@@ -179,6 +179,24 @@ pin（commit / SHA256 / URL）集中在 `modules/pinyinhelper/moqima-gb18030.cma
 
 副作用：墨奇表的分发不再需要 fork `fcitx5-android`；stock fcitx5-android 使用本分支的 addon 子模块即可打包该表。
 
+## D026 — 正式 Voice 不得依赖单一 OEM/System RecognitionService
+
+**状态：Accepted**
+
+upstream PR #899 与当前 Phase 4 PoC 的 Android `SpeechRecognizer -> RecognitionService` 路径继续作为重要上游基线和 Android System ASR 实现，不因单一 OEM 失败而弃用。
+
+但正式版不得把设备默认 `RecognitionService` 作为唯一 Voice/ASR 路径。Phase 4 真机 A/B 已出现同一 PoC 在 vivo X100 Pro 可用、在 Redmi K90 Pro Max 经 Xiaomi AsrService 返回 `ERROR_INSUFFICIENT_PERMISSIONS (9)` 的差异；因此 System ASR 的存在不等于实际 session 可用。
+
+正式架构至少保留：
+
+```text
+Voice Input Flow
+├─ Android System ASR → SpeechRecognizer → RecognitionService
+└─ OEM-independent ASR path → Fcitx5-owned Audio Capture → cloud/local/self-hosted ASR
+```
+
+至少一条路径必须与 OEM/system `RecognitionService` 解耦。System ASR 不可用或运行失败时，不应导致 Voice 功能整体不可用。默认 Provider 与自动 fallback 策略暂不在本决策中确定，须由后续 Portable ASR PoC 和代表性设备矩阵验证决定。
+
 ## D025 — 自构建 Android 发布线：独立包名后缀、自有固定签名密钥、tag 触发发布
 
 **状态：Accepted**
