@@ -19,3 +19,11 @@
   - A：`encoder.int8.onnx` 161141793 `5ac51e27…aa4f`；`decoder.onnx` 5165083 `06522ad6…ac7e`；`joiner.int8.onnx` 1033416 `b34584dc…814b`；`tokens.txt` 20628 `6193c7ea…6652`。
   - B：`encoder_adaptor.int8.onnx` 237792748 `f36dea2e…b422`；`llm.int8.onnx` 600356593 `dfbf9aa3…322a`；`embedding.int8.onnx` 155584380 `95e61cd0…8644`；`Qwen3-0.6B/tokenizer.json` 11422654 `aeb13307…dae4`；`Qwen3-0.6B/vocab.json` 2776833 `ca10d7e9…0910`；`Qwen3-0.6B/merges.txt` 1671853 `8831e4f1…04d5`。完整值见 Android 目录源码。
 - 下一步：写计划与 D037，推送 planning；开始批次 A1。
+
+## 2026-09-27T18:17Z — A1 推送，A2 本地验证
+
+- A1（`fcitx5-android` `1f62c3a0`，已推送）：具体服务 System/Local、启用/当前选择分离、一次性首次推荐、旧 Auto/Local/System 迁移、当前服务不可用时的原因提示 + 打开语音设置、重建的“语音输入”设置页。纯逻辑 `AsrSelection.kt` 14 项测试本机 JVM 通过（LOCAL-JVM-VERIFIED）；CI run `36339927619` 进行中。
+- A2（本地，未提交）：`VoiceBackend.Events.onSessionEstablished`；就绪点 System=`onReadyForSpeech`、Local=模型租约就绪后首次建会话、Doubao=首个非失败服务端响应；`VoiceInputSession.rebind` 发新 token；`VoiceInputFlow` 只对“会话建立前 + 手势仍在 + `VoiceError.Service`”回落一次；`fallbackTarget` 只允许“已选外部服务 → 已启用且已安装的正式 Local 模型”。A/B 为研究模型（`production=false`），因此当前实际没有回落目标——符合 D035/D037。本机 JVM 46 项测试通过（flow/session/selection）。
+- 决定：D030 触发可见性保持“不可用则隐藏”；不可用时的设置入口通过长按空格/设置页提供（记录：若所有者希望麦克风按钮也提供入口，需要修订 D030）。
+- 决定：Doubao 就绪点选“首个非失败服务端响应”而不是 `onOpen`：握手后首帧中的鉴权/配额错误仍算早期。需设备验证服务端是否对首个请求立即回包。
+- 下一步：等 A1 CI；通过后提交 A2 并推送；然后 A3（凭据存储 + Doubao BYOK）。
