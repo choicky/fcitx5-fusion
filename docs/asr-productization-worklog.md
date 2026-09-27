@@ -37,3 +37,12 @@
 - A5 进展：在本机用上游 sherpa-onnx v1.13.8（pip aarch64 wheel）`python-api-examples/streaming_server.py` + `sherpa-onnx-streaming-zipformer-small-bilingual-zh-en-2023-02-16` 起服务（ws://localhost:6006，无 TLS/鉴权）。Kotlin `SherpaOnnxServerClient`（与 Android backend 共用的协议与 OkHttp 客户端代码）以 20 ms 块发送 3 个上游测试 wav：分别 32/16/55 个 partial，均得到 final。**INTEROP-VERIFIED（纯 JVM 客户端 ↔ 上游 Python 服务器）**；Android backend 与设备未测。
 - 互通测试发现并修复缺陷：服务端按端点切段，英文词跨段拼接时丢空格（"MONDAYTODAY"）；现按拉丁字母/数字边界补空格。
 - 下一步：自建实例模型（多实例、协议、URL、可选 Bearer token 存凭据库）、TLS 策略（release 只允许 wss://；debug 显式允许明文）、SherpaOnnxServerBackend 与设置入口。
+
+## 2026-09-27T19:02Z — A5 CI 通过；A4 Model Manager 推送；B 真实下载验证
+
+- A5 `21f37e3c`（自建 sherpa-onnx 实例）CI `36341823349` PASS。设计：release 只接受 `wss://` + 系统信任锚；debug 通过显式 debug-only network security config 允许 `ws://`；无 trust-all；可选 Bearer token 存凭据库。
+- A4 `4a8f7856`（Model Manager）已推送，CI 进行中。目录固定逐文件 SHA-256；A 仅导入；B 从 HF 固定 revision 下载；临时目录 + 校验 + 重命名替换；取消/重试/空间检查；删除为先重命名；中断的替换在下次恢复。模型装到 `noBackupFilesDir/local-asr`，不进备份与导出；旧 adb 外部目录的完整模型仍可用。
+- **B 真实下载（本机 JVM，真实上游）**：`ModelSources.download` + `LocalModelInstaller` 从 `huggingface.co/csukuangfj/sherpa-onnx-funasr-nano-int8-2025-12-30/resolve/6f16bd37…` 下载 1,009,605,061 字节，6 个文件 SHA-256 全部匹配并原子安装（175 s）。导入与 Android UI 未在设备测试。
+- 本机纯 JVM 测试共 80 项通过。
+- 事故：多个并发 CI 轮询耗尽 GitHub 未认证 API 额度（60/小时），导致一次误报“无结果”。改为：一次 API 查询 run id，之后轮询 HTML 页面状态。
+- 下一步：A6 Qwen（Model Studio WebSocket）与 A7 Tencent 的协议客户端 + 设置（无凭据，只能做协议单测，真实识别 UNTESTED）；随后尝试本机运行 FunASR 2-pass 服务器做互通。
