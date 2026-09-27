@@ -88,11 +88,9 @@ Auxiliary Filter selection 优先通过 Fcitx config descriptor 暴露，复用 
 
 **状态：Accepted**
 
-后续在 `SpaceLongPressBehavior` 增加 `VoiceInput`：按住空格开始录音，正常松开停止录音并等待识别结果；按住期间向上滑进入取消状态，松开则取消本次语音输入。取消不得提交任何本次语音的文本，已显示的临时 partial transcript 应清除，迟到的识别结果应丢弃。上滑取消需明确的视觉反馈与防误触阈值，具体手势细节待真机验证。
+`SpaceLongPressBehavior.VoiceInput` 已在 Phase 4B.2 实现：按住空格达到长按阈值后开始录音，正常松开停止录音并等待 final；按住期间上滑越过阈值进入 cancel-armed，松开取消。取消不得提交本次语音文本，迟到结果由统一 Voice session/token 语义丢弃。
 
-麦克风按钮与长按 Space 共用同一个 Voice Input session/flow，分别把点击、松开、上滑取消映射到 start、stop、cancel，不建立两套语音 pipeline。Phase 4 首批先验证麦克风入口；空格手势在会话 stop/cancel 语义经真机验证后实现。
-
-实现补充（2026-09-27，Phase 4B 源码研究）：仅在 `SpaceLongPressBehavior` 增加枚举值不足以实现上述语义——现有长按只在达到阈值时触发一次动作，不向该动作传递松开或上滑事件，且每个 `KeyAction` 处理前都会先取消语音。实现需要空格键的 gesture Down/Move/Up 接入，并在 D027 的 VoiceBackend 边界建立之后进行（排期见 ROADMAP）。
+麦克风按钮与长按 Space 共用同一个 `VoiceInputSession` / Voice Input flow，不建立两套 pipeline。未显式保存该偏好的新安装默认使用 VoiceInput；已有用户已保存的选择保持不变。Phase 4B.2 follow-up commit `8accd92f` 又将 Listening、Release-to-finish、Release-to-cancel、Recognizing 等反馈映射到同一 session state，并使 Space 在长按后继续接收 Move 以实时显示 cancel-armed 状态。代码与 CI 已通过；双机 follow-up 真机复测状态见 ROADMAP。
 
 ## D014 — 优先复用 Fcitx5 Android SpeechRecognizer 工作
 
@@ -274,17 +272,18 @@ ASR Provider
 
 **Local**
 
-- sherpa-onnx 是 Local ASR 的首选首个实现，也是正式默认 Provider 的**首位候选**；Local 是一等 Provider 候选，而不仅是离线 fallback。
-- 这**不是**最终默认 Provider 决定。定为默认前须在真机验证：中文识别质量、中英混合质量、首个 partial 延迟、final 延迟、partial 稳定性、CPU、RAM、电量/发热、模型大小、所选模型的再分发/许可条款、vivo/Redmi 设备表现、完全离线运行。
-- 模型许可须按所选模型逐一核对；sherpa-onnx 框架本身的许可不足以批准模型再分发。
-- 以后可考虑可下载/本地模型分发方式；当前不冻结具体模型打包或下载 UX。
+- Local ASR 是一等 Provider 候选，而不仅是离线 fallback。当前优先研究 sherpa-onnx 作为首个 Local **runtime**，但 runtime 与 model 必须分层理解：sherpa-onnx 可承载多个模型，不能因为选择 runtime 就提前冻结具体模型。
+- 4B.3b 集成前先做窄范围 runtime/model checkpoint：当前第一轮优先比较中文 streaming Zipformer INT8（输入法低延迟/资源基准）与 FunASR Nano INT8（高质量本地候选）；SenseVoice、Qwen3-ASR、whisper.cpp 等仅在第一轮证据显示必要时扩展，不做全面 ASR 横评。
+- 这**不是**最终默认 Provider 决定。定为默认前须在真机验证：中文识别质量、中英混合质量、首个 partial/final 延迟、partial 稳定性、CPU、RAM、电量/发热、模型大小、所选模型的再分发/许可条款、vivo/Redmi 设备表现、完全离线运行。
+- runtime 与模型许可须分别核对；sherpa-onnx 框架本身的许可不足以批准具体模型的商用、再分发或打包。
 
 **Cloud 凭据（BYOK）**（2026-09-27 明确正式凭据策略）
 
 - 正式云端 ASR Provider 采用 BYOK（Bring Your Own Key，用户自有凭据）。
 - 维护者持有的长期云端凭据**不得**内置于 APK、Git 仓库、CI 配置或 CI 产物，以及任何 release 构建；CI 与公开/release APK 必须在没有任何维护者云端凭据的情况下可以构建。
-- 云端 Provider 凭据由用户在运行时按 Provider 分别配置，存放在 Android 设备本地、采用合适的安全凭据存储机制；具体 Android 存储实现尚未冻结，实现前须对照当前 Android 与 fcitx5-android API 核实。
-- Local Provider（如 sherpa-onnx）不需要云端凭据。
+- API Key/credential 是 **Provider-specific runtime configuration**：用户按 Provider 分别配置、独立安全存储、独立使用；切换 Provider 不删除其他 Provider 已保存凭据，也不得跨 Provider 复用凭据。具体 Android 安全存储实现尚未冻结，实现前须对照当前 Android 与 fcitx5-android API 核实。
+- Provider 的普通配置（如 model、endpoint、resource）与 secret storage 逻辑分离；secret 默认遮蔽，可替换/清除，不得写入日志、普通配置导出、诊断报告或 crash 信息。
+- Local Provider 不需要云端凭据。
 - 运行时 Provider 配置保持 ASR 与 LLM 分离（D017）：配置 ASR 凭据不会配置或启用任何 LLM 凭据/Provider。
 - 开发 PoC 只可通过本地、不提交的 debug 配置使用开发者测试凭据。Phase 4B.3a 的 Doubao 凭据注入（环境变量或用户级 Gradle 属性 → debug `BuildConfig`）**仅限 PoC**，不得演变为正式凭据路径。
 - 正式 BYOK 的凭据存储与 UI **不属于** Phase 4B.3a。
@@ -315,3 +314,21 @@ ASR Provider
 **不属于本决策**
 
 不选定 Doubao 为最终默认 Provider；不认定 sherpa-onnx 已通过验证；不选定 realtime provisional preedit；不选定自动 local/cloud fallback；不选定独立 RecognitionService APK/模块架构。长按 Space 仍是独立的 Voice Trigger 任务（D013），不阻塞 4B.3a/4B.3b。
+
+## D029 — 正式 ASR 设置采用 Provider-specific configuration；Local 模型独立管理
+
+**状态：Accepted（2026-09-27）**
+
+正式 Android Voice settings 必须提供一等的 ASR Provider 选择入口；Phase 4B 的 Developer debug 开关仅用于 PoC，不是正式 UX。选择 Provider 后只展示该 Provider 需要的运行时配置；Local Provider 不显示 API Key。Provider-specific 配置可复用通用 UI/descriptor 思路，但在第二个真实 Cloud Provider 出现前不建立复杂 schema/plugin framework。
+
+云端 credential 遵循 D028：按 Provider 独立配置、独立安全存储和独立使用。可提供“测试配置”，但若 Provider 没有轻量 credential-validation API，不得为了测试而未经明确告知上传用户录音。
+
+Local ASR 的 Provider、runtime、model 分层管理。正式版需要 Local Model Manager/Downloader，覆盖至少：model catalog、大小/版本/License、下载/失败重试、完整性校验、原子安装、更新和删除；暂停/断点续传等具体能力按实现阶段验证。大型模型原则上不强制内置 APK；安装后的 Local ASR 日常识别应可完全离线。Model Manager 不进入 4B.3b 最小 PoC，待实际 runtime/model 的文件布局、加载方式和许可验证后实现。
+
+## D030 — Voice Trigger 可见性跟随 configured backend，而非 System ASR
+
+**状态：Accepted / Implemented in Phase 4B.2 follow-up（2026-09-27）**
+
+麦克风/Voice Trigger 的可用性必须依据当前 configured backend 判断；只有 configured backend 为 System ASR 时，`SpeechRecognizer.isRecognitionAvailable()` 才参与可用性判断。Direct Cloud/Local backend 不得因 OEM/system RecognitionService 不可用而隐藏 Voice Trigger。
+
+该规则在 `fcitx5-android` commit `8accd92f` 中通过统一 `configuredBackend` 的 visibility/start 判断实现。它是 D026/D027 “System ASR 不得成为正式 Voice 唯一路径”的 UI/dispatch 落地，不意味着当前 debug backend selector 已是正式 Provider settings；正式配置见 D029。
