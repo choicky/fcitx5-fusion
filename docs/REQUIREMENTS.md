@@ -210,7 +210,27 @@ Raw Transcript → IME
 
 ## 9. ASR Provider
 
-ASR Provider 位于 VoiceBackend 之后（见 8.1）：System ASR 由 `SystemAsrBackend` 承载；cloud/local/self-hosted Provider 由 `DirectAsrBackend` 使用 Fcitx5-owned Audio Capture 驱动：
+ASR Provider 位于 VoiceBackend 之后（见 8.1）：System ASR 由 `SystemAsrBackend` 承载；Local、Managed Cloud、Self-hosted Provider 由 `DirectAsrBackend` 使用 Fcitx5-owned Audio Capture 驱动。Provider 按部署位置/数据去向分为四个逻辑类别（D033；逻辑分类，不是物理模块/APK 拆分）：
+
+```text
+ASR Provider
+├─ System
+│  └─ Android SpeechRecognizer / RecognitionService
+├─ Local
+│  └─ On-device ASR
+├─ Managed Cloud
+│  ├─ Doubao / Seed-ASR
+│  ├─ Alibaba / Qwen ASR
+│  ├─ Tencent Realtime ASR
+│  └─ future providers
+└─ Self-hosted
+   ├─ FunASR 2-pass / Paraformer
+   ├─ Fun-ASR-Nano Server
+   ├─ sherpa-onnx Server
+   └─ Custom / OpenAI-compatible or future protocol adapters
+```
+
+在 VoiceBackend 中的位置：
 
 ```text
 Voice Input Flow
@@ -219,13 +239,26 @@ internal VoiceBackend
 ├─ SystemAsrBackend → SpeechRecognizer → RecognitionService
 └─ DirectAsrBackend → Fcitx5-owned Audio Capture
                       ├─ Local（如 sherpa-onnx）→ on-device engine
-                      ├─ Cloud / BYOK → Provider API
-                      └─ Custom（OpenAI-compatible / self-hosted endpoint）→ custom endpoint
+                      ├─ Managed Cloud（BYOK）→ Provider API
+                      └─ Self-hosted（含 OpenAI-compatible 等协议适配）→ 用户配置的 endpoint
 ↓
 Raw Transcript
 ```
 
 允许云端、本地、自建和 OpenAI-compatible Provider，包括但不限于豆包、阿里云、腾讯、讯飞、FunASR/SenseVoice、sherpa-onnx 等。
+
+所有 Provider 走同一逻辑流程；Self-hosted 不建立独立 Voice pipeline：
+
+```text
+Mic / Long-press Space → VoiceInputFlow → Configured ASR Provider → Raw Transcript
+→ Optional Text Post Processor / LLM → Final Transcript → IME
+```
+
+当前事实与计划的区分：
+
+- **已真机验证**：System（vivo 可用 / Redmi OEM error 9）；Managed Cloud 中仅 Doubao Seed-ASR 2.0（4B.3a 双机 PASS）；Local 候选 A 基础双机 gate PASS（仅研究用途，见 9.1）。
+- **计划 checkpoint 候选（均无 PoC）**：Managed Cloud 的 Alibaba Qwen ASR 系列（具体模型在 checkpoint 时依当时官方产品线核实）与 Tencent Realtime ASR；Self-hosted 的 FunASR 2-pass / Paraformer、Fun-ASR-Nano Server、sherpa-onnx Server。iFlytek 为未来候选，当前不实现。比较维度与核实项见 D033。
+- **未冻结**：任何 Managed Cloud 胜者、Self-hosted 是否需要共同的 backend/协议边界、Local 正式模型。
 
 正式版的可移植性要求：
 
@@ -237,17 +270,52 @@ Raw Transcript
 
 PoC 使用某个 Provider 不得使 Voice Trigger、Audio Capture 或 IME 层绑定该 Provider。对于 Android System ASR，不强制要求 Fcitx5 提供 PCM；对于 direct cloud/local Provider，使用最小的 Fcitx5-owned Audio Capture 边界，不提前建立复杂 Provider framework。
 
-Provider 逻辑分类与选择见 D028：Phase 4B.3a 选定 Doubao Seed-ASR 2.0 作为首个真实 Direct Cloud ASR PoC 的 Provider/路径，并已在 vivo X100 Pro 与 Redmi K90 Pro Max 完成 Direct Cloud E2E 真机验证；这**不**表示 Doubao 是正式/默认 ASR Provider。正式默认 Provider 仍未决定。Local ASR 的窄范围 runtime/model checkpoint 已完成：当前以 sherpa-onnx 作为首个 runtime 候选，并保留两个代表性模型进入同条件真机 A/B PoC：A) streaming Zipformer zh INT8（OnlineRecognizer，真流式、约 168 MB），仅作 research/device-evaluation，模型权重许可未澄清前不得进入正式 release/distribution；B) FunASR Nano INT8（OfflineRecognizer，约 1 GB），作为高质量/多语言本地候选。A/B 均未被选定为正式或默认 Local ASR。`android.permission.INTERNET` 在 capture-only 的 Phase 4B.1 中有意未声明；Phase 4B.3a 的真实云端 ASR 集成需要时可以增加，其数据流须满足第 11 节；这不意味着 Local ASR 需要联网。云端 Provider 采用 BYOK；API Key/credential 必须是 **Provider-specific runtime configuration**：各 Provider 独立配置、独立安全存储、独立使用，切换 Provider 不删除其他 Provider 已保存凭据，也不得跨 Provider 复用凭据；Local Provider 不需要云端凭据；ASR 与 LLM 的 Provider/credential 完全分离。维护者凭据不得进入 APK、仓库、CI 或 release，CI 与公开 APK 无需维护者凭据即可构建。Provider 的普通配置（model/endpoint 等）与 secret storage 应逻辑分离；secret 默认遮蔽，不得进入日志、普通配置导出或诊断信息。具体 Android 安全存储 API 在实现前按最新 Android/fcitx5-android 源码核实。详见 D028/D029。
+Provider 选择见 D028（逻辑分类已由 D033 更新）：Phase 4B.3a 选定 Doubao Seed-ASR 2.0 作为首个真实 Direct Cloud ASR PoC 的 Provider/路径，并已在 vivo X100 Pro 与 Redmi K90 Pro Max 完成 Direct Cloud E2E 真机验证；这**不**表示 Doubao 是正式/默认 ASR Provider。正式默认 Provider 仍未决定。Local ASR 的窄范围 runtime/model checkpoint 已完成：当前以 sherpa-onnx 作为首个 runtime 候选，并保留两个代表性模型进入同条件真机 A/B PoC：A) streaming Zipformer zh INT8（OnlineRecognizer，真流式、约 168 MB），仅作 research/device-evaluation，模型权重许可未澄清前不得进入正式 release/distribution；B) FunASR Nano INT8（OfflineRecognizer，约 1 GB），作为高质量/多语言本地候选。A/B 均未被选定为正式或默认 Local ASR。`android.permission.INTERNET` 在 capture-only 的 Phase 4B.1 中有意未声明；Phase 4B.3a 的真实云端 ASR 集成需要时可以增加，其数据流须满足第 11 节；这不意味着 Local ASR 需要联网。云端 Provider 采用 BYOK；API Key/credential 必须是 **Provider-specific runtime configuration**：各 Provider 独立配置、独立安全存储、独立使用，切换 Provider 不删除其他 Provider 已保存凭据，也不得跨 Provider 复用凭据；Local Provider 不需要云端凭据；ASR 与 LLM 的 Provider/credential 完全分离。维护者凭据不得进入 APK、仓库、CI 或 release，CI 与公开 APK 无需维护者凭据即可构建。Provider 的普通配置（model/endpoint 等）与 secret storage 应逻辑分离；secret 默认遮蔽，不得进入日志、普通配置导出或诊断信息。具体 Android 安全存储 API 在实现前按最新 Android/fcitx5-android 源码核实。详见 D028/D029。
 
 ### 9.1 正式 Android Provider 设置与 Local Model Manager
 
-正式 Android UI 应提供一等的 ASR Provider 选择入口，而不是依赖 Developer debug 开关。选择 Provider 后只显示该 Provider 所需的配置；云端 Provider 可包含 API Key、model、endpoint/resource 等，Local Provider 不显示 API Key。可提供 Provider-specific“测试配置”，但不得为了测试凭据而未经明确告知上传用户录音。
+正式 Android UI 应提供一等的 ASR Provider 选择入口，而不是依赖 Developer debug 开关。面向用户的名称优先使用“语音识别服务”，选项按数据/处理去向分组：自动（推荐）、设备端 / Local、云端服务 / Managed Cloud、自托管 / Self-hosted、系统 / Android System ASR。顶层设置方向（D034，非最终 UI 规格）：
+
+```text
+语音输入
+├─ 启用语音输入
+├─ 语音识别服务
+│  └─ 自动（推荐）
+├─ 麦克风按钮
+├─ 长按空格
+│  └─ 语音输入
+├─ 本地语音模型
+└─ 高级设置
+```
+
+选择 Provider 后只显示该 Provider 所需的配置；云端 Provider 可包含 API Key、model、endpoint/resource 等，Local Provider 不显示 API Key。可提供 Provider-specific“测试配置”，但不得为了测试凭据而未经明确告知上传用户录音。
 
 Local ASR 的 **Provider / runtime / model** 必须区分：例如 Local Provider 可使用 sherpa-onnx runtime，而 Zipformer、FunASR Nano 等是具体 model；runtime 可用不等于任一模型已获准打包或再分发，模型许可须逐一核对。
 
 正式版应提供 Local Model Manager/Downloader，至少覆盖 model catalog、大小/版本/License 展示、下载/重试（是否支持暂停/断点续传按实现验证）、完整性校验、原子安装、更新与删除。大型 Local 模型原则上不因启用 Voice 而强制内置 APK；模型安装完成后，Local ASR 的日常识别应能完全离线工作。Downloader/Model Manager 不属于 4B.3b 最小 PoC，须在实际 runtime/model 的文件结构、加载方式和许可确认后设计。
 
 4B.3b A/B PoC 的模型均不打包进 APK，也不实现下载器；使用固定模型文件/hash，通过 `adb` 放入测试设备可访问的应用目录。正式产品不要求用户使用 adb，而是在后续 Model Manager/Downloader 中按需获取已通过许可审查的模型。A 的模型权重许可未明确前，不得进入正式模型目录、release artifact 或由项目提供下载。第三方 runtime、模型与训练数据许可必须分层记录；Local ASR 引入前建立并维护 `docs/THIRD_PARTY_LICENSES.md`。
+
+### 9.2 默认服务：Auto（D034）
+
+产品目标为“开箱即用优先”，默认“语音识别服务”= 自动（Auto）。初始 Auto 策略：
+
+1. 已安装且健康的 Local 模型 → Local；
+2. 否则 System ASR 可用 → System；
+3. 否则提示当前没有可用的识别服务，并提供配置入口：安装 Local 模型、配置 Managed Cloud、配置 Self-hosted。
+
+Auto 不得静默选择 BYOK Managed Cloud，也不得静默选择用户配置的 Self-hosted endpoint。首次使用引导是否推荐/下载 Local 模型尚未冻结，等待 Local A/B checkpoint。
+
+### 9.3 自动 fallback（D035）
+
+自动 fallback 默认开启：
+
+- 显式选择 Managed Cloud / Self-hosted：Primary →（技术失败）Local（若已安装且健康）→（不可用/失败）System（若可用）→ 识别失败；
+- 显式选择 Local：Local →（失败）System（若可用）→ 识别失败。
+
+核心隐私规则：自动 fallback 可以保持或缩小用户所选的数据暴露边界，但不得静默扩大到新的第三方 ASR Provider（例如不得 Doubao → Alibaba、Alibaba → Tencent、Self-hosted → Managed Cloud、Local → Managed Cloud、System → Managed Cloud）。
+
+V1 只处理启动/早期技术失败：Provider 不可用、无网络/连接失败、endpoint 不可用、认证/服务初始化失败、Local 模型不可用/加载失败、可用识别会话建立前的早期超时。V1 不做会话中途跨 Provider PCM replay/迁移、不因质量差自动重识别、不做双 Provider 同时识别、不把已采集音频静默重放给其他第三方；会话中途失败报告失败/允许重试。fallback 须可观测（第 11 节）。System ASR 的数据去向由 OEM 决定（可能联网），fallback 到 System 如何满足核心隐私规则须在实现前确认（D035 待核实项）。
 
 ## 10. ASR 与 LLM 解耦
 
@@ -276,9 +344,10 @@ LLM 必须可以完全关闭。ASR Provider 与 LLM Provider 分别选择和配�
 - ASR 返回的 Raw Transcript；
 - 是否继续发送给 LLM；
 - LLM Provider/endpoint；
-- 最终提交给 IME 的文本。
+- 最终提交给 IME 的文本；
+- 是否发生自动 fallback，以及实际使用的 ASR Provider。
 
-启用词库更新不等于上传用户输入；启用 Voice Trigger 不等于选择某家云 ASR；启用 ASR 不等于把 transcript 自动发送给 LLM。
+启用词库更新不等于上传用户输入；启用 Voice Trigger 不等于选择某家云 ASR；启用 ASR 不等于把 transcript 自动发送给 LLM；Auto 与自动 fallback 不得静默把音频发送给用户未选择的 Managed Cloud 或 Self-hosted 服务（D034/D035）。
 
 ## 12. 最小修改边界
 

@@ -315,6 +315,8 @@ ASR Provider
 
 不选定 Doubao 为最终默认 Provider；不认定 sherpa-onnx 已通过验证；不选定 realtime provisional preedit；不选定自动 local/cloud fallback；不选定独立 RecognitionService APK/模块架构。长按 Space 仍是独立的 Voice Trigger 任务（D013），不阻塞 4B.3a/4B.3b。
 
+修订（2026-09-27）：上文“Provider 逻辑分类”由 D033 的 System / Local / Managed Cloud / Self-hosted 四类取代（原 Cloud/BYOK → Managed Cloud；原 Custom → Self-hosted 下的协议适配）；“不设计自动 Provider 切换/fallback”与“不选定自动 local/cloud fallback”由 D034（默认 Auto）与 D035（自动 fallback 策略）取代。BYOK、Direct ASR 结果语义与 4B.3 设计不变。
+
 ## D029 — 正式 ASR 设置采用 Provider-specific configuration；Local 模型独立管理
 
 **状态：Accepted（2026-09-27）**
@@ -359,3 +361,105 @@ A/B 均复用 D027 的 Voice flow、Fcitx-owned `AudioCapture` 与 Local ASR 边
 
 第三方许可作为 Local ASR 引入 gate：runtime、model weights、必要时 training-data provenance 分层记录，并维护 `docs/THIRD_PARTY_LICENSES.md`。
 
+## D033 — ASR Provider 分类扩展为 System / Local / Managed Cloud / Self-hosted；所有 Provider 共用同一 Voice flow
+
+**状态：Accepted（2026-09-27，Local ASR 实现审阅后的架构/产品 checkpoint；纯规划，未实现）**
+
+```text
+ASR Provider
+├─ System
+│  └─ Android SpeechRecognizer / RecognitionService
+├─ Local
+│  └─ On-device ASR
+├─ Managed Cloud
+│  ├─ Doubao / Seed-ASR
+│  ├─ Alibaba / Qwen ASR
+│  ├─ Tencent Realtime ASR
+│  └─ future providers
+└─ Self-hosted
+   ├─ FunASR 2-pass / Paraformer
+   ├─ Fun-ASR-Nano Server
+   ├─ sherpa-onnx Server
+   └─ Custom / OpenAI-compatible or future protocol adapters
+```
+
+- 这是按**部署位置/数据去向**划分的逻辑分类，不是物理模块/APK 拆分；不建立复杂 Provider 插件框架。
+- 所有 Provider 走同一逻辑流程；Self-hosted **不**建立独立 Voice pipeline：
+
+```text
+Mic / Long-press Space → VoiceInputFlow → Configured ASR Provider → Raw Transcript
+→ Optional Text Post Processor / LLM → Final Transcript → IME
+```
+
+- System 由 `SystemAsrBackend` 承载；Local、Managed Cloud、Self-hosted 均经 D027 的 Fcitx-owned Audio Capture（Direct 路径）驱动。
+- OpenAI-compatible 是协议适配，不等于 Self-hosted（沿用 D028）。
+
+**Managed Cloud 对比候选（计划，未选定）**
+
+- Cloud A：Doubao Seed-ASR 2.0 — 已有 Direct backend，4B.3a 双机 PASS，作为基线；
+- Cloud B：Alibaba Qwen ASR 系列 — checkpoint 时依据当时官方产品线核实适合流式/输入法的模型；若存在多个相关变体，不提前冻结单一模型名；
+- Cloud C：Tencent Realtime ASR；
+- iFlytek 保留为未来候选，当前不实现。
+
+Managed Cloud checkpoint 至少比较：中文识别质量、中英混合、首个 partial 延迟、partial 修订行为、stop→final 延迟、弱网/失败行为、计费模式、认证/BYOK 复杂度、隐私/数据处理影响、客户端实现边界。Cloud B/C 尚无任何 PoC；不选定胜者。
+
+**Self-hosted 研究候选（计划，未实现）**
+
+- S1：FunASR 2-pass / Paraformer；S2：Fun-ASR-Nano Server；S3：sherpa-onnx Server。
+
+Self-hosted checkpoint 须依据当时上游源码/文档核实：实际 streaming/offline 行为、partial/final 语义、适用时的第二遍修正、协议/API、CPU/GPU 需求、延迟/吞吐预期、模型与 runtime 许可及再分发/商用状态、Android 客户端最小修改边界，以及是否值得建立共同的 `SelfHostedAsrBackend`/协议边界。当前不实现任何 Self-hosted backend，不设计插件框架。
+
+## D034 — 语音识别服务设置方向与默认 Auto
+
+**状态：Accepted（2026-09-27）；UI 未实现**
+
+- 面向用户的术语优先使用“语音识别服务”，不要求普通用户理解“ASR Provider”。
+- 顶层 Voice 设置方向（细化 D029，不是最终 UI 规格）：
+
+```text
+语音输入
+├─ 启用语音输入
+├─ 语音识别服务
+│  └─ 自动（推荐）
+├─ 麦克风按钮
+├─ 长按空格
+│  └─ 语音输入
+├─ 本地语音模型
+└─ 高级设置
+```
+
+- 服务选择按数据/处理去向分组：自动（推荐）、设备端 / Local、云端服务 / Managed Cloud、自托管 / Self-hosted、系统 / Android System ASR。凭据、endpoint、model 等放在各 Provider 自己的设置中；Local 提供模型管理而非 API 凭据（D029）。
+- 产品目标“开箱即用优先”。默认值 **ASR Provider = Auto**，初始 Auto 策略：
+  1. 已安装且健康的 Local 模型 → Local；
+  2. 否则 System ASR 可用 → System；
+  3. 否则提示当前没有可用的识别服务，并给出配置入口：安装 Local 模型、配置 Managed Cloud、配置 Self-hosted。
+- Auto **不得**静默选择 BYOK Managed Cloud Provider，也**不得**静默选择用户配置的 Self-hosted endpoint；这两类只在用户显式选择时使用。
+- 未冻结：首次使用引导是否推荐/下载 Local 模型（等待 Local A/B checkpoint）；“健康”的具体判定；System 可用性判定沿用 D026/D030（存在 RecognitionService ≠ session 可用）。
+- 本决策细化 D028 的 Default Provider checkpoint：默认**设置**为 Auto；Local A/B checkpoint 仍决定 Local 模型是否及如何进入默认体验。
+
+## D035 — 自动 fallback：默认开启，只保持或缩小数据暴露边界
+
+**状态：Accepted（2026-09-27）；未实现**
+
+自动 fallback 默认开启。用户显式选择 Managed Cloud 或 Self-hosted 时：
+
+```text
+Primary Managed Cloud / Self-hosted
+  ↓ 技术失败
+Local ASR（若已安装且健康）
+  ↓ 不可用/失败
+System ASR（若可用）
+  ↓
+识别失败
+```
+
+用户显式选择 Local 时：Local →（失败）System ASR（若可用）→ 识别失败。
+
+**核心隐私规则**：自动 fallback 可以保持或缩小用户所选的数据暴露边界，但不得静默扩大到新的第三方 ASR Provider。因此不得静默发生：Doubao → Alibaba、Alibaba → Tencent、Self-hosted → Managed Cloud、Local → Managed Cloud、System ASR → Managed Cloud 等。
+
+**V1 范围**：只处理启动/早期技术失败——Provider 不可用、无网络/连接失败、endpoint 不可用、认证/服务初始化失败、Local 模型不可用/加载失败、可用识别会话建立前的早期超时。
+
+**V1 不实现**：会话中途跨 Provider 的 PCM replay/迁移；因识别质量看起来差而自动换 Provider 重识别；双 Provider 同时识别；把已采集音频静默重放给其他第三方。会话中途失败报告识别失败/允许重试，而不迁移会话。
+
+- fallback 发生时须可观测（D018），具体提示 UI 未冻结；关闭 fallback 的设置位置未冻结。
+- 待核实（实现前）：System ASR 的数据去向由 OEM/system `RecognitionService` 决定，可能是联网服务；Cloud/Self-hosted/Local → System 的 fallback 是否及如何满足上面的核心隐私规则（例如明确披露或在用户选择 Local 时的处理），须在实现前结合 OEM 行为确认。
