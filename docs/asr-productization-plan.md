@@ -50,7 +50,7 @@ OpenAI-compatible 整段转写是可选独立适配器，不在本计划必需�
 | Tencent | `9d9b9dba` | IMPLEMENTED；签名与独立实现一致；EMULATION-VERIFIED；真实服务 UNTESTED（无凭据）；CI 见工作日志 |
 | sherpa-onnx Server | A5 `21f37e3c` | IMPLEMENTED，CI-VERIFIED（`36341823349`），**INTEROP-VERIFIED**（上游 v1.13.8 Python streaming_server.py 与 C++ online websocket server 两种）；Android DEVICE UNTESTED |
 | FunASR 2-pass | `5fcc495f` | IMPLEMENTED，CI-VERIFIED（`36344526847`），**INTEROP-VERIFIED**（上游 Python 2pass 服务器，CPU）；C++ 服务器 UNTESTED |
-| OpenAI-compatible 整段转写（可选适配器） | `91dd1708` | IMPLEMENTED；https 端点（debug 可 http）；本地仿真器往返验证；无实时文字；真实服务器 UNTESTED |
+| OpenAI-compatible 整段转写（可选适配器） | `91dd1708` | IMPLEMENTED，CI-VERIFIED（`36352793131`）；https 端点（debug 可 http）；**INTEROP-VERIFIED**（上游 FunASR 1.4.16 `funasr-server --model sensevoice --device cpu`，stop→final 2.1/3.0 s）；无实时文字 |
 | Fun-ASR-Nano Server | `e9035b81` | IMPLEMENTED；EMULATION-VERIFIED；上游服务器需 GPU → INTEROP UNTESTED；CI 见工作日志 |
 
 设备、云凭据与 GPU 服务器的验收步骤：`docs/asr-productization-acceptance.md`。

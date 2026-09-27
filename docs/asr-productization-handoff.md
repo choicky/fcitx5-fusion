@@ -46,5 +46,5 @@ java -cp out:<jars>:kotlin-stdlib.jar org.junit.runner.JUnitCore <TestClass...>
 1. 所有者用最新 CI APK 执行 `asr-productization-acceptance.md`（设备、凭据、服务器），尤其是 1.x 迁移、2.x Model Manager、2.7b 候选 C、3.x 三家云端（需凭据）、4.x 自建。
 2. 按设备结果修复缺陷。
 3. 所有者决定 §5 三项后实施。
-4. OpenAI-compatible 适配器已实现（`91dd1708`），需要一个真实兼容服务器做互通（如 FunASR `serve_vllm.py` 需 GPU）。
+4. OpenAI-compatible 适配器已实现并与上游 `funasr-server`（CPU，SenseVoice）互通；设备端仍未测。
 5. 清理本机 `~/asr-scratch`（约 6 GB：venv、模型缓存、上游源码；仓库外）。

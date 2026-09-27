@@ -97,3 +97,9 @@
 ## 2026-09-27T21:53Z — sherpa-onnx C++ 服务器互通
 
 - 官方 v1.13.8 发布包 linux-aarch64-shared-cpu 中的 C++ 在线 websocket 服务器（会发 is_eof）本机运行；同一 Kotlin 客户端送 3 个 wav：32/17/56 partial，final 正确。sherpa-onnx 的 Python 与 C++ 两种上游服务器均 INTEROP-VERIFIED。
+
+## 2026-09-27T21:58Z — OpenAI 兼容适配器真实互通
+
+- `91dd1708` CI `36352793131` PASS。
+- 上游 FunASR 1.4.16 自带的 `funasr-server`（OpenAI 兼容 `/v1/audio/transcriptions`，文档示例 `--model sensevoice --device cpu`）本机运行；`OpenAiTranscriptionClient` 送 10.1 s 与 17.6 s wav：转写正确，stop→final 2.1 s / 3.0 s。**INTEROP-VERIFIED**。测试 `OpenAiTranscriptionInteropTest` 已提交（环境变量启用）。
+- 附注：SenseVoiceSmall 的 HF 许可为 `other`，此处只作为服务端测试模型，不进入 Model Manager。
