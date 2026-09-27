@@ -11,6 +11,7 @@
 | 选择/推荐/迁移/fallback 纯逻辑 | 本机 JVM 95 项测试 + CI | LOCAL-JVM + CI |
 | sherpa-onnx 客户端 | 上游 v1.13.8 Python streaming_server 本机互通（3 个 wav） | INTEROP |
 | FunASR 2-pass 客户端 | 上游 FunASR 1.4.16 Python 2pass 服务器本机互通（3 个 wav，含标点修正） | INTEROP |
+| OpenAI-compatible 整段转写 | 上游 FunASR 1.4.16 `funasr-server --model sensevoice --device cpu` 本机互通（2 个 wav，stop→final 2.1/3.0 s） | INTEROP |
 | Qwen / Tencent / Fun-ASR-Nano 客户端 | 按文档/源码的本地协议仿真器；Tencent 签名与独立 Python 实现一致 | EMULATION（非真实服务） |
 | B 模型下载 | 真实上游 HF 固定 revision 下载 1,009,605,061 字节，6 文件 SHA-256 匹配，原子安装 | JVM + 真实上游 |
 | Android UI、Keystore、AudioCapture 路径、真实云端 | — | UNTESTED |
@@ -62,6 +63,7 @@
 - sherpa-onnx：`pip install sherpa-onnx==1.13.8`；`python python-api-examples/streaming_server.py --encoder … --decoder … --joiner … --tokens … --port 6006`（v1.13.8 源码）。
 - FunASR 2-pass：FunASR v1.4.16 `runtime/python/websocket/funasr_wss_server.py --port 10095 --ngpu 0 --device cpu`（首次下载默认模型约 1.8 GB）。
 - Fun-ASR-Nano：`funasr-realtime-server`（需 NVIDIA GPU / vLLM）。
+- OpenAI-compatible：FunASR v1.4.16 `funasr-server --model sensevoice --device cpu --port 9000`，端点 `http://…:9000/v1/audio/transcriptions`。
 - release 构建需要 `wss://`：在服务器前放置带有效证书的反向代理（如 Caddy/nginx），可选 Bearer 鉴权。
 
 | # | 步骤 | 预期 | vivo | Redmi |
@@ -71,6 +73,7 @@
 | 4.3 | 同上，Fun-ASR-Nano | 最终文本提交（需 GPU 服务器） | | |
 | 4.4 | release 构建中添加 `ws://` 实例 | 保存被拒绝：“不允许未加密的 ws:// 地址” | | |
 | 4.5 | 反向代理要求 Bearer，实例不填令牌 | 早期失败（HTTP 401），不切换服务 | | |
+| 4.6b | 同上，OpenAI-compatible 实例 `http://…:9000/v1/audio/transcriptions` | 说话期间无实时文字；停止后约数秒提交最终文本 | | |
 | 4.6 | 删除当前实例 | 当前服务显示“已删除”，不改选 | | |
 
 ## 5. fallback（D035）
