@@ -104,3 +104,40 @@ VoiceInputFlow（不变）
 - 低内存下 IME 进程被回收的风险（1 GB 常驻）。
 - A（若作为备选）：流式首字延迟与 endpoint 行为；中文生僻字经 byte fallback 的实际输出。
 - 许可：B 第三方 ONNX 导出仓库内 LICENSE 原文；A 权重作者的许可答复。
+
+## 10. 4B.3b-1 设备实测记录
+
+实现：`choicky/fcitx5-android` 分支 `phase4-voice-poc`，`204fc324`（A/B 同时接入：sherpa-onnx v1.13.8 官方 AAR，debug-only/arm64，复用 `AudioCapture` / `VoiceBackend` / `VoiceInputSession`）+ `a8a0e1b3`（B 设备测试前加固，见下）；CI run `36320274118`（`204fc324`）与 `36323060020`（`a8a0e1b3`）均通过。
+
+### A — streaming Zipformer zh INT8：基础双机 gate PASS；测试已停止
+
+项目所有者实测（人工回报）：
+
+| 项 | Redmi K90 Pro Max | vivo X100 Pro |
+|---|---|---|
+| sherpa JNI/native/模型加载 | PASS | PASS（首次加载 1425 ms） |
+| recognizer 缓存复用 | PASS | PASS |
+| OnlineRecognizer streaming partials | PASS | PASS |
+| Mic / Space stop / Space cancel | PASS / PASS / PASS | PASS / PASS / PASS |
+| 连续 session | PASS | —（未单列） |
+| RTF（缓存后） | 约 0.10–0.18 | 约 0.135–0.148 |
+| stopToFinal | 约 40–59 ms | 约 111–131 ms |
+| 长语音 | 33.76 s 连续中文：83 个 partial，RTF 0.176，stopToFinal 40 ms，PASS | — |
+| 中英混说 | 可用但识别质量差（所测样本） | — |
+
+- **基础设备 gate 通过 ≠ 被选为产品/发布模型。** A 不是正式/默认 Local ASR，仍仅限 research/device-evaluation。
+- 许可阻碍保持不变：模型权重的再分发/商用许可未明确；训练数据中的非商用条款对权重的法律效果**不作推断**。许可澄清前不得进入正式 release/distribution，也不得由项目提供正式下载。
+- A 的 partial 在本 PoC 中仅写日志，不写入 preedit/composing。
+- A 的进一步测试按决定**已停止**。
+
+### B — FunASR Nano INT8：待设备实测
+
+`a8a0e1b3` 对照 sherpa-onnx 1.13.8 源码复核 B 后的调整：
+
+- 预检文件与 `OfflineFunASRNanoModelConfig::Validate()` 一致：`encoder_adaptor.int8.onnx`、`llm.int8.onnx`、`embedding.int8.onnx`，以及 tokenizer 目录中的 `Qwen3-0.6B/vocab.json`、`merges.txt`、`tokenizer.json`；缺任一文件时给出列出文件名的受控错误。
+- 选择其他 backend（Local 关闭）开始新 session 时释放已缓存的 Local 模型；A↔B 切换由缓存按租约释放旧 recognizer。
+- 每次结果日志增加进程 `pss`（MB），其余字段不变：`load`、`audio`、`decode`、`rtf`、`stopToFinal`、`finalChars` 与采集统计。
+
+B 设备测试需记录：首次/缓存加载时间、`pss`、3 s/10 s/30 s 语音的 `stopToFinal` 与 `rtf`（`numThreads` 1–4）、连续 session、Mic/Space stop/cancel（cancel 不得 decode/提交）、发热与完全离线，以及中文/中英混说与 A、Doubao 的同语料对比。
+
+已知风险（源码事实）：FunASR Nano 的 prompt + 音频 token 受模型元数据 `max_total_len` 限制；超出时 sherpa-onnx 会截断音频并只在原生日志（logcat `LOGE`）中提示。该 int8 模型的 `max_total_len` 未核实，需用接近 60 s 上限的长语音确认是否截断。
