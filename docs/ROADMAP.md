@@ -321,12 +321,13 @@ B. 由源码推断、需实机确认的风险：
 
 - [x] **4B.1 — capture-only AudioRecord PoC**：建立最小 `VoiceBackend`，把现有 SpeechRecognizer 代码迁入 `SystemAsrBackend`，新增只采集、不识别的 capture backend（不含 ASR、不联网、不持久化音频，不增加 `INTERNET` 权限）；麦克风入口经同一 `VoiceInputSession` 驱动；单元测试以 fake backend 覆盖会话编排。实现：`choicky/fcitx5-android` 分支 `phase4-voice-poc`，`90ae5a55`（VoiceBackend + capture probe）+ `877c9c0c`（code review 修复：startRecording 失败时仍释放录音器，补充 3 个 flow 测试）；CI run `36300480076` 成功（编译、`:app:testDebugUnitTest`、APK 构建与内容断言、产物 `moqi-debug-apk`）；capture probe 仅在 debug 构建中经 Developer 开关启用；
 - [x] **硬关口 — vivo X100 Pro + Redmi K90 Pro Max 真机：PASS（2026-09-27）**：两台设备都须证明真实**非静音**采集（不仅是 `AudioRecord.read()` 成功；API 29+ 以 client-silenced 状态作辅助证据），以及 stop / cancel / release 与各 lifecycle 路径正确、系统麦克风占用指示及时消失；System ASR 行为不回退。**STOP 条件：若 Redmi 上 Direct capture 被拒绝或被静音，停止，不接入真实 Direct ASR Provider，先重新评估。**（未触发，见下方关口结果）
-- [ ] 4B.2 — 长按 Space：独立的 Voice Trigger 任务，在 `VoiceBackend` 边界与 capture 关口通过之后实现，可在真实 Direct ASR PoC 之前或同时进行，不阻塞 4B.3a/4B.3b；长按阈值达到 → start，松开 → stop，按住上滑 → cancel；需要空格键 gesture Down/Move/Up 接入；与麦克风进入同一 Voice Input flow；
-- [x] **Provider Selection / 4B.3 设计 checkpoint：ACCEPTED（2026-09-27，D028）**：Provider 逻辑分类 Local（sherpa-onnx）/ Cloud-BYOK（Doubao/Seed-ASR、Qwen、Tencent、iFlytek 等）/ Custom（OpenAI-compatible、self-hosted/custom endpoint）；sherpa-onnx 为 Local 首选实现及正式默认 Provider 的首位候选（尚未验证、未定为默认）；正式构建不内置维护者云端凭据，云端采用 BYOK；Direct ASR 边界须区分 provisional/partial 与 final/stable 结果；首个真实 Direct ASR PoC 为 Doubao（4B.3a）；
-- [ ] **4B.3a — Doubao Direct Cloud ASR PoC（下一实现目标）**：Fcitx-owned `AudioRecord` → PCM 流式发送 → Doubao Seed-ASR 2.0（`bigmodel_async`，`enable_nonstream=true`）→ provisional 结果 + 第二遍 stable/final 结果 → Raw Transcript → IME。provisional 结果须接收、解析并可观测，但不写入 Fcitx preedit；只有 stable/final 进入 IME；不实现自动回退到 `bigmodel_nostream`；优先直接 WebSocket 集成（编码前核对最新官方 API 与 Android 源码）；需要时可增加 `android.permission.INTERNET`；开发凭据只经本地、不提交的配置注入 debug 构建（环境变量或用户级 Gradle 属性 → debug `BuildConfig`，仅限 PoC，不是正式凭据路径，见 D028），正式 BYOK 凭据存储/UI 不在本批次；
-- [ ] 4B.3b — sherpa-onnx Local PoC：同一 Voice flow 与 Direct ASR 结果语义，尽量用同一固定语音测试语料与 Doubao 对比识别质量、中英混合、首个 partial 延迟、final 延迟、partial 稳定性、CPU、RAM、电量/发热、模型大小、模型许可/再分发、离线表现、vivo 与 Redmi 差异；此前不为覆盖面增加其他云端 Provider（如需第二个云端 benchmark，首选 Qwen）；
+- [~] **4B.2 — 长按 Space：CODE + CI PASS，follow-up 双机真机复测待完成**。基础实现 commit `bdae6138`：长按阈值达到 → start，正常松开 → stop，按住上滑越过阈值 → cancel；与麦克风进入同一 `VoiceInputSession`。vivo X100 Pro 与 Redmi K90 Pro Max 已验证基础 start/stop/cancel、连续会话及 gesture regression。真机反馈后接受并实现 fix-1/2/3，follow-up commit `8accd92f`：未保存偏好的新安装默认 `VoiceInput`（stored choice 保持）、Space/Mic 共享 Listening/Cancel-armed/Recognizing UI 状态、Voice Trigger visibility/start 改为跟随 configured backend 而非无条件依赖 System ASR；CI run `36314866471` PASS（`:app:testDebugUnitTest`、debug APK 与内容检查，artifact `moqi-debug-apk`）。**剩余关口**：在 vivo + Redmi 使用本地含 Doubao credential 的 debug APK 对 `8accd92f` 做短清单复测；fix-1 需清数据/重装验证 fresh default。
+- [x] **Provider Selection / 4B.3 设计 checkpoint：ACCEPTED（2026-09-27，D028/D029）**：Provider 逻辑分类 Local / Cloud-BYOK / Custom；正式构建不内置维护者云端凭据，云端 credential 为 Provider-specific runtime configuration；ASR/LLM credential 分离。Local 的 Provider/runtime/model 分层：当前优先 sherpa-onnx 作为首个 runtime 候选，但不提前冻结具体模型；4B.3b 集成前增加窄 runtime/model checkpoint。
+- [x] **4B.3a — Doubao Direct Cloud ASR PoC：COMPLETE / DUAL-DEVICE PASS（2026-09-27）**。实现链路：Fcitx-owned `AudioRecord` → PCM streaming → Doubao Seed-ASR 2.0（`bigmodel_async` + `enable_nonstream=true`）→ provisional/definite/last-package 解析 → final Raw Transcript → IME。主要提交：`8a0f6d79`（Direct Doubao backend）、`4bc74a87`（按官方协议将 definite utterance 与 final last-package 分离）、`8502f0b1`（OkHttp 4.12.0 Android 兼容修复）。provisional/stable 仅观测，不写入 Fcitx preedit；stop 等待 server final，cancel 丢弃迟到结果；无 `bigmodel_nostream` fallback。vivo X100 Pro 与 Redmi K90 Pro Max 均完成 Direct Cloud E2E 真机验证，包括 stop→final→commit、cancel 不提交、重复会话、网络失败恢复与资源释放；Redmi Direct 路径不依赖 Xiaomi RecognitionService。PoC credential 仍仅通过本地 debug 配置注入，不是正式 BYOK 路径。通过 4B.3a 只证明 Cloud Direct ASR 可行，不选定 Doubao 为默认 Provider；
+- [ ] **4B.3b-0 — Local ASR runtime/model 窄 checkpoint**：不先改 Fcitx 产品代码；优先验证 sherpa-onnx runtime 下两个代表性方向：A) 中文 streaming Zipformer INT8，作为输入法低延迟/资源基准；B) FunASR Nano INT8，作为高质量本地候选。比较中文/中英混合、首个 partial/final 延迟、partial 稳定性、CPU、RAM、电量/发热、模型大小、完全离线表现、vivo/Redmi 差异，以及 runtime/model 各自 License、商用/再分发条件。SenseVoice、Qwen3-ASR、whisper.cpp 等仅在 A/B 证据显示必要时进入第二轮；不做全面 ASR 横评；
+- [ ] **4B.3b-1 — Local ASR 最小集成 PoC**：只把 4B.3b-0 胜出的一个 runtime + model 接入现有 `DirectAsrBackend` / Voice flow，验证离线 AudioRecord → Local ASR → Raw Transcript → IME；不在此批次实现正式 Provider settings 或 Model Downloader；
 - [ ] 4B.3c — realtime preedit UX PoC（后续、有条件，不属于 4B.3a）：provisional 结果 → Fcitx preedit → 修订 → final 替换；单独研究 preedit 所有权、与现有 composition/候选的交互、provisional 修订/替换、stop 到 final 的过渡、cancel 回滚/丢弃；
-- [ ] Default Provider checkpoint（4B.3a 与 4B.3b 之后）：若 sherpa-onnx 质量/性能/模型约束可接受，可将 Local 冻结为正式默认 Provider；否则依据实测证据重新评估；结果不预先决定。
+- [ ] Default Provider checkpoint（4B.3a 与 4B.3b 之后）：依据 Cloud Direct 与 Local 实测决定正式默认 Provider；不预设 sherpa-onnx runtime 或任何具体模型必然胜出，也不预设 Doubao 为默认。
 
 本阶段不接 LLM、不同时接多家 Provider、不实现自动 fallback（含 local/cloud Auto 模式）、不建立插件框架；默认 Provider 在 Default Provider checkpoint 决定。
 
@@ -408,7 +409,8 @@ ASR
 
 - Auxiliary Filter settings；
 - Voice settings；
-- ASR Provider settings（含按 Provider 的 BYOK 凭据配置，见 D028）；
+- ASR Provider settings：一等 Provider selector + Provider-specific runtime configuration；云端 API Key/credential 按 Provider 独立安全存储、独立使用，普通配置与 secret storage 逻辑分离（D028/D029）；
+- Local Model Manager / Downloader：model catalog、大小/版本/License、下载/失败重试、完整性校验、原子安装、更新/删除；大型模型原则上不强制内置 APK，安装后 Local ASR 日常识别可完全离线；
 - optional LLM settings；
 - privacy/data-flow UI；
 - packaging/release。
@@ -430,13 +432,12 @@ Android 架构稳定后再评估 Windows、Linux、macOS、iOS，并保持 Trigg
 
 ## 当前下一步
 
-**Provider Selection / Phase 4B.3 设计 checkpoint 已接受（D028），下一实现目标为 Phase 4B.3a Doubao Direct Cloud ASR PoC：**
+**先完成 4B.2 follow-up 真机复测，再进入 4B.3b-0 Local ASR checkpoint。**
 
-- 4B.3a：Fcitx-owned `AudioRecord` → Doubao Seed-ASR 2.0（`bigmodel_async` + `enable_nonstream=true`）→ provisional（仅接收/解析/可观测，不写入 preedit）+ stable/final → Raw Transcript → IME；编码前核对最新官方 API 与 Android 源码；按 4B.3a Exit Criteria 在 vivo 与 Redmi 上验证；
-- 开发凭据只经本地、不提交的配置注入 debug 构建，仅限 PoC；正式凭据采用 BYOK（运行时按 Provider 配置、设备本地安全存储，见 D028），其存储/UI 不在 4B.3a；
-- 其后：4B.3b sherpa-onnx Local PoC（同一语料对比），再到 Default Provider checkpoint；4B.3c realtime preedit UX 为后续有条件 PoC；
-- 4B.2 长按 Space 为独立 Voice Trigger 任务，不阻塞 4B.3a/4B.3b，与麦克风进入同一 Voice Input flow；
-- 不预先选定 Doubao 为默认 Provider，不认定 sherpa-onnx 已通过验证，不选定 realtime preedit、自动 local/cloud fallback 或独立 RecognitionService APK/模块架构；
-- upstream PR #899 / Android `SpeechRecognizer` 继续作为 System ASR backend 跟踪；不把 Xiaomi 私有实现、AppOps 或强制切换 RecognitionService 作为主线；
-- candidate list 覆盖顶部麦克风按钮不是需要修复的 UI 缺陷；
-- LLM 后处理继续保持独立，本阶段不接入。
+1. **4B.2 follow-up device gate**：在 vivo X100 Pro 与 Redmi K90 Pro Max 使用本地含 Doubao credential 的 `8accd92f` debug APK，验证 fresh default = VoiceInput、Space 的“松开结束 · 上滑取消”/“松开取消”/“识别中…”反馈、正常 stop 与 cancel、Mic 共享状态、Redmi Direct backend 下麦克风可见，以及 Space tap/横向滑动无回归。通过后将 4B.2 标记 COMPLETE/PASS。
+2. **4B.3a 已收口**：Doubao Direct Cloud ASR 已双机 PASS；不再继续扩展该 PoC，不把 debug credential 路径产品化。
+3. **4B.3b-0**：做窄 Local runtime/model checkpoint，优先 sherpa-onnx + streaming Zipformer zh INT8 与 sherpa-onnx + FunASR Nano INT8；先验证再选择，不提前冻结具体模型。
+4. **4B.3b-1**：只集成 checkpoint 胜出的一个 Local 组合，复用现有 AudioCapture / VoiceBackend / VoiceInputSession；不同时实现多套 Local runtime。
+5. 正式 Provider selector、Provider-specific BYOK/API Key UI 与 Local Model Manager/Downloader 已进入 Requirements/D029/Phase 7，但**不提前塞进 4B.3b PoC**；待真实 Provider/model 文件结构和配置需求验证后实现。
+6. 4B.3c realtime preedit UX 仍为后续有条件 PoC；LLM 后处理继续独立，本阶段不接入。
+7. upstream PR #899 / Android `SpeechRecognizer` 继续作为 System ASR backend 跟踪；不把 Xiaomi 私有实现或强制切换 RecognitionService 作为主线。
