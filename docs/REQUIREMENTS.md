@@ -156,7 +156,7 @@ Long-press Space ──┘
 - stop 表示结束录音并等待 final transcript；cancel 表示放弃本次输入，清除临时 partial transcript，不提交文本，并丢弃迟到的回调；
 - 上滑取消应显示明确反馈并设置防误触阈值，距离与反馈样式待真机验证。
 
-长按 Space 应作为 `SpaceLongPressBehavior` 的 `VoiceInput` 选项，仅把手势分发到统一 Voice Input flow；不得为两种入口建立独立 pipeline。源码研究表明仅增加枚举值不足：现有长按只在达到阈值时触发一次，不传递松开/上滑事件，因此需要空格键的 gesture Down/Move/Up 接入，分别映射为：长按阈值达到 → start，松开 → stop，按住上滑 → cancel。Phase 4 首批先验证麦克风入口；空格手势在 VoiceBackend 边界（第 8 节）建立之后实现，排期见 ROADMAP。
+长按 Space 作为 `SpaceLongPressBehavior.VoiceInput` 接入统一 Voice Input flow，不建立第二套 pipeline。Phase 4B.2 已实现 gesture Down/Move/Up：长按阈值达到 → start，正常松开 → stop，按住上滑越过阈值 → cancel；未显式保存该设置的新安装默认使用 VoiceInput，已有用户已保存的选择保持不变。麦克风与 Space 共用同一个 `VoiceInputSession` 状态：Listening/Recording、Cancel-armed、Processing/Recognizing 均应提供明确反馈。实现提交与真机状态见 ROADMAP。
 
 ## 8. Android Voice Input
 
@@ -236,7 +236,15 @@ Raw Transcript
 
 PoC 使用某个 Provider 不得使 Voice Trigger、Audio Capture 或 IME 层绑定该 Provider。对于 Android System ASR，不强制要求 Fcitx5 提供 PCM；对于 direct cloud/local Provider，使用最小的 Fcitx5-owned Audio Capture 边界，不提前建立复杂 Provider framework。
 
-Provider 逻辑分类与选择见 D028：Phase 4B.3a 选定 Doubao Seed-ASR 2.0 作为首个真实 Direct Cloud ASR PoC 的 Provider/路径；这**不**表示 Doubao 是正式/默认 ASR Provider。正式默认 Provider 仍未决定，须在 Doubao 云端 PoC（4B.3a）、sherpa-onnx Local PoC（4B.3b）与 Default Provider checkpoint 之后依据实测决定。`android.permission.INTERNET` 在 capture-only 的 Phase 4B.1 中有意未声明；Phase 4B.3a 的真实云端 ASR 集成需要时可以增加，其数据流须满足第 11 节；这不意味着 Local ASR 需要联网。云端 Provider 采用 BYOK；凭据策略（用户运行时按 Provider 配置、设备本地安全存储、维护者凭据不进入 APK/仓库/CI/release 且 CI 与公开 APK 无需其即可构建、Local Provider 无需云端凭据、ASR 凭据与 LLM 分离）见 D028。
+Provider 逻辑分类与选择见 D028：Phase 4B.3a 选定 Doubao Seed-ASR 2.0 作为首个真实 Direct Cloud ASR PoC 的 Provider/路径，并已在 vivo X100 Pro 与 Redmi K90 Pro Max 完成 Direct Cloud E2E 真机验证；这**不**表示 Doubao 是正式/默认 ASR Provider。正式默认 Provider 仍未决定。Local ASR 在进入 Fcitx 集成前先做窄范围 runtime/model checkpoint：当前优先以 sherpa-onnx 作为 runtime 候选，对比适合输入法低延迟的中文 streaming Zipformer INT8 与高质量本地候选 FunASR Nano INT8；具体模型不得在实测前冻结。`android.permission.INTERNET` 在 capture-only 的 Phase 4B.1 中有意未声明；Phase 4B.3a 的真实云端 ASR 集成需要时可以增加，其数据流须满足第 11 节；这不意味着 Local ASR 需要联网。云端 Provider 采用 BYOK；API Key/credential 必须是 **Provider-specific runtime configuration**：各 Provider 独立配置、独立安全存储、独立使用，切换 Provider 不删除其他 Provider 已保存凭据，也不得跨 Provider 复用凭据；Local Provider 不需要云端凭据；ASR 与 LLM 的 Provider/credential 完全分离。维护者凭据不得进入 APK、仓库、CI 或 release，CI 与公开 APK 无需维护者凭据即可构建。Provider 的普通配置（model/endpoint 等）与 secret storage 应逻辑分离；secret 默认遮蔽，不得进入日志、普通配置导出或诊断信息。具体 Android 安全存储 API 在实现前按最新 Android/fcitx5-android 源码核实。详见 D028/D029。
+
+### 9.1 正式 Android Provider 设置与 Local Model Manager
+
+正式 Android UI 应提供一等的 ASR Provider 选择入口，而不是依赖 Developer debug 开关。选择 Provider 后只显示该 Provider 所需的配置；云端 Provider 可包含 API Key、model、endpoint/resource 等，Local Provider 不显示 API Key。可提供 Provider-specific“测试配置”，但不得为了测试凭据而未经明确告知上传用户录音。
+
+Local ASR 的 **Provider / runtime / model** 必须区分：例如 Local Provider 可使用 sherpa-onnx runtime，而 Zipformer、FunASR Nano 等是具体 model；runtime 可用不等于任一模型已获准打包或再分发，模型许可须逐一核对。
+
+正式版应提供 Local Model Manager/Downloader，至少覆盖 model catalog、大小/版本/License 展示、下载/重试（是否支持暂停/断点续传按实现验证）、完整性校验、原子安装、更新与删除。大型 Local 模型原则上不因启用 Voice 而强制内置 APK；模型安装完成后，Local ASR 的日常识别应能完全离线工作。Downloader/Model Manager 不属于 4B.3b 最小 PoC，须在实际 runtime/model 的文件结构、加载方式和许可确认后设计。
 
 ## 10. ASR 与 LLM 解耦
 
