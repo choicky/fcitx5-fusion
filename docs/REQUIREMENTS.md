@@ -160,39 +160,52 @@ Long-press Space ──┘
 
 ## 8. Android Voice Input
 
-优先研究和复用 `fcitx5-android` 现有麦克风 UI 及 upstream WIP SpeechRecognizer voice-input 工作，而不是重新实现 Android speech client。
+优先研究和复用 `fcitx5-android` 现有麦克风 UI 及 upstream WIP PR #899 SpeechRecognizer voice-input 工作，而不是重新实现已有 Android voice 基础设施。
 
-优先边界：
+Android System ASR 路径：
 
 ```text
 Fcitx5 Android
 ↓
 SpeechRecognizer
 ↓
-RecognitionService
+device default RecognitionService
 ↓
 speech implementation
 ```
 
-Voice layer 应负责 start/stop、权限、lifecycle、partial/final transcript、取消、错误处理和 UI 状态。
+该路径是一个 ASR implementation/provider path，不是整个 Voice 架构，也不得成为正式版唯一可用的 Voice 路径。真机 PoC 已证明不同 OEM 的默认 `RecognitionService` 行为可能不同：vivo X100 Pro 可用，而 Redmi K90 Pro Max 的 Xiaomi AsrService 在实际 session 中返回权限不足（error 9）。因此“存在/可发现 RecognitionService”不能等同于“实际 session 一定可用”。
+
+Voice layer 应负责 start/stop、权限、lifecycle、partial/final transcript、取消、错误处理和 UI 状态。正式版还必须至少提供一条由 Fcitx5 控制、与 OEM/system `RecognitionService` 解耦的 ASR 路径；System ASR 不可用或运行失败时，不得导致 Voice 功能整体不可用。
 
 `RecognitionService` 是 Android speech implementation 的标准边界，但不是项目内部 ASR Provider abstraction 本身。
 
 ## 9. ASR Provider
 
-项目内部保持独立 Provider 层：
+项目内部保持独立 Provider 边界：
 
 ```text
-RecognitionService / Voice Service
+Voice Input Flow
 ↓
 Configured ASR Provider
+├─ Android System ASR → SpeechRecognizer → RecognitionService
+├─ Direct Cloud ASR   → Fcitx5-owned Audio Capture → Provider API
+└─ Local/Self-hosted  → Fcitx5-owned Audio Capture → local/remote engine
 ↓
 Raw Transcript
 ```
 
 允许云端、本地、自建和 OpenAI-compatible Provider，包括但不限于豆包、阿里云、腾讯、讯飞、FunASR/SenseVoice、sherpa-onnx 等。
 
-PoC 使用某个 Provider 不得使 Voice Trigger、Audio Capture 或 IME 层绑定该 Provider。
+正式版的可移植性要求：
+
+- OEM/system `RecognitionService` 不得是唯一 ASR 路径；
+- 至少一条 ASR 路径必须由 Fcitx5 控制 Audio Capture，并与 OEM RecognitionService 解耦；
+- System ASR 可保留为低成本、系统集成良好的 Provider，但是否作为默认 Provider 必须由后续跨设备 PoC 与产品可用性验证决定；
+- capability detection 既要考虑静态可用性，也要处理实际 session failure；不得仅因 `RecognitionService` 存在就认定可用；
+- 目标是覆盖代表性 Android/OEM 设备并避免单一 OEM speech service 使 Voice 整体失效；不作“所有 Android 设备 100% 可用”的不可验证承诺。
+
+PoC 使用某个 Provider 不得使 Voice Trigger、Audio Capture 或 IME 层绑定该 Provider。对于 Android System ASR，不强制要求 Fcitx5 提供 PCM；对于 direct cloud/local Provider，应研究最小的 Fcitx5-owned Audio Capture 边界，不提前建立复杂 Provider framework。
 
 ## 10. ASR 与 LLM 解耦
 
