@@ -329,7 +329,7 @@ B. 由源码推断、需实机确认的风险：
 - [ ] 4B.3c — realtime preedit UX PoC（后续、有条件，不属于 4B.3a）：provisional 结果 → Fcitx preedit → 修订 → final 替换；单独研究 preedit 所有权、与现有 composition/候选的交互、provisional 修订/替换、stop 到 final 的过渡、cancel 回滚/丢弃；
 - [x] **Provider 分类 / 设置 UX / 默认 Auto / 自动 fallback 规划 checkpoint：ACCEPTED（2026-09-27，D033–D035；纯文档，未实现）**：Provider 逻辑分类扩展为 System / Local / Managed Cloud / Self-hosted，所有 Provider 共用同一 VoiceInputFlow，Self-hosted 不建独立 pipeline；用户术语“语音识别服务”；默认 Auto = 健康的 Local → 可用且已授权的 System（未授权则先一次性披露/授权）→ 提示配置，Auto 不静默选择 BYOK Managed Cloud 或 Self-hosted；自动 fallback 默认开启，未经事先授权不得扩大语音数据接收方——System ASR 不视为与 Local 隐私等价，仅在用户已授权时进入 fallback 链；V1 仅处理启动/早期技术失败，不做中途 PCM 迁移。
 - [ ] **Local A/B checkpoint**（B 真机实测之后）：依据 A/B 实测与许可状态决定 Local 的下一步，包括是否及如何在首次使用引导中推荐/下载 Local 模型（D034 未冻结项）；若 A/B 均不满足，再启动第二轮模型研究。
-- [ ] **Managed Cloud + Self-hosted checkpoint**（Local A/B checkpoint 之后）：Managed Cloud 以 Doubao（已有基线）对比 Alibaba Qwen ASR 系列与 Tencent Realtime ASR；Self-hosted 研究 FunASR 2-pass / Paraformer、Fun-ASR-Nano Server、sherpa-onnx Server。比较维度与核实项见 D033；Cloud B/C 与 S1–S3 均尚无 PoC，不预选胜者。
+- [~] **Managed Cloud + Self-hosted checkpoint**：Managed Cloud 以 Doubao（已有基线）对比 Alibaba Qwen ASR 系列与 Tencent Realtime ASR；Self-hosted 研究 FunASR 2-pass / Paraformer、Fun-ASR-Nano Server、sherpa-onnx Server。比较维度与核实项见 D033。**文档研究部分已完成（2026-09-27，与 B 实测并行）**，见 `docs/network-asr-checkpoint.md`：全部候选可留在现有 `VoiceBackend` 之后并复用 `AudioCapture`，无需 JNI；V1 继续采用 Provider-specific backend，不建通用网络协议抽象；Alibaba 官方面向输入法的实时族为 Qwen-Audio-3.x-ASR-Flash-Streaming（模型名不冻结）。Cloud B/C 与 S1–S3 均尚无 PoC，不预选胜者；各项 PoC 待证事实见该文档 §5.6。
 - [ ] Default Provider checkpoint：默认**设置**已定为 Auto（D034）；剩余问题（Local 模型是否进入默认体验、各 Provider 的正式地位）在上述两个 checkpoint 之后决定；不预设 sherpa-onnx runtime 或任何具体模型必然胜出，也不预设 Doubao 为默认。
 
 本阶段不接 LLM、不同时接多家 Provider、不实现 Auto 或自动 fallback（策略已在 D034/D035 决定，实现另排批次）、不实现 Provider Settings UI、不建立插件框架。
@@ -441,7 +441,7 @@ Android 架构稳定后再评估 Windows、Linux、macOS、iOS，并保持 Trigg
 
 1. **Candidate B 真机实测**（vivo + Redmi）；
 2. **Local A/B checkpoint**；
-3. **Managed Cloud + Self-hosted checkpoint**（D033）；
+3. **Managed Cloud + Self-hosted checkpoint**（D033；文档研究已先行完成，PoC 待定，见 `docs/network-asr-checkpoint.md`）；
 4. 之后才确定下一个最小实现批次（Provider Settings UI、Auto/fallback、新 Provider 均不提前实现）。
 
 各项背景：
