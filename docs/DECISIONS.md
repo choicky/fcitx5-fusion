@@ -335,14 +335,14 @@ Local ASR 的 Provider、runtime、model 分层管理。正式版需要 Local Mo
 
 ## D031 — Active Voice 使用共享 Voice Session Panel 与可选真实音量可视化
 
-**状态：Accepted / Implemented，双机 device gate pending（2026-09-27）**
+**状态：Accepted / Implemented / DUAL-DEVICE PASS（2026-09-27）**
 
 麦克风按钮与长按 Space 继续共用一个 `VoiceInputSession` / Voice flow。active session 期间使用共享 Voice Session Panel 覆盖主键盘按键区域；不得为 Mic/Space 建立两套状态机，也不得通过移除正在持有 Space gesture 的 keyboard/gesture owner 来显示 Panel。
 
 - Mic：Panel 提供“取消 / 完成”；取消立即 discard，完成 stop 后进入 Recognizing，final 后恢复键盘并提交。
 - Space：Panel 显示“松开结束 · 上滑取消”；越过阈值显示“松开取消”，滑回阈值内必须恢复 finish 状态；松开时按当时状态 stop 或 cancel。
 - 能提供 Fcitx-owned PCM 的 backend 可通过 optional audio-level event 提供归一化 microphone level；UI 仅消费 level，不取得 PCM、不拥有或另开 `AudioRecord`。System ASR 等无 level backend 使用静态 Listening indicator，识别功能不得依赖波形。
-- 实现 commit `89e964885af14f87832a2008ca1fa9271241364e` 已通过代码审查与 CI run `36318396011`；是否在 Panel overlay 后仍完整保留 Space Move/Up gesture，以及双机实际波形/交互效果，仍以 vivo X100 Pro + Redmi K90 Pro Max 真机 gate 为准。
+- 实现 commit `89e964885af14f87832a2008ca1fa9271241364e` 已通过代码审查与 CI run `36318396011`。2026-09-27 项目所有者在 Redmi K90 Pro Max 与 vivo X100 Pro 完成最终真机 gate：Mic Panel、PCM-driven 音量响应、Done/final/commit、Cancel/discard、Space overlay 后 Move/Up 连续性（越阈值→滑回→松手）、Space cancel、tap/横滑回归与连续/混合 session 均 PASS；密码输入框 Voice trigger 正确抑制。vivo 还验证了 capability fallback：System ASR 可正常识别但没有 Fcitx-owned PCM level，因此无真实波形；切换到 Doubao Direct 后由既有 AudioCapture 提供真实波形。该差异符合设计，不作为缺陷。
 
 ## D032 — Local ASR 第一轮采用 A/B comparative device PoC；PoC 模型外置
 
