@@ -156,7 +156,7 @@ Long-press Space ──┘
 - stop 表示结束录音并等待 final transcript；cancel 表示放弃本次输入，清除临时 partial transcript，不提交文本，并丢弃迟到的回调；
 - 上滑取消应显示明确反馈并设置防误触阈值，距离与反馈样式待真机验证。
 
-现有 `SpaceLongPressBehavior` 后续应增加 `VoiceInput`，仅将手势分发到统一 Voice Input flow。Phase 4 首批先验证麦克风入口的 stop/cancel 和结果路径，再实现空格手势；不得为两种入口建立独立 pipeline。
+长按 Space 应作为 `SpaceLongPressBehavior` 的 `VoiceInput` 选项，仅把手势分发到统一 Voice Input flow；不得为两种入口建立独立 pipeline。源码研究表明仅增加枚举值不足：现有长按只在达到阈值时触发一次，不传递松开/上滑事件，因此需要空格键的 gesture Down/Move/Up 接入，分别映射为：长按阈值达到 → start，松开 → stop，按住上滑 → cancel。Phase 4 首批先验证麦克风入口；空格手势在 VoiceBackend 边界（第 8 节）建立之后实现，排期见 ROADMAP。
 
 ## 8. Android Voice Input
 
@@ -178,19 +178,47 @@ speech implementation
 
 Voice layer 应负责 start/stop、权限、lifecycle、partial/final transcript、取消、错误处理和 UI 状态。正式版还必须至少提供一条由 Fcitx5 控制、与 OEM/system `RecognitionService` 解耦的 ASR 路径；System ASR 不可用或运行失败时，不得导致 Voice 功能整体不可用。
 
-`RecognitionService` 是 Android speech implementation 的标准边界，但不是项目内部 ASR Provider abstraction 本身。
+`RecognitionService` 是 Android System ASR 的标准边界，但不是项目内部 ASR backend/Provider abstraction 本身。
+
+### 8.1 Voice 架构（Architecture A，D027）
+
+```text
+Voice Input Flow（麦克风 / 长按 Space → 同一 VoiceInputSession）
+↓
+internal VoiceBackend
+├─ SystemAsrBackend → Android SpeechRecognizer → OEM/system RecognitionService
+└─ DirectAsrBackend → Fcitx-owned Audio Capture（AudioRecord）→ configured cloud/local/self-hosted ASR
+↓
+Raw Transcript → IME
+```
+
+- **System ASR**：由 OEM/system `RecognitionService` 自行采集音频并识别；复用 upstream PR #899 思路；可选，行为随 OEM 而异。
+- **Direct/Fcitx-controlled ASR**：由 Fcitx5 在 IME 进程内用 `AudioRecord` 采集音频，再交给所配置的 ASR；这是正式版可移植性的基础。
+- `VoiceBackend` 是内部最小 session/backend 边界（start/stop/cancel 与 partial/final/error 事件），不是公开插件框架，也不是以 PCM 为中心的接口；System ASR 不接收 Fcitx5 PCM。
+- 当前 Direct ASR 不以自定义 `RecognitionService` 作为边界；仅当需要通过 Android RecognitionService API 对外提供本项目识别器时再评估。
+
+### 8.2 Capture-only AudioRecord 硬关口
+
+接入任何真实 Direct ASR Provider 之前，必须先完成 capture-only `AudioRecord` PoC（不含 ASR、不联网、不持久化音频），并在 **vivo X100 Pro 与 Redmi K90 Pro Max** 上都证明：
+
+- Fcitx5 IME 进程在已授予 `RECORD_AUDIO` 时能打开 `AudioRecord` 并开始录音；
+- 采集到的是**真实非静音音频**，而不仅是 `AudioRecord.read()` 返回成功——Android 在并发/后台策略下可能向应用返回静音而非报错；API 29+ 以 client-silenced 状态作为辅助证据；
+- stop / cancel / release 在各 lifecycle 路径下正确，系统麦克风占用指示及时消失。
+
+若 Redmi 上无法获得真实非静音音频（被拒绝或被静音），则停止，不接入真实 Direct ASR Provider，先重新评估。
 
 ## 9. ASR Provider
 
-项目内部保持独立 Provider 边界：
+ASR Provider 位于 VoiceBackend 之后（见 8.1）：System ASR 由 `SystemAsrBackend` 承载；cloud/local/self-hosted Provider 由 `DirectAsrBackend` 使用 Fcitx5-owned Audio Capture 驱动：
 
 ```text
 Voice Input Flow
 ↓
-Configured ASR Provider
-├─ Android System ASR → SpeechRecognizer → RecognitionService
-├─ Direct Cloud ASR   → Fcitx5-owned Audio Capture → Provider API
-└─ Local/Self-hosted  → Fcitx5-owned Audio Capture → local/remote engine
+internal VoiceBackend
+├─ SystemAsrBackend → SpeechRecognizer → RecognitionService
+└─ DirectAsrBackend → Fcitx5-owned Audio Capture
+                      ├─ Direct Cloud ASR → Provider API
+                      └─ Local/Self-hosted → local/remote engine
 ↓
 Raw Transcript
 ```
@@ -205,7 +233,9 @@ Raw Transcript
 - capability detection 既要考虑静态可用性，也要处理实际 session failure；不得仅因 `RecognitionService` 存在就认定可用；
 - 目标是覆盖代表性 Android/OEM 设备并避免单一 OEM speech service 使 Voice 整体失效；不作“所有 Android 设备 100% 可用”的不可验证承诺。
 
-PoC 使用某个 Provider 不得使 Voice Trigger、Audio Capture 或 IME 层绑定该 Provider。对于 Android System ASR，不强制要求 Fcitx5 提供 PCM；对于 direct cloud/local Provider，应研究最小的 Fcitx5-owned Audio Capture 边界，不提前建立复杂 Provider framework。
+PoC 使用某个 Provider 不得使 Voice Trigger、Audio Capture 或 IME 层绑定该 Provider。对于 Android System ASR，不强制要求 Fcitx5 提供 PCM；对于 direct cloud/local Provider，使用最小的 Fcitx5-owned Audio Capture 边界，不提前建立复杂 Provider framework。
+
+当前不选择默认 Provider，也不选择首个真实 Direct ASR Provider；Provider selection 是 capture 关口（8.2）通过后的独立研究。当前 Android 应用未声明 `android.permission.INTERNET`，暂不增加；云端/自建 Provider 所需的联网权限及其隐私影响，在 Provider selection checkpoint 一并决定。
 
 ## 10. ASR 与 LLM 解耦
 
@@ -250,7 +280,7 @@ LLM 必须可以完全关闭。ASR Provider 与 LLM Provider 分别选择和配�
 
 ### Voice
 
-后续优先复用 `fcitx5-android` 现有能力、upstream SpeechRecognizer 工作和 Android `SpeechRecognizer/RecognitionService`。Provider-specific 实现与 Voice Trigger 分离。
+后续优先复用 `fcitx5-android` 现有能力、upstream SpeechRecognizer 工作（System ASR backend）和 Android `SpeechRecognizer/RecognitionService`；Direct ASR 所需的 Audio Capture 与 VoiceBackend 边界保持在 `fcitx5-android` 的 voice 模块内部、最小化。Provider-specific 实现与 Voice Trigger 分离。
 
 ## 13. Phase 2 PoC Exit Criteria
 

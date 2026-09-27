@@ -169,7 +169,7 @@ Phase 3 未定义独立的 "Exit Criteria" 小节（ROADMAP 中只有 Phase 2 �
 
 ## Phase 4 — Voice Input PoC
 
-**状态：IN PROGRESS — Android System SpeechRecognizer PoC 已完成关键真机验证；Portable ASR 架构关口已触发**
+**状态：IN PROGRESS — System SpeechRecognizer PoC 真机 checkpoint 已完成（vivo 通过 / Redmi OEM System ASR 失败）；Phase 4B 架构 checkpoint 已接受（D027）；下一步为 capture-only AudioRecord 硬关口**
 
 优先复用：
 
@@ -212,9 +212,9 @@ Exit Criteria：
 ### 当前批次
 
 - [x] 批次 4.1 — 麦克风最小 PoC（源码已实现）：`choicky/fcitx5-android` 分支 `phase4-voice-poc`，commit `fc5b909c25f99f012e7b37963fa1a418d0d06bf9`，父提交为 Phase 4 基线 `59efbf54`；未进入任何发布 tag；
-- [ ] **实机验证批次 4.1**（批次 4.2 常规加固前的关口，见下方"实机验证关口"）；
-- [ ] 批次 4.2 — 麦克风路径加固（范围待实机结果与未决问题确定后再定）；
-- [ ] 批次 4.3 — 长按空格手势（按 D013，在批次 4.1/4.2 的 stop/cancel 与生命周期经实机验证后实现）。
+- [x] **实机验证批次 4.1**：2026-09-27 真机 checkpoint 已完成关键场景验证（vivo X100 Pro 通过；Redmi K90 Pro Max 的 OEM System ASR 返回 error 9），见下方"2026-09-27 真机 checkpoint 与架构关口"；下方 12 项清单未逐项记录结果；
+- [ ] 批次 4.2 — 麦克风路径加固：暂缓。System ASR 路径的后续加固在 D027 的 `SystemAsrBackend` 迁移后按需安排；
+- [ ] 批次 4.3 — 长按空格手势：已移入 Phase 4B，在 VoiceBackend 边界建立与 capture 关口通过之后实现（需 gesture Down/Move/Up 接入，见 D013 实现补充）。
 
 批次 4.1 实际内容（源码事实，未经实机验证）：
 
@@ -229,7 +229,12 @@ Exit Criteria：
 
 - CI run `36252101559`：workflow `MoQi test APK`，手动触发（`workflow_dispatch`），分支 `phase4-voice-poc`，head `fc5b909c`；唯一 job `build_debug_apk` 成功。该 workflow 只执行 `BUILD_ABI=arm64-v8a ./gradlew :app:assembleDebug` 及 APK 内容断言（码表路径与 SHA256、`libpinyin.so` 含 AuxiliaryFilter、`.debug` 包名），**不运行单元测试或 lint**；addon 取构建时 `feature/moqi-filter` 的 tip（测试 workflow 设计如此）。产物 `moqi-debug-apk`；
 - 单元测试：`VoiceInputSessionTest` 4/4 通过，**仅在项目所有者本机**（`testDebugUnitTest`，2026-09-26，提交前运行），未在 CI 中运行；
-- 实机：**无**。
+- 实机：**无**（截至批次 4.1 提交时）。
+
+证据更新（2026-09-27）：
+
+- CI：自 `b92a5b67` 起，`moqi-test-apk.yml` 也在 push `phase4-voice-poc` 时触发，并在同一次 Gradle 调用中运行 `:app:testDebugUnitTest :app:assembleDebug`。首次运行 `36289772265` 因上游遗留的陈旧断言 `ThemeSerializationTest.version2` 失败（upstream `fda9ecbc` 将主题 `CURRENT_VERSION` 升到 2.1 但未更新该测试，与 Phase 4 无关）；`d94e8924` 修正该断言后，run `36290868094` 全部步骤通过（单元测试、APK 构建与内容断言、产物 `moqi-debug-apk` 上传）；
+- 实机：见下方"2026-09-27 真机 checkpoint 与架构关口"。
 
 ### 已知问题与待确认项（来自 2026-09-27 源码审阅）
 
@@ -239,7 +244,7 @@ A. 源码层已确认的事实（非实机结论）：
 2. 原"切换到外部语音输入法"路径已移除：麦克风按钮不再调用 `InputMethodUtil.switchInputMethod`，`preferredVoiceInput` 设置项仍显示但不再被读取。是否保留、恢复或移除外部语音键盘行为是**未决的兼容性/行为问题**，尚无决定；
 3. 数据流审计：仅错误路径有日志；录音 start/stop/cancel、实际使用的 `RecognitionService`、raw transcript 与最终提交文本均未记录——Exit Criteria"数据流可审计"尚未满足。隐私约束：后续实现审计时须区分开发/诊断日志与 release 日志；release 日志默认不得记录完整的用户 transcript 或最终输入文本；
 4. Stopping 状态没有超时，且 Stopping 期间点击麦克风不做任何处理；
-5. 当前 PoC 在 `VoiceInputComponent` 内封装对 `SpeechRecognizer` 的直接调用，与 D015 记录的 Android `SpeechRecognizer` / `RecognitionService` 边界一致；Phase 5 的 ASR Provider abstraction 尚未实现；应用层 PoC 边界是否需要细化，待实机验证后再评估；
+5. 当前 PoC 在 `VoiceInputComponent` 内封装对 `SpeechRecognizer` 的直接调用，与 D015 记录的 Android `SpeechRecognizer` / `RecognitionService` 边界一致；Phase 5 的 ASR Provider abstraction 尚未实现；应用层 PoC 边界是否需要细化，待实机验证后再评估（2026-09-27 更新：应用层边界已由 D027 确定为内部 `VoiceBackend`，尚未实现）；
 6. `fcitx5-android` fork 已包含语音产品代码，`research/upstream-fork-assessment.md` 中"仅发行用途、约 3 文件差异"的结论不再适用于该分支；长期 fork 范围（D019）未决。
 
 B. 由源码推断、需实机确认的风险：
@@ -272,11 +277,11 @@ B. 由源码推断、需实机确认的风险：
 
 | Exit Criterion | 状态 |
 |---|---|
-| microphone 与可选 long-press Space 进入同一 voice path | 麦克风已实现（未实机验证）；空格按 D013 推迟 |
-| permission / lifecycle / start / stop / cancel 正确 | 源码已实现，未实机验证；见 B1–B4 |
-| partial / final transcript 正确 | 源码已实现，未实机验证；见 B1、B5 |
+| microphone 与可选 long-press Space 进入同一 voice path | 麦克风已实现，vivo 真机通过；空格移入 Phase 4B（需 gesture 接入） |
+| permission / lifecycle / start / stop / cancel 正确 | vivo 真机：IME hide/show、切换 IME、mic release、简单错误恢复通过；Redmi 的 System ASR session 失败（error 9）；B1–B4 未逐项记录 |
+| partial / final transcript 正确 | vivo 真机 Voice → Text 与连续 session 通过；B1、B5 未逐项记录 |
 | Voice Trigger 不绑定 ASR vendor | 源码层满足：仅使用系统默认 `RecognitionService` |
-| ASR implementation boundary 明确 | Android 边界符合 D015；Provider abstraction 属 Phase 5；应用层边界待实机后评估（A5） |
+| ASR implementation boundary 明确 | 设计已确定：D027 内部 `VoiceBackend`（System / Direct）；尚未实现 |
 | 数据流可审计 | 未满足（A3） |
 
 
@@ -300,11 +305,33 @@ B. 由源码推断、需实机确认的风险：
 4. 选取一个真实 direct ASR Provider 做最小端到端验证：`Voice Trigger -> VoiceInputSession -> Audio Capture -> ASR -> Raw Transcript -> IME`，并至少在 vivo + Redmi 通过。
 
 此 PoC 阶段不接 LLM、不同时接多家云 ASR、不实现自动 fallback、不建立复杂插件框架。默认 Provider 与 fallback 策略待该 PoC 结果后决定。
+
+### Phase 4B — Portable ASR Architecture
+
+**架构 checkpoint：COMPLETE / ACCEPTED（2026-09-27，D027）**
+
+演进：System SpeechRecognizer 最小 PoC → vivo 通过 / Redmi OEM System ASR 失败（error 9）→ 可移植性要求（D026）→ 源码与 Android API 研究（fork `d94e8924`、upstream `e6199a28`、PR #899 head `cd5c60e2`、AOSP framework 源码）→ 接受 Architecture A（D027）。上面"下一窄范围 PoC"第 2、3 问由该 checkpoint 回答：
+
+- 采用 app 内部 `VoiceBackend`：`SystemAsrBackend`（SpeechRecognizer → OEM/system RecognitionService，复用 PR #899 思路）与 `DirectAsrBackend`（Fcitx-owned `AudioRecord` → 所配置 ASR）；
+- `DirectAsrBackend` 是正式版可移植性的基础；System ASR 可选；
+- 当前 PoC 不采用自定义 `RecognitionService` 作为 Direct ASR 边界；
+- `VoiceBackend` 是内部最小 session/backend 边界，不是公开插件框架，也不是以 PCM 为中心的接口。
+
+批次（按顺序）：
+
+- [ ] **4B.1 — capture-only AudioRecord PoC（下一实现批次）**：建立最小 `VoiceBackend`，把现有 SpeechRecognizer 代码迁入 `SystemAsrBackend`，新增只采集、不识别的 capture backend（不含 ASR、不联网、不持久化音频，不增加 `INTERNET` 权限）；麦克风入口经同一 `VoiceInputSession` 驱动；单元测试以 fake backend 覆盖会话编排；
+- [ ] **硬关口 — vivo X100 Pro + Redmi K90 Pro Max 真机**：两台设备都须证明真实**非静音**采集（不仅是 `AudioRecord.read()` 成功；API 29+ 以 client-silenced 状态作辅助证据），以及 stop / cancel / release 与各 lifecycle 路径正确、系统麦克风占用指示及时消失；System ASR 行为不回退。**STOP 条件：若 Redmi 上 Direct capture 被拒绝或被静音，停止，不接入真实 Direct ASR Provider，先重新评估。**
+- [ ] 4B.2 — 长按 Space：在 `VoiceBackend` 边界与 capture 关口通过之后实现，可在真实 Direct ASR PoC 之前或同时进行；长按阈值达到 → start，松开 → stop，按住上滑 → cancel；需要空格键 gesture Down/Move/Up 接入；与麦克风进入同一 Voice Input flow；
+- [ ] Provider selection 研究与 checkpoint（关口通过后）：选择首个真实 Direct ASR Provider（cloud / self-hosted / on-device），并一并决定是否增加 `android.permission.INTERNET` 及其隐私影响；
+- [ ] 4B.3 — 真实 Direct ASR 端到端 PoC：`Voice Trigger → VoiceInputSession → Fcitx-owned Audio Capture → 一个真实 ASR → Raw Transcript → IME`，在 vivo 与 Redmi 上均不依赖 OEM RecognitionService 通过。
+
+本阶段不接 LLM、不同时接多家 Provider、不实现自动 fallback、不建立插件框架；默认 Provider 与 fallback 策略在 4B.3 之后决定。
+
 ## Phase 5 — ASR Provider Architecture / PoC
 
-**状态：NEXT — 先做 Portable ASR Architecture PoC**
+**状态：NOT STARTED — 待 Phase 4B（capture 关口、Provider selection、真实 Direct ASR PoC）完成**
 
-根据 Phase 4 vivo/Redmi 真机结果，先建立最小 Portable ASR PoC，证明 Voice 不依赖单一 OEM RecognitionService。随后再扩展 Provider abstraction，验证代表性的：
+根据 Phase 4 vivo/Redmi 真机结果，最小 Portable ASR PoC 已作为 Phase 4B 先行（见上）。Phase 4B 通过后，再在 D027 的 `VoiceBackend` 边界上扩展 Provider，验证代表性的：
 
 - cloud ASR；
 - OpenAI-compatible；
@@ -360,12 +387,12 @@ Android 架构稳定后再评估 Windows、Linux、macOS、iOS，并保持 Trigg
 
 ## 当前下一步
 
-**Phase 4 System ASR checkpoint 已取得结论，下一步进入 Portable ASR Architecture PoC：**
+**Phase 4B 架构 checkpoint 已接受（D027），下一步为 capture-only AudioRecord PoC（批次 4B.1）：**
 
-- 保留并继续跟踪 upstream PR #899 / Android `SpeechRecognizer`，将其定位为 Android System ASR Provider path，而非整个 Voice 架构；
-- 不继续把 Xiaomi `mibrain.speech` 私有实现、AppOps 或强制切换 RecognitionService 作为当前主线；
-- 先核对最新 `fcitx5-android` / PR #899 / Android API，再设计最小 Fcitx5-owned Audio Capture + Provider boundary；
-- 用一个真实 direct ASR Provider 做端到端 PoC，并至少在 vivo X100 Pro 与 Redmi K90 Pro Max 验证；
-- PoC 通过后再决定默认 Provider、是否自动 fallback、Provider 配置 UI，以及 Long-press Space 的实现批次；
-- Long-press Space 仍必须与麦克风共用同一 Voice Input flow；candidate list 覆盖顶部麦克风按钮不是需要修复的 UI 缺陷；
-- LLM 后处理继续保持独立，Portable ASR PoC 阶段不接入。
+- 建立内部最小 `VoiceBackend`，现有 SpeechRecognizer 代码迁入 `SystemAsrBackend`；新增只采集、不识别的 capture backend；
+- 在 vivo X100 Pro 与 Redmi K90 Pro Max 上验证真实非静音采集与 stop/cancel/release；Redmi 被拒绝或被静音即 STOP；
+- 关口通过前：不选择、不接入真实 Direct ASR Provider，不增加 `android.permission.INTERNET`，不实现 fallback；
+- 关口通过后：长按 Space（gesture 接入，与麦克风同一 flow）与 Provider selection 研究，再做真实 Direct ASR 端到端 PoC；
+- upstream PR #899 / Android `SpeechRecognizer` 继续作为 System ASR backend 跟踪；不把 Xiaomi 私有实现、AppOps 或强制切换 RecognitionService 作为主线；
+- candidate list 覆盖顶部麦克风按钮不是需要修复的 UI 缺陷；
+- LLM 后处理继续保持独立，本阶段不接入。

@@ -92,27 +92,33 @@ Auxiliary Filter selection 优先通过 Fcitx config descriptor 暴露，复用 
 
 麦克风按钮与长按 Space 共用同一个 Voice Input session/flow，分别把点击、松开、上滑取消映射到 start、stop、cancel，不建立两套语音 pipeline。Phase 4 首批先验证麦克风入口；空格手势在会话 stop/cancel 语义经真机验证后实现。
 
+实现补充（2026-09-27，Phase 4B 源码研究）：仅在 `SpaceLongPressBehavior` 增加枚举值不足以实现上述语义——现有长按只在达到阈值时触发一次动作，不向该动作传递松开或上滑事件，且每个 `KeyAction` 处理前都会先取消语音。实现需要空格键的 gesture Down/Move/Up 接入，并在 D027 的 VoiceBackend 边界建立之后进行（排期见 ROADMAP）。
+
 ## D014 — 优先复用 Fcitx5 Android SpeechRecognizer 工作
 
 **状态：Accepted**
 
 未来 Voice PoC 先研究和复用 upstream Fcitx5 Android 已有麦克风能力及 WIP SpeechRecognizer voice-input 工作，不从零重写 Android speech client。
 
-## D015 — SpeechRecognizer / RecognitionService 为优先 Android speech boundary
+## D015 — SpeechRecognizer / RecognitionService 为 Android System ASR backend 的优先边界
 
-**状态：Accepted**
+**状态：Accepted；2026-09-27 由 D026/D027 收窄范围**
 
-优先采用：
+Android System ASR backend 优先采用：
 
 `Fcitx5 Android -> SpeechRecognizer -> RecognitionService`
 
 其中 RecognitionService 是 Android speech implementation 标准边界，不等同于项目内部 ASR Provider abstraction。
 
-## D016 — ASR Provider 独立可插拔
+范围说明：本决策最初表述为整个 Android Voice 的优先 speech boundary。Phase 4 真机结果（D026）后收窄为 **System ASR backend** 的边界；它不是正式版 Voice 的整体架构，也不是 Direct/Fcitx-controlled ASR 路径的边界（见 D027）。
 
-**状态：Accepted**
+## D016 — ASR backend/Provider 独立可插拔
 
-RecognitionService / Voice Service 后保持独立 ASR Provider 层。更换云端、本地、自建或 OpenAI-compatible Provider 不改变基本 Voice Trigger 交互。
+**状态：Accepted；2026-09-27 按 D027 修订**
+
+Voice Input flow 之后保持独立的 ASR backend/Provider 层；Android System ASR（`SpeechRecognizer -> RecognitionService`）只是其中一个实现，该层不必位于 RecognitionService 之后。更换云端、本地、自建或 OpenAI-compatible Provider 不改变基本 Voice Trigger 交互。
+
+修订说明：原文为"RecognitionService / Voice Service 后保持独立 ASR Provider 层"。按 D027，该层位于 app 内部 Voice Input flow 之后，而不是 RecognitionService 之后。
 
 ## D017 — ASR 与 LLM 后处理解耦
 
@@ -179,6 +185,22 @@ pin（commit / SHA256 / URL）集中在 `modules/pinyinhelper/moqima-gb18030.cma
 
 副作用：墨奇表的分发不再需要 fork `fcitx5-android`；stock fcitx5-android 使用本分支的 addon 子模块即可打包该表。
 
+## D025 — 自构建 Android 发布线：独立包名后缀、自有固定签名密钥、tag 触发发布
+
+**状态：Accepted**
+
+项目需要一条可长期使用的 Android 分发线（不依赖上游官方包，也不与之冲突）。决定：
+
+- 包名后缀：release 变体固定 `.moqi`（`org.fcitx.fcitx5.android.moqi`），debug 测试包固定 `.debug`；两者都提交在 fork 的 `app/build.gradle.kts` 中，而不是由 CI 临时打补丁，便于审查；
+- 签名：使用项目自有的固定密钥（PKCS#12），保存于 `choicky/fcitx5-android` 的仓库 secrets（`SIGN_KEY_BASE64` / `SIGN_KEY_PWD` / `SIGN_KEY_ALIAS`），由上游 `build-logic` 既有的 `SIGN_KEY_*` 接口消费，因此 fork 内不含任何签名代码；
+- 发布：推送 `v*` tag 触发 `Release APK` workflow，构建 `:app:assembleRelease`，校验 APK（存在签名、`.moqi` 包名、码表路径与 SHA256），再创建 GitHub Release 并附 APK。
+
+理由：固定密钥使同一发布线之间可以覆盖升级（不会因卸载重装丢失学习词库）；独立包名可与官方包共存且不造成混淆；全部机制复用上游接口，fork 面最小。
+
+已验证的对照事实：CI runner 上临时生成的 debug 密钥每次构建都不同（同一条分支三次构建的 `META-INF/CERT.RSA` 哈希互不相同），因此早期 pre-release 之间无法覆盖安装；本条决策正是为消除该问题。
+
+风险与约束：签名密钥一旦丢失，就无法再发布可覆盖升级的版本（用户必须卸载重装），因此密钥必须在仓库 secrets 之外另行备份；密钥与口令不得进入任何 git 仓库。
+
 ## D026 — 正式 Voice 不得依赖单一 OEM/System RecognitionService
 
 **状态：Accepted**
@@ -197,18 +219,27 @@ Voice Input Flow
 
 至少一条路径必须与 OEM/system `RecognitionService` 解耦。System ASR 不可用或运行失败时，不应导致 Voice 功能整体不可用。默认 Provider 与自动 fallback 策略暂不在本决策中确定，须由后续 Portable ASR PoC 和代表性设备矩阵验证决定。
 
-## D025 — 自构建 Android 发布线：独立包名后缀、自有固定签名密钥、tag 触发发布
+具体落地架构见 D027：上图中的 OEM-independent 路径即 `DirectAsrBackend`，是正式版可移植性的基础；System ASR 为可选 backend。
 
-**状态：Accepted**
+## D027 — Voice 采用 app 内部 VoiceBackend 边界（Architecture A）
 
-项目需要一条可长期使用的 Android 分发线（不依赖上游官方包，也不与之冲突）。决定：
+**状态：Accepted（2026-09-27，Phase 4B Portable ASR Architecture checkpoint）**
 
-- 包名后缀：release 变体固定 `.moqi`（`org.fcitx.fcitx5.android.moqi`），debug 测试包固定 `.debug`；两者都提交在 fork 的 `app/build.gradle.kts` 中，而不是由 CI 临时打补丁，便于审查；
-- 签名：使用项目自有的固定密钥（PKCS#12），保存于 `choicky/fcitx5-android` 的仓库 secrets（`SIGN_KEY_BASE64` / `SIGN_KEY_PWD` / `SIGN_KEY_ALIAS`），由上游 `build-logic` 既有的 `SIGN_KEY_*` 接口消费，因此 fork 内不含任何签名代码；
-- 发布：推送 `v*` tag 触发 `Release APK` workflow，构建 `:app:assembleRelease`，校验 APK（存在签名、`.moqi` 包名、码表路径与 SHA256），再创建 GitHub Release 并附 APK。
+演进：Phase 4 最小 PoC 直接使用 `SpeechRecognizer`（复用 upstream PR #899 思路）→ vivo X100 Pro 通过、Redmi K90 Pro Max 的 OEM System ASR 返回 error 9 → D026 可移植性要求 → 本决策。
 
-理由：固定密钥使同一发布线之间可以覆盖升级（不会因卸载重装丢失学习词库）；独立包名可与官方包共存且不造成混淆；全部机制复用上游接口，fork 面最小。
+```text
+Voice Input Flow（麦克风 / 长按 Space → 同一 VoiceInputSession）
+      ↓
+internal VoiceBackend
+├─ SystemAsrBackend → Android SpeechRecognizer → OEM/system RecognitionService
+└─ DirectAsrBackend → Fcitx-owned Audio Capture（AudioRecord）→ configured cloud/local/self-hosted ASR
+      ↓
+Raw Transcript → IME
+```
 
-已验证的对照事实：CI runner 上临时生成的 debug 密钥每次构建都不同（同一条分支三次构建的 `META-INF/CERT.RSA` 哈希互不相同），因此早期 pre-release 之间无法覆盖安装；本条决策正是为消除该问题。
-
-风险与约束：签名密钥一旦丢失，就无法再发布可覆盖升级的版本（用户必须卸载重装），因此密钥必须在仓库 secrets 之外另行备份；密钥与口令不得进入任何 git 仓库。
+- `VoiceInputSession`/Voice Input flow 负责触发入口、权限、lifecycle、start/stop/cancel、token/迟到回调丢弃、composing/commit 与 UI 状态；各 backend 只负责自身的识别会话。
+- `VoiceBackend` 是**内部最小 session/backend 边界**：以 start/stop/cancel 与 partial/final/error 事件为接口，**不是**公开插件框架，也**不是**以 PCM 为中心的 ASR 接口——System ASR 由 RecognitionService 自行采集音频，不需要 Fcitx5 提供 PCM。
+- `DirectAsrBackend`（Fcitx-controlled）是正式版可移植性的基础；`SystemAsrBackend` 保留为重要的上游复用路径（PR #899），但正式版 Voice 不得依赖它才能工作。
+- 当前 Direct-ASR PoC **不采用**自定义 `RecognitionService` 作为 Direct ASR 边界。依据（Phase 4B 研究，AOSP 源码）：framework `RecognitionService` 基类在每次 start 时对调用方 attribution 做 `RECORD_AUDIO` data-delivery 检查，失败即返回 `ERROR_INSUFFICIENT_PERMISSIONS (9)`；自定义 service 也仍需在内部再做 Provider 选择。仅当"通过 Android RecognitionService API 对外提供本项目识别器"成为真实需求时再重新评估。
+- 下一硬关口为 capture-only `AudioRecord` PoC（vivo + Redmi，须证明真实非静音采集），见 ROADMAP Phase 4B。关口通过前不选择、不接入真实 Direct ASR Provider，也不增加 `android.permission.INTERNET`；联网与隐私影响在后续 Provider selection checkpoint 决定。
+- 本决策不确定默认 Provider 或自动 fallback 策略（仍按 D026）。
