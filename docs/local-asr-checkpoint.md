@@ -71,31 +71,30 @@
 | 模型许可 | ❌ 未声明 + 非商用训练数据 | ✅ 各层声明 Apache-2.0 |
 | 集成复杂度 | 流式循环 + stop 时 flush | 最简：按住期间缓存 PCM，stop 时一次 decode |
 
-## 7. 推荐：B（FunASR Nano INT8）作为首个最小设备 PoC
+## 7. 后续决策：A/B 同时进入 comparative device PoC
 
-理由：
+本 checkpoint 原始研究结论曾建议先以 B 做最小设备 PoC；在进一步复核 Online/Offline 差异、A 的许可边界以及当前项目仍处于研究测试阶段后，项目决定第一轮**同时保留 A/B 做同条件真机比较**，不在纸面阶段选唯一胜者。
 
-1. **只有 B 能成为可发布的默认 Provider**：D028 的 Default Provider checkpoint 要求模型许可可再分发；A 的权重无许可且训练数据含非商用语料，即使 PoC 成功也不能进入产品，除非先解决许可。
-2. **B 满足中英混说**，这是 D028 列出的评估项；A 的词表结构上无法输出英文。
-3. **按住说话的交互天然分段**（麦克风点按、长按 Space），非流式在 stop 时 decode 与现有 `onFinal` 语义直接吻合；4B.3a 的 provisional 在 4B.3a 本来就不写入 preedit，缺少 provisional 不影响本阶段。
-4. B 的主要风险（1 GB、LLM 解码延迟/内存）正是设备 PoC 需要测出来的，且两台测试机均为旗舰。
-
-备选：若 B 在 vivo/Redmi 上延迟或内存不可接受，退回 A 做“流式可行性”技术验证，同时单独向 A 的权重作者确认许可；在许可澄清前 A 只作内部评估，不分发。
+- **A**：用于验证真 streaming、first partial、低延迟与较轻资源形态；模型权重许可未澄清，因此仅限 research/device-evaluation。许可明确前不得进入正式 release/distribution，也不得由项目提供正式下载。
+- **B**：用于验证 FunASR Nano 的中文/中英混合潜力，以及约 1 GB OfflineRecognizer 在 Android IME 中的 load/RAM/stop→final 可行性。B 也不是预选默认模型。
+- A/B 均复用同一 Voice flow、Fcitx-owned AudioCapture 与 sherpa-onnx runtime；公共 Local ASR 边界不得设计成 offline-only。
+- 若 A/B 均不能满足产品要求，再依据实测缺口启动第二轮候选研究。
 
 ## 8. 最小集成边界（PoC）
 
 ```text
 VoiceInputFlow（不变）
   → VoiceBackend
-      └─ LocalAsrBackend（新，debug-only）
-            ├─ AudioCapture.pump()（复用，16 kHz mono PCM16 → FloatArray [-1,1]）
-            ├─ 按住期间缓存 PCM；stop → OfflineRecognizer.createStream / acceptWaveform / decode / getResult → onFinal(text)
-            ├─ cancel → 丢弃缓存，不 decode
-            └─ OfflineRecognizer 实例：首次使用时加载并缓存（加载成本高），服务销毁时 release
+      └─ Local ASR boundary（debug-only）
+            ├─ AudioCapture.pump()（复用，16 kHz mono PCM16）
+            ├─ A / OnlineRecognizer：边采集边 accept/decode/getResult；stop → inputFinished/finalize
+            └─ B / OfflineRecognizer：按住期间缓存 PCM；stop → createStream/accept/decode/getResult
 ```
 
-- 不改 `VoiceInputFlow`/`VoiceInputSession` 语义，不加 provisional，不做 Model Manager / 下载 / Provider 框架。
-- decode 在 IO 线程；结果回主线程，沿用 token 丢弃迟到结果。
+- A/B 共用一个 Voice pipeline；cancel 均不得提交，迟到结果继续按 session token 丢弃。
+- A 允许产生可观测 partial，用于测 first-partial/streaming 行为；本阶段仍不把 provisional 写入 Fcitx preedit。
+- B stop 后在后台线程整段 decode；结果回主线程。
+- 模型使用固定文件/hash，通过 `adb` 放入测试设备可访问的应用目录；不打包 APK、不做 Model Manager / 下载 / 正式 Provider UI。
 
 ## 9. 需真机测试的未决项
 
