@@ -27,3 +27,13 @@
 - 决定：D030 触发可见性保持“不可用则隐藏”；不可用时的设置入口通过长按空格/设置页提供（记录：若所有者希望麦克风按钮也提供入口，需要修订 D030）。
 - 决定：Doubao 就绪点选“首个非失败服务端响应”而不是 `onOpen`：握手后首帧中的鉴权/配额错误仍算早期。需设备验证服务端是否对首个请求立即回包。
 - 下一步：等 A1 CI；通过后提交 A2 并推送；然后 A3（凭据存储 + Doubao BYOK）。
+
+## 2026-09-27T18:41Z — A1–A3 CI 通过；sherpa-onnx 服务器互通
+
+- A1 `1f62c3a0` CI `36339927619` PASS；A2 `820616b0` CI `36340502719` PASS；A3 `849f0eda` CI `36340993548` PASS（均为 debug 构建 + `:app:testDebugUnitTest`）。设备未测。
+- A3 决定：凭据不放 SharedPreferences——源码核实 `UserDataManager.export` 打包整个 `shared_prefs` 与外部文件目录，且 `allowBackup=true` 未排除 shared_prefs。改为 `noBackupFilesDir/asr-credentials/<provider>.bin`，AES-256-GCM（AndroidKeyStore 不可导出密钥，provider id 作 AAD）。不用已弃用的 androidx security-crypto。
+- A3 决定：`INTERNET` 从 debug manifest 移到 main manifest（产品云端/自建服务在 release 也要能用；仅在用户选定外部服务时发送音频）。
+- 附带发现（既有问题，未改）：用户数据导出会打包外部文件目录，包括 adb 推送的 Local 模型（B 约 1 GB）。Model Manager 将把模型装到内部 no-backup 目录。
+- A5 进展：在本机用上游 sherpa-onnx v1.13.8（pip aarch64 wheel）`python-api-examples/streaming_server.py` + `sherpa-onnx-streaming-zipformer-small-bilingual-zh-en-2023-02-16` 起服务（ws://localhost:6006，无 TLS/鉴权）。Kotlin `SherpaOnnxServerClient`（与 Android backend 共用的协议与 OkHttp 客户端代码）以 20 ms 块发送 3 个上游测试 wav：分别 32/16/55 个 partial，均得到 final。**INTEROP-VERIFIED（纯 JVM 客户端 ↔ 上游 Python 服务器）**；Android backend 与设备未测。
+- 互通测试发现并修复缺陷：服务端按端点切段，英文词跨段拼接时丢空格（"MONDAYTODAY"）；现按拉丁字母/数字边界补空格。
+- 下一步：自建实例模型（多实例、协议、URL、可选 Bearer token 存凭据库）、TLS 策略（release 只允许 wss://；debug 显式允许明文）、SherpaOnnxServerBackend 与设置入口。
