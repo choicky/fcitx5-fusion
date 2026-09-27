@@ -232,9 +232,9 @@ Android 侧对照基线：`choicky/fcitx5-android` `phase4-voice-poc` @ `a8a0e1b
 
 ## 6. 与 D033–D035 / 现有架构的对照
 
-- 未发现与 D033–D035 或 `VoiceBackend` 架构冲突的源码/文档事实；不需要 STOP 任何设计结论。
+- 本节记录研究当时的对照；D034/D035 于 2026-09-28 修订为首次推荐具体服务及外部服务只回落 Local，System 不参与自动回落；原先关于旧版 Auto/System fallback 的表述以修订后的 D034/D035 为准。
 - 需要在后续实现批次中**补充**（不是冲突）的点：
-  1. **D035 fallback 需要区分“会话建立前”与“会话中”的失败**。现有 `VoiceError.Service(detail)` 不区分二者（`app/src/main/java/org/fcitx/fcitx5/android/input/voice/VoiceBackend.kt`）。最小调整：在实现 fallback 的批次中给 Direct backend 的错误增加一个“是否已建立可用会话”的标记（例如 `onStarted` 之前/之后），不改其他接口。
+  1. **D035 fallback 需要区分“可用会话建立前”与“会话中”的失败**。现有 `VoiceError.Service(detail)` 不区分二者（`app/src/main/java/org/fcitx/fcitx5/android/input/voice/VoiceBackend.kt`）。`onStarted` 在 System 就绪、Local 模型加载、Doubao 网络握手之前就可能触发，**不能**作为该边界；实现批次须增加明确的会话就绪信号（具体各 backend 发出时机需验证），并过滤旧 token 与已停止/取消的手势。
   2. **BYOK 与官方安全建议的张力**：Alibaba 官方建议移动端由后端发放临时 key；Tencent 签名依赖长期 SecretKey。D028 禁止的是**维护者**凭据进入 APK，用户自带凭据存于本机并不违反 D028，但属于用户知情承担的风险。处理方式：Direct BYOK 与可选 Credential Broker / Proxy 两条路径并存（§5.5）；正式 BYOK UI 建议“使用最小权限子账号/专用 key”；V1 不要求、不实现 broker；本批不改决策。
   3. **Self-hosted 的 TLS/明文与证书策略**是 Android release 构建的真实约束（§3.4），需在 Self-hosted 设置设计时单独决定。
 

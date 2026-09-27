@@ -274,21 +274,19 @@ Provider 选择见 D028（逻辑分类已由 D033 更新）：Phase 4B.3a 选定
 
 ### 9.1 正式 Android Provider 设置与 Local Model Manager
 
-正式 Android UI 应提供一等的 ASR Provider 选择入口，而不是依赖 Developer debug 开关。面向用户的名称优先使用“语音识别服务”，选项按数据/处理去向分组：自动（推荐）、设备端 / Local、云端服务 / Managed Cloud、自托管 / Self-hosted、系统 / Android System ASR。顶层设置方向（D034，非最终 UI 规格）：
+正式 Android UI 应提供一等的 ASR Provider 选择入口，而不是依赖 Developer debug 开关。面向用户的名称优先使用“语音识别服务”；设置页按四类展示：系统自带 / System、设备端 / Local、第三方云端 / Managed Cloud、自建云端 / Self-hosted。每个已接入的具体服务可以独立配置和启用，允许同时启用多个；“当前使用”只选择一个已启用的具体服务，不提供长期 Auto 选项。顶层设置方向（D034，非最终 UI 规格）：
 
 ```text
 语音输入
-├─ 启用语音输入
-├─ 语音识别服务
-│  └─ 自动（推荐）
-├─ 麦克风按钮
-├─ 长按空格
-│  └─ 语音输入
-├─ 本地语音模型
-└─ 高级设置
+├─ 系统自带：Android 系统语音识别
+├─ 本地集成（不联网）：正式 Local 模型
+├─ 第三方云端 ASR：已接入的服务
+├─ 自建云端 ASR：已配置的服务
+├─ 当前使用：已启用的具体服务
+└─ 麦克风按钮、本地模型管理等其他设置
 ```
 
-选择 Provider 后只显示该 Provider 所需的配置；云端 Provider 可包含 API Key、model、endpoint/resource 等，Local Provider 不显示 API Key。可提供 Provider-specific“测试配置”，但不得为了测试凭据而未经明确告知上传用户录音。
+每个 Provider 只显示其所需的配置；云端 Provider 可包含 API Key、model、endpoint/resource 等，Local Provider 不显示 API Key。配置、启用和“当前使用”分别持久化；禁用当前服务时需提示重新选择，不得静默选中另一家云端服务。可提供 Provider-specific“测试配置”，但不得为了测试凭据而未经明确告知上传用户录音。
 
 Local ASR 的 **Provider / runtime / model** 必须区分：例如 Local Provider 可使用 sherpa-onnx runtime，而 Zipformer、FunASR Nano 等是具体 model；runtime 可用不等于任一模型已获准打包或再分发，模型许可须逐一核对。
 
@@ -296,32 +294,32 @@ Local ASR 的 **Provider / runtime / model** 必须区分：例如 Local Provide
 
 4B.3b A/B PoC 的模型均不打包进 APK，也不实现下载器；使用固定模型文件/hash，通过 `adb` 放入测试设备可访问的应用目录。正式产品不要求用户使用 adb，而是在后续 Model Manager/Downloader 中按需获取已通过许可审查的模型。A 的模型权重许可未明确前，不得进入正式模型目录、release artifact 或由项目提供下载。第三方 runtime、模型与训练数据许可必须分层记录；Local ASR 引入前建立并维护 `docs/THIRD_PARTY_LICENSES.md`。
 
-### 9.2 默认服务：Auto（D034）
+### 9.2 首次推荐具体服务（D034）
 
-产品目标为“开箱即用优先”，默认“语音识别服务”= 自动（Auto）。初始 Auto 策略：
+产品目标为“开箱即用优先”。首次安装/首次启用语音输入时运行一次推荐规则，将结果保存为“当前使用”的具体服务：
 
 1. 已安装且健康的 Local 模型 → Local；
 2. 否则 System ASR 可用：用户已授权 System ASR → System；尚未授权 → 使用前先显示一次性披露/授权（不授权则按第 3 步处理）；
 3. 否则提示当前没有可用的识别服务，并提供配置入口：安装 Local 模型、配置 Managed Cloud、配置 Self-hosted。
 
-Auto 不得静默选择 BYOK Managed Cloud，也不得静默选择用户配置的 Self-hosted endpoint。
+首次推荐不得静默选择 BYOK Managed Cloud，也不得静默选择用户配置的 Self-hosted endpoint。之后可用性变化不重新运行推荐规则，也不悄悄更改“当前使用”；早期故障按 9.3 处理。`fb3b0c26` 中的默认 Auto 是此前已验收的基础实现，修订后的产品设置尚未实现。
 
-System ASR 授权：System ASR 与 Local ASR 在隐私上不等价，使用前需要用户事先一次性授权，不在每次识别或 fallback 时询问。未来设置可提供概念上类似“允许使用 Android 系统语音识别 [开/关]”的开关，并披露该服务由 Android/设备系统服务提供、语音数据处理取决于该系统服务且可能涉及远程处理；最终文案与 UI 未冻结。
+System ASR 授权：System ASR 与 Local ASR 在隐私上不等价，显式选为“当前使用”或首次推荐时，使用前需要用户事先一次性授权；启用条目不应绕过披露。设置应披露该服务由 Android/设备系统服务提供、语音数据处理取决于该系统服务且可能涉及远程处理；最终文案与 UI 未冻结。已有授权不意味着同意将 System 用作自动回落。
 
-首次使用引导是否推荐/下载 Local 模型尚未冻结，等待 Local A/B checkpoint。
+首次使用引导是否推荐/下载 Local 模型尚未冻结，待正式 Local ASR 发布候选确定后再决定。
 
 ### 9.3 自动 fallback（D035）
 
 核心隐私规则：未经用户事先明确授权，自动 fallback 不得扩大可能接收用户语音数据的参与方/处理方集合。Local ASR 是 Fcitx 控制的设备端处理；System ASR 是独立的信任/数据处理边界，由 Android/OEM/system `RecognitionService` 实现，可能在本地或远程处理，Fcitx 不得假定其仅在本地处理。
 
-自动 fallback 默认开启：
+自动 fallback 默认开启。Managed Cloud 与 Self-hosted 同级，不在两者之间自动切换：
 
-- 显式选择 Managed Cloud / Self-hosted：Primary →（技术失败）Local（若已安装且健康，可自动进入）→（不可用/失败）System（仅当用户已事先授权）→ 识别失败；
-- 显式选择 Local：Local →（失败）System（仅当已事先授权）→ 识别失败。
+- 当前使用 Managed Cloud / Self-hosted：该具体服务 →（启动/早期技术失败）已安装、启用且健康的正式 Local → 识别失败；Local 不可用时直接报告失败；
+- 当前使用 Local 或 System：其失败直接报告失败。
 
-未授权 System ASR 时 fallback 链跳过它。同样不得静默发生 Doubao → Alibaba、Alibaba → Tencent、Self-hosted → Managed Cloud、Local → Managed Cloud、System → Managed Cloud 等。
+**System 即使已授权也永不进入自动 fallback 链**；它只在用户显式选为当前服务，或首次推荐经披露/授权选定为当前服务时使用。不得静默发生 Doubao → Alibaba、Alibaba → Tencent、Managed Cloud ↔ Self-hosted、Local → 云端、任何服务 → System 等。
 
-V1 只处理启动/早期技术失败：Provider 不可用、无网络/连接失败、endpoint 不可用、认证/服务初始化失败、Local 模型不可用/加载失败、可用识别会话建立前的早期超时。V1 不做会话中途跨 Provider PCM replay/迁移、不因质量差自动重识别、不做双 Provider 同时识别、不把已采集音频静默重放给其他第三方；会话中途失败报告失败/允许重试。fallback 须可观测（第 11 节）。
+V1 只处理启动/早期技术失败：Provider 不可用、无网络/连接失败、endpoint 不可用、认证/服务初始化失败、可用识别会话建立前的早期超时。早期边界是“可用识别会话已建立”，现有 `onStarted` 太早，不能用它判定。V1 不做会话中途跨 Provider PCM replay/迁移、不因质量差自动重识别、不做双 Provider 同时识别、不把已采集音频静默重放给其他第三方；用户停止/取消后不切换，会话中途失败报告失败/允许重试。fallback 须可观测（第 11 节）。D035 实现仍未开始；没有正式 Local 模型时不把 debug A/B 当作产品回落目标。
 
 ## 10. ASR 与 LLM 解耦
 
@@ -353,7 +351,7 @@ LLM 必须可以完全关闭。ASR Provider 与 LLM Provider 分别选择和配�
 - 最终提交给 IME 的文本；
 - 是否发生自动 fallback，以及实际使用的 ASR Provider。
 
-启用词库更新不等于上传用户输入；启用 Voice Trigger 不等于选择某家云 ASR；启用 ASR 不等于把 transcript 自动发送给 LLM；Auto 与自动 fallback 不得静默把音频发送给用户未选择的 Managed Cloud 或 Self-hosted 服务，也不得在用户未事先授权时使用 System ASR（D034/D035）。
+启用词库更新不等于上传用户输入；启用 Voice Trigger 不等于选择某家云 ASR；启用 ASR 不等于把 transcript 自动发送给 LLM；首次推荐与自动 fallback 不得静默把音频发送给用户未选择的 Managed Cloud 或 Self-hosted 服务；System ASR 只在用户显式选择为“当前使用”或首次推荐经披露/授权后使用，从不自动回落到它（D034/D035）。
 
 ## 12. 最小修改边界
 

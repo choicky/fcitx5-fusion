@@ -315,7 +315,7 @@ ASR Provider
 
 不选定 Doubao 为最终默认 Provider；不认定 sherpa-onnx 已通过验证；不选定 realtime provisional preedit；不选定自动 local/cloud fallback；不选定独立 RecognitionService APK/模块架构。长按 Space 仍是独立的 Voice Trigger 任务（D013），不阻塞 4B.3a/4B.3b。
 
-修订（2026-09-27）：上文“Provider 逻辑分类”由 D033 的 System / Local / Managed Cloud / Self-hosted 四类取代（原 Cloud/BYOK → Managed Cloud；原 Custom → Self-hosted 下的协议适配）；“不设计自动 Provider 切换/fallback”与“不选定自动 local/cloud fallback”由 D034（默认 Auto）与 D035（自动 fallback 策略）取代。BYOK、Direct ASR 结果语义与 4B.3 设计不变。
+修订（2026-09-27）：上文“Provider 逻辑分类”由 D033 的 System / Local / Managed Cloud / Self-hosted 四类取代（原 Cloud/BYOK → Managed Cloud；原 Custom → Self-hosted 下的协议适配）；“不设计自动 Provider 切换/fallback”与“不选定自动 local/cloud fallback”由 D034/D035 取代。2026-09-28 D034 进一步改为首次推荐具体服务、D035 排除 System 自动回落。BYOK、Direct ASR 结果语义与 4B.3 设计不变。
 
 ## D029 — 正式 ASR 设置采用 Provider-specific configuration；Local 模型独立管理
 
@@ -409,11 +409,13 @@ Managed Cloud checkpoint 至少比较：中文识别质量、中英混合、首�
 
 Self-hosted checkpoint 须依据当时上游源码/文档核实：实际 streaming/offline 行为、partial/final 语义、适用时的第二遍修正、协议/API、CPU/GPU 需求、延迟/吞吐预期、模型与 runtime 许可及再分发/商用状态、Android 客户端最小修改边界，以及是否值得建立共同的 `SelfHostedAsrBackend`/协议边界。当前不实现任何 Self-hosted backend，不设计插件框架。
 
-## D034 — 语音识别服务设置方向与默认 Auto
+## D034 — 语音识别服务设置与首次推荐
 
-**状态：Accepted（2026-09-27）；2026-09-27 修订：System ASR 需事先授权；设置/授权/解析基础已实现（`fcitx5-android` `818dc671` + `fb3b0c26`，CI `36329322686` / `36330310566` PASS）；设备验收 CLOSED（2026-09-28）：vivo X100 Pro 全部通过，Redmi K90 Pro Max 可测部分通过、依赖 System ASR 的用例因设备 System ASR 不可用而不可测，无新观察到的 blocker；release 构建本地编译通过（2026-09-28，项目所有者在 Windows 上对 `fb3b0c26` 执行 arm64 `.\gradlew.bat :app:assembleRelease`：BUILD SUCCESSFUL，6m 22s，272 tasks：264 executed、8 up-to-date）；release APK 的安装与设备运行行为未测试；D035 运行时 fallback 未实现**
+**状态：Accepted（2026-09-27）；2026-09-28 产品规划修订：首次推荐选择具体服务，取消长期 Auto 选项；以下设置/授权/解析基础及设备验收记录仍对应旧版实现，修订后的产品 UI 尚未实现；D035 运行时 fallback 未实现。**
 
-实现记录（2026-09-27，不改变下文决策）：
+历史实现与验收（`fcitx5-android` `818dc671` + `fb3b0c26`，CI `36329322686` / `36330310566` PASS）：设备验收 CLOSED（2026-09-28）：vivo X100 Pro 全部通过，Redmi K90 Pro Max 可测部分通过、依赖 System ASR 的用例因设备 System ASR 不可用而不可测，无新观察到的 blocker；release 构建本地编译通过（2026-09-28，项目所有者在 Windows 上对 `fb3b0c26` 执行 arm64 `.\gradlew.bat :app:assembleRelease`：BUILD SUCCESSFUL，6m 22s，272 tasks：264 executed、8 up-to-date）；release APK 的安装与设备运行行为未测试。
+
+实现记录（2026-09-27，描述当时实现，不代表下述修订已落地）：
 
 - 已实现：“语音输入”设置页，含“语音识别服务”（自动（推荐）/ 本地语音识别 / Android 系统语音识别，默认自动）、“允许使用 Android 系统语音识别”开关（摘要即披露）与原“显示语音输入按钮”（存储键不变）；一次性披露对话框（允许/不允许均持久化，未作答则下次再问；允许后紧接着请求麦克风权限）；单一解析函数按“调试覆盖（Doubao > 采集探针）→ 正式服务”决定后端；先解析服务、后请求 RECORD_AUDIO；麦克风按钮在可启动或需授权时显示（D030）。
 - 当前 Local 可用性：仅 debug 构建带 Local runtime，且调试研究选择的模型文件齐全时视为可用；未选定任何正式 Local 模型（D036）。
@@ -424,56 +426,54 @@ Self-hosted checkpoint 须依据当时上游源码/文档核实：实际 streami
 
 ```text
 语音输入
-├─ 启用语音输入
-├─ 语音识别服务
-│  └─ 自动（推荐）
-├─ 麦克风按钮
-├─ 长按空格
-│  └─ 语音输入
-├─ 本地语音模型
-└─ 高级设置
+├─ 系统自带：Android 系统语音识别
+├─ 本地集成（不联网）：已安装的正式 Local 模型
+├─ 第三方云端 ASR：豆包、Qwen 等已接入服务
+├─ 自建云端 ASR：已配置的自托管服务
+├─ 当前使用：从已启用且可用的具体服务中选一个
+└─ 语音输入按钮、本地模型管理等其他设置
 ```
 
-- 服务选择按数据/处理去向分组：自动（推荐）、设备端 / Local、云端服务 / Managed Cloud、自托管 / Self-hosted、系统 / Android System ASR。凭据、endpoint、model 等放在各 Provider 自己的设置中；Local 提供模型管理而非 API 凭据（D029）。
-- 产品目标“开箱即用优先”。默认值 **ASR Provider = Auto**，初始 Auto 策略：
+- 按处理去向展示四类：System、Local、Managed Cloud、Self-hosted。各类列出实际已接入的具体服务；用户可分别配置并启用多个服务，但“当前使用”只选择一个已启用的具体服务，不提供长期“自动”选项。配置、启用与当前选择是不同状态；禁用当前服务后的提示/重新选择交互在实现前细化，不得静默改选另一家云服务。尚未接入的服务不得作为可选的假选项。云端凭据、endpoint、model 等放在各 Provider 自己的设置中；Local 提供模型管理而非 API 凭据（D029）。
+- 产品目标“开箱即用优先”。**首次安装/首次启用语音输入时运行一次推荐规则，选定并持久化具体服务**：
   1. 已安装且健康的 Local 模型 → Local；
   2. 否则 System ASR 可用：用户已授权 System ASR → System；尚未授权 → 使用前先显示一次性披露/授权（用户不授权则按第 3 步处理）；
   3. 否则提示当前没有可用的识别服务，并给出配置入口：安装 Local 模型、配置 Managed Cloud、配置 Self-hosted。
-- Auto **不得**静默选择 BYOK Managed Cloud Provider，也**不得**静默选择用户配置的 Self-hosted endpoint；这两类只在用户显式选择时使用。
-- **System ASR 授权**：System ASR 与 Local ASR 在隐私上不等价（见 D035）。使用 System ASR 需要用户**事先一次性授权**，不在每次识别或每次 fallback 时询问。未来设置可提供概念上类似“允许使用 Android 系统语音识别 [开/关]”的开关，并披露：该服务由 Android/设备系统服务提供；语音数据如何处理取决于该系统服务，可能涉及远程处理。最终文案与 UI 未冻结；用户显式选择“系统”作为服务时同样须展示该披露，其与授权开关的具体关系在 UI 设计时确定。
-- 未冻结：首次使用引导是否推荐/下载 Local 模型（等待 Local A/B checkpoint）；“健康”的具体判定；System 可用性判定沿用 D026/D030（存在 RecognitionService ≠ session 可用）。
-- 本决策细化 D028 的 Default Provider checkpoint：默认**设置**为 Auto；Local A/B checkpoint 仍决定 Local 模型是否及如何进入默认体验。
+- 首次推荐**不得**静默选择 BYOK Managed Cloud 或用户配置的 Self-hosted endpoint；这两类只在用户显式配置、启用并选为当前服务时使用。首次选定后不因可用性变化重复运行推荐规则或静默改写“当前使用”；启动/早期故障按 D035 处理。
+- **System ASR 授权**：System ASR 与 Local ASR 在隐私上不等价（见 D035）。使用 System ASR 需要用户**事先一次性授权**。启用条目不应绕过披露；是否启用与是否授权应分别表达。该服务由 Android/设备系统服务提供；语音数据如何处理取决于该系统服务，可能涉及远程处理。用户显式选择“系统”作为当前服务时同样须完成披露；具体 UI 文案未冻结。
+- 未冻结：首次使用引导是否推荐/下载 Local 模型，待正式 Local ASR 发布候选确定后再决定；“健康”的具体判定；System 可用性判定沿用 D026/D030（存在 RecognitionService ≠ session 可用）。
+- 本决策取代此前“默认**设置**为 Auto”的产品方向；现有 `fb3b0c26` 的 Auto 设置是已验收的历史实现，不应被误写为修订后的已实现功能。Local A/B 均未选定正式模型（D036）。
 
 ## D035 — 自动 fallback：默认开启，不得未经授权扩大语音数据接收方
 
-**状态：Accepted（2026-09-27）；未实现；2026-09-27 修订：System ASR 不视为与 Local 隐私等价**
+**状态：Accepted（2026-09-27）；2026-09-28 修订：System ASR 不参与自动 fallback；未实现**
 
 **核心隐私规则**：未经用户事先明确授权，自动 fallback 不得扩大可能接收用户语音数据的参与方/处理方集合。
 
 - **Local ASR** 是 Fcitx 控制的设备端处理。
 - **System ASR** 是独立的信任/数据处理边界：实现由 Android/OEM/system `RecognitionService` 控制，处理可能在本地也可能在远程；Fcitx 不得假定 System ASR 仅在本地处理。
 
-自动 fallback 默认开启。用户显式选择 Managed Cloud 或 Self-hosted，且发生 V1 范围内的启动/早期技术失败时：
+自动 fallback 默认开启。Managed Cloud 与 Self-hosted 属于同一回落等级；用户选定其中一个具体服务，且发生 V1 范围内的启动/早期技术失败时：
 
 ```text
-Primary Managed Cloud / Self-hosted
-  ↓ 技术失败
-Local ASR（若已安装且健康）
-  ↓ 不可用/失败
-System ASR（仅当用户已事先授权 System ASR）
-  ↓
+当前 Managed Cloud / Self-hosted 服务
+  ↓ 启动/早期技术失败
+Local ASR（仅当正式模型已安装、启用且可用）
+  ↓ 不可用或再次失败
 识别失败
 ```
 
-Primary → Local 可自动发生，因为它缩小了外部数据处理边界；进入 System ASR 需要事先授权，因为其实际处理去向不受 Fcitx 控制。
+外部服务 → Local 可自动发生，因为它缩小了外部数据处理边界。多个已启用的云端/自托管服务不构成逐个重试列表；另一家服务须由用户显式切换。
 
-用户显式选择 Local 时：Local →（失败）System ASR（仅当已事先授权）→ 识别失败。不得静默认定 Local → System 在隐私上等价。
+用户选择 Local 时：Local 失败 → 识别失败。用户选择 System ASR 时：System ASR 失败 → 识别失败。**System ASR 即使已授权、已启用，也不作为任何服务的自动 fallback 候选；仅在用户显式选为“当前使用”，或首次推荐经披露/授权选定为当前服务时启动。**
 
-授权为一次性事先授权（见 D034），不在每次 fallback 时询问；未授权时 fallback 链跳过 System ASR。
+System ASR 的一次性事先授权（D034）允许其作为当前服务使用，不构成将其加入 fallback 链的授权。
 
-同样不得静默发生：Doubao → Alibaba、Alibaba → Tencent、Self-hosted → Managed Cloud、Local → Managed Cloud、System ASR → Managed Cloud 等。
+同样不得静默发生：Doubao → Alibaba、Alibaba → Tencent、Managed Cloud ↔ Self-hosted、Local → 外部服务、任何服务 → System ASR 等。
 
 **V1 范围**：只处理启动/早期技术失败——Provider 不可用、无网络/连接失败、endpoint 不可用、认证/服务初始化失败、Local 模型不可用/加载失败、可用识别会话建立前的早期超时。
+
+“早期”的边界是**可用识别会话已建立**，不是现有 `onStarted`：System 在 `startListening` 后、Local 在模型加载前、Doubao 在网络握手前就可能触发 `onStarted`。实现时需要明确的会话就绪信号并过滤失效 token；用户已停止或取消时不自动切换。没有正式 Local 模型时，外部服务失败直接报告错误，不以 debug A/B 充当产品 fallback。
 
 **V1 不实现**：会话中途跨 Provider 的 PCM replay/迁移；因识别质量看起来差而自动换 Provider 重识别；双 Provider 同时识别；把已采集音频静默重放给其他第三方。会话中途失败报告识别失败/允许重试，而不迁移会话。
 
@@ -491,4 +491,4 @@ Primary → Local 可自动发生，因为它缩小了外部数据处理边界�
 - 保留共同的 `LocalAsrBackend` / `VoiceBackend` 架构：流式（`OnlineRecognizer` → partial/final）与整段（buffer → `OfflineRecognizer` → final）两种形态均已在该边界上验证。
 - 不为这两个研究候选实现 Model Manager/Downloader（D029 的 Model Manager 仍面向通过许可审查的正式模型）。
 - 下一步：识别并验证正式发布候选——许可清晰、体积/延迟/中文与中英混说合适的其他模型，或能解决体积/上下文风险的实质改进 FunASR Nano 导出/配置；须经含长语音的双机设备 gate。除非有具体未决问题，不重开 A/B 设备测试。
-- D033–D035（Provider 分类、默认 Auto、隐私与 fallback）不变；在没有正式 Local 模型时，Auto 按 D034 走 System（需授权）或提示配置。
+- 当时的 D033–D035（Provider 分类、默认 Auto、隐私与 fallback）不变；在没有正式 Local 模型时，当时的 Auto 按 D034 走 System（需授权）或提示配置。**2026-09-28 注**：D034/D035 此后已修订为首次推荐具体服务、System 不参与自动 fallback；不改变本 A/B checkpoint 的历史结论。
