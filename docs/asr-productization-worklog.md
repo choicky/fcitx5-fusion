@@ -103,3 +103,10 @@
 - `91dd1708` CI `36352793131` PASS。
 - 上游 FunASR 1.4.16 自带的 `funasr-server`（OpenAI 兼容 `/v1/audio/transcriptions`，文档示例 `--model sensevoice --device cpu`）本机运行；`OpenAiTranscriptionClient` 送 10.1 s 与 17.6 s wav：转写正确，stop→final 2.1 s / 3.0 s。**INTEROP-VERIFIED**。测试 `OpenAiTranscriptionInteropTest` 已提交（环境变量启用）。
 - 附注：SenseVoiceSmall 的 HF 许可为 `other`，此处只作为服务端测试模型，不进入 Model Manager。
+
+## 2026-09-27T22:06Z — 收尾检查
+
+- `e85fc547`（OpenAI 兼容互通测试，CI 中跳过）CI `36353613930` PASS。本批全部 Android 提交均 CI 通过（`4a8f7856` 单独不可编译，由 `5c71b109` 修复）。
+- 验收脚本加入 OpenAI 兼容步骤 4.6b；交接文档加入其互通命令。
+- 停止本机测试服务器（sherpa Python 6006、仿真器 6021–6024、funasr-server 9000）；C++ 服务器此前已停。`~/asr-scratch`（7.4 GB）保留以便复现，交接 §6 写明清理命令。
+- 剩余事项均需所有者：设备验收、云凭据、GPU 服务器、交接 §5 三项决定。本会话无法再推进的部分不继续编造工作。

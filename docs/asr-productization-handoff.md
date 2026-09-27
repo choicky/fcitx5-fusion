@@ -9,7 +9,7 @@
 
 ## 2. 本批 Android 提交（按顺序）
 
-`1f62c3a0` 服务选择/推荐/迁移 → `820616b0` 就绪信号 + D035 fallback → `849f0eda` 凭据库 + 豆包 BYOK → `21f37e3c` sherpa-onnx 自建 → `4a8f7856` Model Manager（**此提交单独无法编译**）→ `5c71b109` 修复 → `04785c66` Qwen → `5fcc495f` FunASR 2-pass → `9d9b9dba` Tencent → `e9035b81` Fun-ASR-Nano → `62a565b0` 加固 → `0e45df24` 上次失败显示 → `7bc28523` 候选 C → `d7cb83f2` 设置页生命周期修复 → `91dd1708` OpenAI 兼容整段转写适配器（可选）。
+`1f62c3a0` 服务选择/推荐/迁移 → `820616b0` 就绪信号 + D035 fallback → `849f0eda` 凭据库 + 豆包 BYOK → `21f37e3c` sherpa-onnx 自建 → `4a8f7856` Model Manager（**此提交单独无法编译**）→ `5c71b109` 修复 → `04785c66` Qwen → `5fcc495f` FunASR 2-pass → `9d9b9dba` Tencent → `e9035b81` Fun-ASR-Nano → `62a565b0` 加固 → `0e45df24` 上次失败显示 → `7bc28523` 候选 C → `d7cb83f2` 设置页生命周期修复 → `91dd1708` OpenAI 兼容整段转写适配器（可选）→ `e85fc547` 其互通测试。
 
 ## 3. 如何在无 Android SDK 的机器上验证纯逻辑
 
@@ -22,7 +22,7 @@ kotlinc -cp <jars> -d out \
 java -cp out:<jars>:kotlin-stdlib.jar org.junit.runner.JUnitCore <TestClass...>
 ```
 
-最近一次：96 项纯测试通过。Android 部分（Fragment、Component、Keystore、AudioCapture）只能靠 CI（`.github/workflows/moqi-test-apk.yml`：`BUILD_ABI=arm64-v8a ./gradlew :app:testDebugUnitTest :app:assembleDebug`，约 8–9 分钟；`cancel-in-progress: true`，连续推送会取消前一个 run）。
+最近一次：101 项纯测试通过（另加 `OpenAiTranscriptionClient.kt`）。Android 部分（Fragment、Component、Keystore、AudioCapture）只能靠 CI（`.github/workflows/moqi-test-apk.yml`：`BUILD_ABI=arm64-v8a ./gradlew :app:testDebugUnitTest :app:assembleDebug`，约 8–9 分钟；`cancel-in-progress: true`，连续推送会取消前一个 run）。
 
 推送前检查（避免 A4 类回归）：确认 `R.string` 引用都在 `values/` 与 `values-zh-rCN/`；确认 HEAD 中存在、被删除的函数不再被调用。
 
@@ -33,6 +33,7 @@ java -cp out:<jars>:kotlin-stdlib.jar org.junit.runner.JUnitCore <TestClass...>
 | `SherpaOnnxServerInteropTest` | `SHERPA_ONNX_SERVER_URL`、`SHERPA_ONNX_TEST_WAV` | `pip install sherpa-onnx==1.13.8`；v1.13.8 `python-api-examples/streaming_server.py --encoder … --decoder … --joiner … --tokens … --port 6006` |
 | `FunAsr2PassInteropTest` | `FUNASR_SERVER_URL`、`FUNASR_TEST_WAV` | FunASR v1.4.16 `runtime/python/websocket/funasr_wss_server.py --port 10095 --ngpu 0 --device cpu --certfile "" --keyfile ""` |
 | `QwenAsrEmulatorTest` / `TencentAsrEmulatorTest` / `FunAsrNanoEmulatorTest` | `QWEN_EMULATOR_URL` / `TENCENT_EMULATOR_URL` / `NANO_EMULATOR_URL` | 按文档写的本地仿真器（不是真实服务；脚本未入库，协议见各客户端注释与 network-asr-checkpoint §9） |
+| `OpenAiTranscriptionInteropTest` | `OPENAI_SERVER_URL`、`OPENAI_TEST_WAV`，可选 `OPENAI_MODEL` | FunASR v1.4.16 `funasr-server --model sensevoice --device cpu --port 9000`，URL `http://127.0.0.1:9000/v1/audio/transcriptions` |
 | `ModelDownloadInteropTest` | `MODEL_DOWNLOAD_TEST_DIR`、`MODEL_DOWNLOAD_TEST_MODEL` | 真实 HF 固定 revision |
 
 ## 5. 需要所有者决定的事项
@@ -47,4 +48,4 @@ java -cp out:<jars>:kotlin-stdlib.jar org.junit.runner.JUnitCore <TestClass...>
 2. 按设备结果修复缺陷。
 3. 所有者决定 §5 三项后实施。
 4. OpenAI-compatible 适配器已实现并与上游 `funasr-server`（CPU，SenseVoice）互通；设备端仍未测。
-5. 清理本机 `~/asr-scratch`（约 6 GB：venv、模型缓存、上游源码；仓库外）。
+5. 清理本机 `~/asr-scratch`（约 7.4 GB：venv、模型缓存、上游源码、C 下载副本；仓库外，保留以便复现互通测试，不需要时 `rm -rf ~/asr-scratch`）。
