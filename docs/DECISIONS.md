@@ -472,3 +472,17 @@ Primary → Local 可自动发生，因为它缩小了外部数据处理边界�
 **V1 不实现**：会话中途跨 Provider 的 PCM replay/迁移；因识别质量看起来差而自动换 Provider 重识别；双 Provider 同时识别；把已采集音频静默重放给其他第三方。会话中途失败报告识别失败/允许重试，而不迁移会话。
 
 - fallback 发生时须可观测（D018），具体提示 UI 未冻结；关闭 fallback 的设置位置未冻结。
+
+## D036 — 关闭 Local ASR A/B checkpoint：A、B 均不选为正式/默认 Local ASR
+
+**状态：Accepted（2026-09-27，Phase 4B.3b 关闭）**
+
+4B.3b A/B comparative device PoC 已在 Redmi K90 Pro Max 与 vivo X100 Pro 完成（测试基线 `fcitx5-android` `phase4-voice-poc` @ `a8a0e1b3`；证据见 `docs/local-asr-checkpoint.md` §10–§11）。
+
+- **A（streaming Zipformer zh INT8，约 168 MB）**：双机基础 gate PASS，真流式路径可用，RTF 约 0.10–0.18，stop→final 约 40–131 ms；中文总体可用，所测中英混说较弱。技术上适合 IME，但模型权重再分发/商用许可不明确，**仍仅限 Research / Device Evaluation**，不作为正式发布/默认候选（D032 不变）。
+- **B（FunASR Nano INT8，约 1 GB）**：DUAL-DEVICE BASIC DEVICE GATE PASS；**DUAL-DEVICE LONG-UTTERANCE GATE FAIL**——当前测试的 ONNX artifact/配置 `max_total_len` = 512，约 34–39 s 语音得到空 final。另有 Redmi 约 2 GB PSS 的重大 IME 风险。该失败只归因于此 artifact/配置，不推广到所有 FunASR Nano 导出；更大 `max_total_len` 的导出仅是研究方向，未验证。当前 artifact 不适合作为 Android IME 默认本地模型。
+- 本 checkpoint 不选定任何正式/默认 Local ASR。
+- 保留共同的 `LocalAsrBackend` / `VoiceBackend` 架构：流式（`OnlineRecognizer` → partial/final）与整段（buffer → `OfflineRecognizer` → final）两种形态均已在该边界上验证。
+- 不为这两个研究候选实现 Model Manager/Downloader（D029 的 Model Manager 仍面向通过许可审查的正式模型）。
+- 下一步：识别并验证正式发布候选——许可清晰、体积/延迟/中文与中英混说合适的其他模型，或能解决体积/上下文风险的实质改进 FunASR Nano 导出/配置；须经含长语音的双机设备 gate。除非有具体未决问题，不重开 A/B 设备测试。
+- D033–D035（Provider 分类、默认 Auto、隐私与 fallback）不变；在没有正式 Local 模型时，Auto 按 D034 走 System（需授权）或提示配置。

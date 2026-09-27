@@ -98,6 +98,8 @@ VoiceInputFlow（不变）
 
 ## 9. 需真机测试的未决项
 
+（研究阶段记录；B 的资源/延迟/长语音与混说已由 §10 的 4B.3b-1 实测回答，结论见 §11。）
+
 - B 在 vivo X100 Pro / Redmi K90 Pro Max 上：模型加载时间、常驻内存、3 s / 10 s 语音的 stop→final 延迟（`numThreads` 1/2/3/4 对比）、发热与耗电。
 - 中文、中英混说、方言/口音与 Doubao（4B.3a）在同一语料上的对比。
 - 长时间按住（接近 60 s 上限）时 PCM 缓存与解码时间。
@@ -130,19 +132,39 @@ VoiceInputFlow（不变）
 - A 的 partial 在本 PoC 中仅写日志，不写入 preedit/composing。
 - A 的进一步测试按决定**已停止**。
 
-### B — FunASR Nano INT8：Redmi 首次 E2E 已跑通；设备 gate 未完成
+### B — FunASR Nano INT8：双机基础设备 gate PASS；双机长语音 gate FAIL
 
-冻结的 Android 设备测试基线仍为 `fcitx5-android` `phase4-voice-poc` @ `a8a0e1b3`；B 的设备 gate 不使用之后的 Android 提交。
+冻结的 Android 设备测试基线：`fcitx5-android` `phase4-voice-poc` @ `a8a0e1b3`。
 
-Redmi K90 Pro Max 首批实测（`numThreads` = 2）：真机端到端识别结果已提交到 IME。一次测量会话：
+项目所有者实测（人工回报），Redmi K90 Pro Max 与 vivo X100 Pro：
 
-| audio | decode | RTF | stopToFinal | finalChars | firstPartial / partials | PSS |
-|---|---|---|---|---|---|---|
-| 7740 ms | 795 ms | 0.103 | 846 ms | 21 | 无 / 0 | ≈ 1985 MB |
+| 项 | 结果 |
+|---|---|
+| Mic / Space stop / Space cancel | 双机 PASS |
+| 连续 session | 双机 PASS |
+| 离线 final-only 识别（无 partial，符合 `OfflineRecognizer`） | 双机 PASS |
+| 中英混说路径 | 已验证；所测样本项目所有者判断“基本正常” |
+| RTF（短/中等语句） | 约 0.10–0.18 |
+| stopToFinal（短/中等语句） | 约 0.3–1.8 s |
+| 内存 | Redmi 约 2 GB PSS（单次记录，`numThreads` = 2：7740 ms 语音，decode 795 ms，RTF 0.103，stopToFinal 846 ms，PSS ≈ 1985 MB） |
+| 模型体积 | 约 1 GB |
+| **长语音** | **FAIL（双机复现）**：Redmi 约 34–37 s 时 final 为空；vivo 38.8 s 录音 final 为空 |
 
-- final-only 行为符合 `OfflineRecognizer` 预期（无 partial）。
-- 这只是单次会话数据。**Redmi B 设备 gate 尚未完成**：连续 session、Space stop/cancel、中英混说、更长语音（含下述 `max_total_len` 截断检查）以及内存/进程存活检查仍待测；**vivo 上的 B 验证尚未开始**。
-- B **未**被选为正式/默认 Local ASR。
+vivo 长语音日志要点（整理自项目所有者回报，指标行由多个字段合并）：
+
+```text
+Context_len (669) exceeds KV capacity (512)
+The model max_total_len (512) limits total context
+audio=38800ms decode=1440ms rtf=0.037 stopToFinal=1512ms finalChars=0 clientSilenced=false
+```
+
+- `clientSilenced=false`：采集正常，失败在识别端。
+- 归因：**当前测试的 FunASR Nano ONNX artifact/配置（`max_total_len` = 512）**。不推广为所有 FunASR Nano 模型/导出的结论。
+- 修正先前预期：下文“已知风险”原依据源码推断超限时“截断音频”；实测结果是 **final 为空**（整段识别内容丢失），以实测为准。
+- 更大 `max_total_len` 的导出是可能的后续研究方向，**不是**已验证的修复。
+- 约 2 GB PSS 是 Android IME 的重大产品风险（IME 进程常驻、低内存回收）。
+
+结论：B = **DUAL-DEVICE BASIC DEVICE GATE PASS；DUAL-DEVICE LONG-UTTERANCE GATE FAIL**。B **未**被选为正式/默认 Local ASR。
 
 `a8a0e1b3` 对照 sherpa-onnx 1.13.8 源码复核 B 后的调整：
 
@@ -152,6 +174,35 @@ Redmi K90 Pro Max 首批实测（`numThreads` = 2）：真机端到端识别结�
 
 B 设备测试需记录：首次/缓存加载时间、`pss`、3 s/10 s/30 s 语音的 `stopToFinal` 与 `rtf`（`numThreads` 1–4）、连续 session、Mic/Space stop/cancel（cancel 不得 decode/提交）、发热与完全离线，以及中文/中英混说与 A、Doubao 的同语料对比。
 
-已知风险（源码事实）：FunASR Nano 的 prompt + 音频 token 受模型元数据 `max_total_len` 限制；超出时 sherpa-onnx 会截断音频并只在原生日志（logcat `LOGE`）中提示。该 int8 模型的 `max_total_len` 未核实，需用接近 60 s 上限的长语音确认是否截断。
+已知风险（源码事实，测试前记录）：FunASR Nano 的 prompt + 音频 token 受模型元数据 `max_total_len` 限制，超出时 sherpa-onnx 在原生日志（logcat `LOGE`）中提示。**已由实测确认**：该 int8 artifact 的 `max_total_len` 为 512，约 34–39 s 语音即超限，结果为空 final（见上）。
 
-交叉引用：Local 在默认 Auto 与自动 fallback 中的角色见 D034/D035（健康的 Local 优先于 System；Local 失败只在用户已事先授权 System ASR 时回退到 System，不回退到 Managed Cloud；System ASR 与 Local 隐私不等价）。首次使用引导是否推荐/下载 Local 模型等待 B 设备 gate 完成后的 Local A/B checkpoint。
+交叉引用：Local 在默认 Auto 与自动 fallback 中的角色见 D034/D035（健康的 Local 优先于 System；Local 失败只在用户已事先授权 System ASR 时回退到 System，不回退到 Managed Cloud；System ASR 与 Local 隐私不等价）。首次使用引导是否推荐/下载 Local 模型：A/B 均未被选定，待正式候选模型确定后再决定（见 §11）。
+
+## 11. Local ASR A/B checkpoint 结论（2026-09-27，CLOSED）
+
+**4B.3b A/B comparative device PoC：COMPLETE。** 本 checkpoint **不**选定 A 或 B 为正式/默认 Local ASR（D036）。
+
+| | A — streaming Zipformer zh INT8 | B — FunASR Nano INT8 |
+|---|---|---|
+| 识别路径 | `OnlineRecognizer` 真流式，partial + final | 缓冲整段 → `OfflineRecognizer`，final-only |
+| 双机基础 gate | PASS（Redmi 含约 34 s 连续语音） | PASS |
+| 长语音 | Redmi 约 34 s PASS | **双机 FAIL**（当前 artifact `max_total_len` = 512，约 34–39 s 空 final） |
+| RTF | 约 0.10–0.18 | 约 0.10–0.18（短/中等语句） |
+| stopToFinal | 约 40–131 ms | 约 0.3–1.8 s（短/中等语句） |
+| 中文 | 总体可用 | 可用 |
+| 中英混说 | 所测 Redmi 样本较弱 | 所测样本基本正常 |
+| 模型体积 / 内存 | 约 168 MB | 约 1 GB / Redmi 约 2 GB PSS |
+| 许可 | 权重再分发/商用许可不明确 → 仅 Research / Device Evaluation | 元数据链较清晰，release audit 未完成 |
+| 结论 | 技术上适合 IME（流式、延迟、体积），但许可阻止其成为正式发布候选 | 证明了本地整段识别与较好的混说表现，但当前 artifact 因体积、内存与长语音失败**不适合**作为 Android IME 默认本地模型 |
+
+- 关于 A 的许可：训练数据中的非商用条款**不自动**使权重成为非商用；该法律效果不作推断，阻碍在于权重本身的再分发/商用许可不明确。
+- 架构已验证并保留：共同的 `LocalAsrBackend` / `VoiceBackend` 同时承载 `AudioCapture → OnlineRecognizer → partial/final` 与 `AudioCapture → buffer → OfflineRecognizer → final`。
+- 不为这两个研究候选实现 Model Manager/Downloader。
+- 除非有具体未决问题需要，不重开 A/B 设备测试。
+
+**下一步 Local ASR 行动**：识别并验证一个**正式发布候选**——
+
+1. 另一模型：Android 体积、延迟、中文与中英混说质量合适，且再分发/商用许可清晰；或
+2. 实质改进的 FunASR Nano 导出/配置，且能解决当前的体积/内存与上下文长度风险。
+
+候选须经同样的双机设备 gate（含长语音）后，才进入正式/默认 Local 的讨论。

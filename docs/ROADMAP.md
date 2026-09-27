@@ -169,7 +169,7 @@ Phase 3 未定义独立的 "Exit Criteria" 小节（ROADMAP 中只有 Phase 2 �
 
 ## Phase 4 — Voice Input PoC
 
-**状态：IN PROGRESS — System SpeechRecognizer PoC 真机 checkpoint 已完成（vivo 通过 / Redmi OEM System ASR 失败）；Phase 4B 架构 checkpoint 已接受（D027）；Phase 4B.1 capture-only AudioRecord 硬关口 PASS（vivo + Redmi）；Provider Selection / 4B.3 设计 checkpoint 已接受（D028）；4B.2 与 4B.3a 双机 PASS；4B.3b-1 Local A/B 已实现、A 基础双机 gate PASS；Provider 分类/默认 Auto/fallback 规划已接受（D033–D035）；下一步为 Candidate B 真机实测（执行顺序见“当前下一步”）**
+**状态：IN PROGRESS — System SpeechRecognizer PoC 真机 checkpoint 已完成（vivo 通过 / Redmi OEM System ASR 失败）；Phase 4B 架构 checkpoint 已接受（D027）；Phase 4B.1 capture-only AudioRecord 硬关口 PASS（vivo + Redmi）；Provider Selection / 4B.3 设计 checkpoint 已接受（D028）；4B.2 与 4B.3a 双机 PASS；4B.3b Local A/B device PoC 已 COMPLETE，A/B 均未选定（D036）；Provider 分类/默认 Auto/fallback 规划已接受（D033–D035）；下一步见“当前下一步”**
 
 优先复用：
 
@@ -325,10 +325,11 @@ B. 由源码推断、需实机确认的风险：
 - [x] **Provider Selection / 4B.3 设计 checkpoint：ACCEPTED（2026-09-27，D028/D029）**：Provider 逻辑分类 Local / Cloud-BYOK / Custom；正式构建不内置维护者云端凭据，云端 credential 为 Provider-specific runtime configuration；ASR/LLM credential 分离。Local 的 Provider/runtime/model 分层：当前优先 sherpa-onnx 作为首个 runtime 候选，但不提前冻结具体模型；4B.3b 集成前增加窄 runtime/model checkpoint。
 - [x] **4B.3a — Doubao Direct Cloud ASR PoC：COMPLETE / DUAL-DEVICE PASS（2026-09-27）**。实现链路：Fcitx-owned `AudioRecord` → PCM streaming → Doubao Seed-ASR 2.0（`bigmodel_async` + `enable_nonstream=true`）→ provisional/definite/last-package 解析 → final Raw Transcript → IME。主要提交：`8a0f6d79`（Direct Doubao backend）、`4bc74a87`（按官方协议将 definite utterance 与 final last-package 分离）、`8502f0b1`（OkHttp 4.12.0 Android 兼容修复）。provisional/stable 仅观测，不写入 Fcitx preedit；stop 等待 server final，cancel 丢弃迟到结果；无 `bigmodel_nostream` fallback。vivo X100 Pro 与 Redmi K90 Pro Max 均完成 Direct Cloud E2E 真机验证，包括 stop→final→commit、cancel 不提交、重复会话、网络失败恢复与资源释放；Redmi Direct 路径不依赖 Xiaomi RecognitionService。PoC credential 仍仅通过本地 debug 配置注入，不是正式 BYOK 路径。通过 4B.3a 只证明 Cloud Direct ASR 可行，不选定 Doubao 为默认 Provider；
 - [x] **4B.3b-0 — Local ASR runtime/model 窄 checkpoint：COMPLETE（2026-09-27）**。研究记录见 `docs/local-asr-checkpoint.md`。确认 sherpa-onnx v1.13.8 下：A = streaming Zipformer zh INT8 / `OnlineRecognizer` / 真 streaming / 约 168 MB；B = FunASR Nano INT8 / `OfflineRecognizer` / 非真 streaming / 约 1 GB。A 的权重许可未声明且训练数据许可存在进一步风险，故仅限 research/device-evaluation，许可澄清前不得进入正式 release/distribution；B 的许可链当前更清晰，但 Android RAM/load/stop→final 尚未实测。经后续复核，没有发现推翻 Online/Offline 核心结论的新证据；训练数据条款对模型权重的法律效果不作推断。决定见 D032：第一轮不从 A/B 纸面选唯一胜者，而让 A/B 同时进入 comparative device PoC；
-- [~] **4B.3b-1 — Local ASR A/B comparative device PoC：IMPLEMENTED（`204fc324` + `a8a0e1b3`，CI `36320274118` / `36323060020` PASS）；A 基础双机 gate PASS、测试已停止；B：Redmi 首次 E2E 已跑通（单次会话 RTF 0.103、stopToFinal 846 ms、PSS ≈ 1985 MB），Redmi 设备 gate 未完成、vivo 待测**（冻结测试基线 `a8a0e1b3`；记录见 `docs/local-asr-checkpoint.md` §10；A 通过设备 gate 不代表被选为产品/发布模型，A 的许可阻碍不变）。原定范围：debug-only/arm64，复用现有 `AudioCapture` / `VoiceBackend` / `VoiceInputSession`，同时接入 A（Online）与 B（Offline），不得建立两套 Voice pipeline。模型不打包 APK、不实现 Downloader；固定文件/hash 后通过 `adb` 放入测试设备。vivo + Redmi 用同设备/同语料比较 model load、peak/steady RAM、CPU/发热、3s/10s/30s stop→final、RTF、连续 session、中文/中英混合、Mic/Space/cancel 与完全离线；A 另测 first partial、partial 更新、streaming/finalization latency。A/B 均不是正式/默认 Local ASR；若两者均不满足，再启动第二轮模型研究；
+- [x] **4B.3b-1 — Local ASR A/B comparative device PoC：COMPLETE（2026-09-27，D036）**。实现 `204fc324` + `a8a0e1b3`（CI `36320274118` / `36323060020` PASS；设备测试冻结基线 `a8a0e1b3`），debug-only/arm64，A（`OnlineRecognizer`）与 B（缓冲 → `OfflineRecognizer`）共用 `AudioCapture` / `LocalAsrBackend` / `VoiceBackend` / `VoiceInputSession`，模型经 `adb` 外置。**A**：双机基础 gate PASS（Redmi 含约 34 s 连续语音），RTF 约 0.10–0.18、stop→final 约 40–131 ms、约 168 MB，所测中英混说较弱；因权重许可不明确仍仅限 Research / Device Evaluation。**B**：DUAL-DEVICE BASIC DEVICE GATE PASS；**DUAL-DEVICE LONG-UTTERANCE GATE FAIL**（当前 artifact `max_total_len` = 512，约 34–39 s 空 final），RTF 约 0.10–0.18、stop→final 约 0.3–1.8 s（短/中等）、约 1 GB、Redmi 约 2 GB PSS，所测中英混说基本正常。**A、B 均未被选为正式/默认 Local ASR**。记录见 `docs/local-asr-checkpoint.md` §10–§11；
 - [ ] 4B.3c — realtime preedit UX PoC（后续、有条件，不属于 4B.3a）：provisional 结果 → Fcitx preedit → 修订 → final 替换；单独研究 preedit 所有权、与现有 composition/候选的交互、provisional 修订/替换、stop 到 final 的过渡、cancel 回滚/丢弃；
 - [x] **Provider 分类 / 设置 UX / 默认 Auto / 自动 fallback 规划 checkpoint：ACCEPTED（2026-09-27，D033–D035；纯文档，未实现）**：Provider 逻辑分类扩展为 System / Local / Managed Cloud / Self-hosted，所有 Provider 共用同一 VoiceInputFlow，Self-hosted 不建独立 pipeline；用户术语“语音识别服务”；默认 Auto = 健康的 Local → 可用且已授权的 System（未授权则先一次性披露/授权）→ 提示配置，Auto 不静默选择 BYOK Managed Cloud 或 Self-hosted；自动 fallback 默认开启，未经事先授权不得扩大语音数据接收方——System ASR 不视为与 Local 隐私等价，仅在用户已授权时进入 fallback 链；V1 仅处理启动/早期技术失败，不做中途 PCM 迁移。
-- [ ] **Local A/B checkpoint**（B 真机实测之后）：依据 A/B 实测与许可状态决定 Local 的下一步，包括是否及如何在首次使用引导中推荐/下载 Local 模型（D034 未冻结项）；若 A/B 均不满足，再启动第二轮模型研究。
+- [x] **Local A/B checkpoint：CLOSED（2026-09-27，D036）**：A、B 均不选为正式/默认 Local ASR；保留共同 Local 架构；不为研究候选实现 Model Manager/Downloader；首次使用引导是否推荐/下载 Local 模型待正式候选确定后再定（D034 未冻结项）。
+- [ ] **Local ASR 正式发布候选**：识别并验证许可清晰、Android 体积/延迟合适、中文与中英混说质量合适的模型，或能解决体积/内存与上下文长度风险的实质改进 FunASR Nano 导出/配置；须通过含长语音的双机设备 gate。除非有具体未决问题，不重开 A/B 设备测试。
 - [~] **Managed Cloud + Self-hosted checkpoint**：Managed Cloud 以 Doubao（已有基线）对比 Alibaba Qwen ASR 系列与 Tencent Realtime ASR；Self-hosted 研究 FunASR 2-pass / Paraformer、Fun-ASR-Nano Server、sherpa-onnx Server。比较维度与核实项见 D033。**文档研究部分已完成（2026-09-27，与 B 实测并行）**，见 `docs/network-asr-checkpoint.md`：全部候选可留在现有 `VoiceBackend` 之后并复用 `AudioCapture`，无需 JNI；V1 继续采用 Provider-specific backend，不建通用网络协议抽象；Alibaba 官方面向输入法的实时族为 Qwen-Audio-3.x-ASR-Flash-Streaming（模型名不冻结）。Cloud B/C 与 S1–S3 均尚无 PoC，不预选胜者；各项 PoC 待证事实见该文档 §5.6。
 - [ ] Default Provider checkpoint：默认**设置**已定为 Auto（D034）；剩余问题（Local 模型是否进入默认体验、各 Provider 的正式地位）在上述两个 checkpoint 之后决定；不预设 sherpa-onnx runtime 或任何具体模型必然胜出，也不预设 Doubao 为默认。
 
@@ -435,13 +436,13 @@ Android 架构稳定后再评估 Windows、Linux、macOS、iOS，并保持 Trigg
 
 ## 当前下一步
 
-**4B.2 已 COMPLETE / DUAL-DEVICE PASS；当前处于 4B.3b-1 Local ASR A/B comparative device PoC（A 已 PASS 并停止；B 的 Redmi 首次 E2E 已跑通，双机设备 gate 未完成）。**
+**4B.2 已 COMPLETE / DUAL-DEVICE PASS；4B.3b Local ASR A/B comparative device PoC 已 COMPLETE，A、B 均未选为正式/默认 Local ASR（D036）。**
 
 执行顺序：
 
-1. **Candidate B 真机实测**（先完成 Redmi 设备 gate，再做 vivo；冻结基线 `a8a0e1b3`）；
-2. **Local A/B checkpoint**；
-3. **Managed Cloud + Self-hosted checkpoint**（D033；文档研究已先行完成，PoC 待定，见 `docs/network-asr-checkpoint.md`）；
+1. ~~Candidate B 真机实测~~：已完成（双机基础 gate PASS，双机长语音 gate FAIL）；
+2. ~~Local A/B checkpoint~~：已关闭（D036）；
+3. **Managed Cloud + Self-hosted checkpoint**（D033；文档研究已先行完成，PoC 待定，见 `docs/network-asr-checkpoint.md`）；与之独立的 Local 线：**识别/验证 Local ASR 正式发布候选**（D036）；
 4. 之后才确定下一个最小实现批次（Provider Settings UI、Auto/fallback、新 Provider 均不提前实现）。
 
 各项背景：
@@ -450,6 +451,6 @@ Android 架构稳定后再评估 Windows、Linux、macOS、iOS，并保持 Trigg
 2. **4B.3a 已收口**：Doubao Direct Cloud ASR 已双机 PASS；不再继续扩展该 PoC，不把 debug credential 路径产品化。
 3. **4B.3b-0 已完成**：研究 checkpoint 已确认 A/B 的 Online/Offline、体积、语言与许可差异；A 的 license blocker 保留，B 的 Android 资源/延迟风险待实测。
 4. **License gate**：维护 `docs/THIRD_PARTY_LICENSES.md`，分开记录 runtime / model weights / 必要时 training-data provenance；A 在许可澄清前仅限研究测试。
-5. **4B.3b-1**：A/B 已在同一 sherpa-onnx runtime 下接入（`204fc324` + `a8a0e1b3`）；A 基础双机 gate PASS 且测试已停止（仍仅限研究测试）；**B 的 Redmi 首次 E2E 已跑通（单次会话，见 `docs/local-asr-checkpoint.md` §10），下一步完成 Redmi 设备 gate 并进行 vivo 实测**（连续 session、Space stop/cancel、长语音截断、中文/中英混说、内存/进程存活）；测试基线仍为 `a8a0e1b3`。模型固定文件/hash，通过 `adb` 外置，不打包 APK、不实现 Downloader。
+5. **4B.3b 已关闭**：A/B 在同一 sherpa-onnx runtime 与共同 Local 架构下完成双机测试（`204fc324` + `a8a0e1b3`）；A 仍仅限研究（许可）；B 当前 artifact 因约 1 GB 体积、约 2 GB PSS 与 `max_total_len` = 512 长语音空 final 不适合作为默认；两者均未选定（D036）。下一步寻找/验证正式发布候选；不为研究候选实现 Model Manager/Downloader。
 6. 正式 Provider selector、Provider-specific BYOK/API Key UI 与 Local Model Manager/Downloader 已进入 Requirements/D029/Phase 7，但**不提前塞进 4B.3b PoC**；正式版模型按需下载，不要求用户 adb。
 7. 4B.3c realtime preedit UX 仍为后续有条件 PoC；LLM 后处理继续独立，本阶段不接入。upstream PR #899 / Android `SpeechRecognizer` 继续作为 System ASR backend 跟踪。
