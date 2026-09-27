@@ -17,7 +17,9 @@ Android 侧对照基线：`choicky/fcitx5-android` `phase4-voice-poc` @ `a8a0e1b
 |---|---|---|
 | Alibaba ASR 模型总览 | <https://www.alibabacloud.com/help/en/model-studio/asr-model/> | 页面更新 2026-09-22 |
 | Alibaba 实时识别指南 | <https://www.alibabacloud.com/help/en/model-studio/real-time-speech-recognition-user-guide> | 2026-09-24 |
-| Alibaba Qwen-Audio-3.x / Fun-ASR-Realtime WebSocket API | <https://www.alibabacloud.com/help/en/model-studio/fun-asr-realtime-websocket-api>；client events：<https://help.aliyun.com/en/model-studio/fun-asr-client-events> | 2026-09-24 |
+| Alibaba Qwen-Audio-3.x / Fun-ASR-Realtime WebSocket API | <https://www.alibabacloud.com/help/en/model-studio/fun-asr-realtime-websocket-api> | 2026-09-24 |
+| Alibaba Qwen-Audio-3.x / Fun-ASR-Realtime client events（`vad_model`、`max_sentence_silence` 等参数） | <https://www.alibabacloud.com/help/en/model-studio/fun-asr-client-events>（镜像：<https://help.aliyun.com/en/model-studio/fun-asr-client-events>） | 2026-09-24（2026-09-27 复核） |
+| Alibaba Model Studio 模型定价表（ASR 各模型计费单位、单价、免费额度） | <https://www.alibabacloud.com/help/en/model-studio/model-pricing> | 2026-09-24（2026-09-27 复核） |
 | Alibaba Qwen-ASR-Realtime 交互流程 | <https://www.alibabacloud.com/help/en/model-studio/qwen-asr-realtime-interaction-process> | 2026-09-23 |
 | Alibaba qwen-audio-3.1-asr-flash-streaming 模型页（含价格） | <https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen-audio-3-1-asr-flash-streaming> | 页面未标日期 |
 | Alibaba 临时 API Key | <https://www.alibabacloud.com/help/en/model-studio/generate-temporary-api-key> | 2026-09-11 |
@@ -27,6 +29,7 @@ Android 侧对照基线：`choicky/fcitx5-android` `phase4-voice-poc` @ `a8a0e1b
 | Tencent 实时语音识别（WebSocket） | <https://cloud.tencent.com/document/product/1093/48982> | 2026-09-20 |
 | Tencent 计费概述（在线版） | <https://cloud.tencent.com/document/product/1093/35686> | 2026-09-08 |
 | Tencent 语音识别 SDK 个人信息保护规则 | <https://cloud.tencent.com/document/product/1093/73072> | 2024-12-23 |
+| Tencent 混元 ASR（内测版，`Hy-ASR-3.0-preview`） | <https://cloud.tencent.com/document/product/1093/135476> | 2026-09-16 |
 | FunASR | `modelscope/FunASR` tag `v1.4.16`（commit `904cd18`，2026-09-18）；MIT；`MODEL_LICENSE` v1.1 | 源码直接阅读 |
 | sherpa-onnx | `k2-fsa/sherpa-onnx` tag `v1.13.8`（commit `11afbd0`，2026-09-10）；Apache-2.0 | 源码直接阅读 |
 | Fun-ASR-Nano 权重 | HF `FunAudioLLM/Fun-ASR-Nano-2512`，metadata `apache-2.0`，sha `272c57b8` | HF API metadata |
@@ -58,10 +61,15 @@ Android 侧对照基线：`choicky/fcitx5-android` `phase4-voice-poc` @ `a8a0e1b
 **协议（Qwen-Audio-3.x / Fun-ASR-Realtime）[官方]**
 
 - `wss://{WorkspaceId}.ap-southeast-1.maas.aliyuncs.com/api-ws/v1/inference`（新加坡）或 `…cn-beijing…`（北京）；握手 header `Authorization: Bearer <api key>`，可选 `X-DashScope-WorkSpace`、`X-DashScope-DataInspection`。
-- 客户端事件：`run-task`（`model`、`parameters.format`=`pcm`、`sample_rate`、`semantic_punctuation_enabled`、`max_sentence_silence` 200–6000 ms 默认 1300、`language_hints`、`vocabulary_id`/`vocabulary`、`heartbeat` 等）→ 收到 `task-started` 后发送二进制音频 → `continue-task`（中途更新 context，仅 Qwen-Audio-3.x 与 Fun-ASR-Realtime）→ `finish-task`。服务端事件：`task-started`、`result-generated`、`task-finished`（`task-failed` 在另一页）。
+- 客户端事件：`run-task`（`model`、`parameters.format`=`pcm`、`sample_rate`、`semantic_punctuation_enabled`、VAD 参数（按模型区分，见下）、`language_hints`、`vocabulary_id`/`vocabulary`、`heartbeat` 等）→ 收到 `task-started` 后发送二进制音频 → `continue-task`（中途更新 context，仅 Qwen-Audio-3.x 与 Fun-ASR-Realtime）→ `finish-task`。服务端事件：`task-started`、`result-generated`、`task-finished`（`task-failed` 在另一页）。
 - 建议每 100 ms 发送 3200 字节（16 kHz PCM16）。**[官方]**
 - 结果：`sentence_end` 区分中间结果与句末结果；中间结果先于最终结果。**[官方]** 同一句中间结果是否整体改写（而非仅追加）**[待验证]**（需 PoC 抓包）。
-- 标点：默认包含；VAD 断句由 `max_sentence_silence` 控制。**[官方]**
+- 标点：默认包含。**[官方]**
+- VAD 参数按模型区分 **[官方]**：
+  - `qwen-audio-3.1-asr-flash-streaming`：模型专属的 VAD 控制是 `vad_model`（client events 注明“Supported only by `qwen-audio-3.1-asr-flash-streaming`”），默认 `far_field_meeting_16k`（远场），另有 `near_meeting_16k`（近场）。
+  - Qwen-Audio 3.0 与 Fun-ASR-Realtime：实时识别指南以 `max_sentence_silence` 作为 VAD 静音阈值（ms，200–6000，默认 1300；启用 `semantic_punctuation_enabled` 时不作为 `sentence_end` 判据）。
+  - client events 页列出 `max_sentence_silence` 时未标模型限制；它对 3.1 是否生效、效果如何 **[待验证]**，不作为 3.1 的主要控制。
+  - 手机按住说话多为近场，`near_meeting_16k` 可能更合适——**尚未经设备测试 [待验证]**。
 
 **协议（Qwen-ASR-Realtime / `qwen3-asr-flash-realtime`）[官方]**：`/api-ws/v1/realtime?model=…`，`Authorization: Bearer`；`session.update`（`turn_detection`：VAD 默认 `silence_duration_ms` 800，或设为 `null` 进入 Manual）→ `input_audio_buffer.append` → Manual 时 `input_audio_buffer.commit` → `session.finish`；服务端 `…input_audio_transcription.text`（中间）/ `.completed`（最终）。音频是否需 base64 包在 JSON 中 **[待验证]**。
 
@@ -69,7 +77,18 @@ Android 侧对照基线：`choicky/fcitx5-android` `phase4-voice-poc` @ `a8a0e1b
 
 **鉴权/BYOK [官方]**：长期 API Key（Bearer）。官方临时 API Key：`POST …/api/v1/tokens`，`expire_in_seconds` 1–1800，默认 60；官方明确建议“untrusted environments such as browsers and mobile apps”由安全后端生成临时 key。临时 key 能否用于上述 WebSocket 实时 ASR，页面未写明，**[待验证]**。Endpoint 含 WorkspaceId 与地域（新加坡/北京），配置须包含二者。
 
-**价格 [官方]**：`qwen-audio-3.1-asr-flash-streaming` 按 **token** 计费（每百万 token）：北京 input 0.848 / output 0.636，新加坡 input 0.93 / output 0.70（页面以 USD 显示；页面注明只显示原价、不含限时优惠）。免费额度：该页未写，**[待验证]**。音频→token 的换算未在页面给出，**不做每小时换算**，需 PoC 实测 usage。`fun-asr-realtime` / `qwen3-asr-flash-realtime` 价格本次未取得，**[待验证]**。
+**价格 [官方，Model Studio 定价表，2026-09-24 版，2026-09-27 复核]**：
+
+| 模型 | 计费单位 | 北京（USD） | 新加坡（USD） | 免费额度 |
+|---|---|---|---|---|
+| `qwen-audio-3.1-asr-flash-streaming` | 输入 / 输出 token（每百万） | 0.848 / 0.636 | 0.93 / 0.70 | 新加坡 1,000,000 tokens；北京无 |
+| `fun-asr-realtime` | 输入音频秒数（输出免费） | 0.000047 / 秒 | 0.000090 / 秒 | 新加坡 36,000 秒；北京无 |
+| `qwen3-asr-flash-realtime` | 输入音频秒数（输出免费） | 0.000047 / 秒 | 0.000090 / 秒 | 新加坡 36,000 秒；北京无 |
+
+- 免费额度仅新加坡提供，条件为定价表所注：自 Model Studio 开通、模型发布或申请获批（取较晚者）起 90 天内有效。
+- 3.1 按 token 计费，音频→token 的换算页面未给出：**不做每小时换算**，每分钟音频的实际 token 用量待 PoC 实测。
+- 同一定价表另列 `qwen-audio-3.1-asr-flash-message`（token 计费，价格与 3.1 streaming 相同），其协议与输入法适用性本次未核实 **[待验证]**。
+- 价格与额度可能变动，**实现前须再次核对**官方定价表。
 
 **隐私 [官方]**：“will never use your data for model training”；“Model Studio stores data generated from model and application calls”。保存内容是否含音频、保存期限、地域驻留：**[待验证]**。
 
@@ -86,7 +105,8 @@ Android 侧对照基线：`choicky/fcitx5-android` `phase4-voice-poc` @ `a8a0e1b
 
 - 音频：二进制帧；建议 200 ms 一包（16 kHz = 6400 字节），**不超过 1:1 实时速率**；客户端超过 15 秒未发音频报错 4008；结束发文本 `{"type":"end"}`。默认单账号 200 路并发。
 - 结果：`result.slice_type` 0 = 一段话开始、**1 = 识别中、非稳态（“该段识别结果还可能变化”）**、2 = 一段话结束、稳态；最后消息 `final=1`。即：句内中间结果会被改写，句末稳定。
-- 引擎：大模型 2.0 `Hy-ASR-3.0-preview`（“中英+20种方言”，单次最长 60 s，名称含 preview）；大模型 1.0 `16k_zh_en`、`16k_multi_lang` 等；通用 `16k_zh` 等。**[官方]** 各引擎中英混说实际质量 **[待验证]**。
+- 引擎：大模型 2.0 `Hy-ASR-3.0-preview`（“中英+20种方言”，单次最长 60 s）；大模型 1.0 `16k_zh_en`、`16k_multi_lang` 等；通用 `16k_zh` 等。**[官方]** 各引擎中英混说实际质量 **[待验证]**。
+- `Hy-ASR-3.0-preview` 的官方页面（混元 ASR（内测版），2026-09-16）仍称其“当前为内测版本仅作为体验”，仅支持 1 分钟以内、16k 单声道 PCM，并列出部分不支持的功能（如说话人分离、VAD、词汇替换、噪声阈值参数）。**[官方]** 它可作为 PoC 候选，**不**作为生产默认引擎。
 
 **Android 适配 [推断]**：直接复用 `AudioCapture`；需把 20 ms 聚合为 ~200 ms 帧并严格不超实时速率（按采集节奏发送即可满足）；60 s 上限与现有 `MAX_SESSION_MS` 一致。无需 JNI。
 
@@ -172,9 +192,9 @@ Android 侧对照基线：`choicky/fcitx5-android` `phase4-voice-poc` @ `a8a0e1b
 | Candidate | 类型 | 流式类型 | 协议 | 16 kHz PCM | partial | 句末修正 | 中英混说 | 鉴权 | Android 适配 | 服务器硬件 | 成本模型 | 许可/条款 | 实现风险 | 验证状态 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | A Doubao Seed-ASR 2.0 | Managed | 流式 + 第二遍 | 自定义二进制帧 WS | 是 | 有（仅观测） | 有（definite / nonstream） | 真机可用 | 长期 key header | 已实现 | — | 按时长（价格待验证） | 服务条款 | 低（已存在） | **双机 PASS** |
-| B Alibaba Qwen-Audio-3.x / Fun-ASR-Realtime | Managed | 流式，句末 `sentence_end` | JSON 控制 + 二进制 WS | 是（100 ms/3200 B） | 有 | 句内是否改写待验证 | 官方称中英无缝 | Bearer 长期 key；官方建议后端发临时 key | 直接复用，形同 Doubao | — | **按 token**（每百万） | 服务条款；声明不用于训练 | 中（临时 key 与 WS 兼容性、token 成本未知） | 仅文档 |
-| B′ Alibaba qwen3-asr-flash-realtime | Managed | 流式，VAD/Manual | Realtime 风格 JSON 事件 WS | 是 | 有 | `.completed` | 多语种 | 同上 | 可复用 | — | 待验证 | 同上 | 中 | 仅文档 |
-| C Tencent 实时 ASR | Managed | 流式，slice_type 0/1/2 | 签名 URL + 二进制 WS | 是（200 ms/6400 B，≤1:1） | 有，句内非稳态会改写 | slice_type=2 稳态 | 引擎相关，待验证 | HMAC-SHA1(SecretKey) URL 签名，可服务端预签 | 直接复用 | — | **按时长**：¥1.0–4.8/h，5 h/月免费 | 服务条款；云端数据处理待验证 | 中（签名、preview 引擎） | 仅文档 |
+| B Alibaba Qwen-Audio-3.x / Fun-ASR-Realtime | Managed | 流式，句末 `sentence_end` | JSON 控制 + 二进制 WS | 是（100 ms/3200 B） | 有 | 句内是否改写待验证 | 官方称中英无缝 | Bearer 长期 key；官方建议后端发临时 key | 直接复用，形同 Doubao | — | 3.1：**按 token**（每百万）；3.0 / `fun-asr-realtime`：**按输入音频秒数**（北京 $0.000047/s，新加坡 $0.000090/s）；免费额度仅新加坡（90 天条件） | 服务条款；声明不用于训练 | 中（临时 key 与 WS 兼容性、3.1 每分钟 token 用量未知） | 仅文档 |
+| B′ Alibaba qwen3-asr-flash-realtime | Managed | 流式，VAD/Manual | Realtime 风格 JSON 事件 WS | 是 | 有 | `.completed` | 多语种 | 同上 | 可复用 | — | **按输入音频秒数**：北京 $0.000047/s，新加坡 $0.000090/s；新加坡 36,000 秒免费（90 天条件） | 同上 | 中 | 仅文档 |
+| C Tencent 实时 ASR | Managed | 流式，slice_type 0/1/2 | 签名 URL + 二进制 WS | 是（200 ms/6400 B，≤1:1） | 有，句内非稳态会改写 | slice_type=2 稳态 | 引擎相关，待验证 | HMAC-SHA1(SecretKey) URL 签名，可服务端预签 | 直接复用 | — | **按时长**：¥1.0–4.8/h，5 h/月免费 | 服务条款；云端数据处理待验证 | 中（签名；`Hy-ASR-3.0-preview` 为内测版） | 仅文档 |
 | S1 FunASR 2-pass | Self-hosted | 真流式 + 句末第二遍 | JSON 首包 + 二进制 PCM WS | 是 | 有（2pass-online） | 有（2pass-offline + 标点） | 模型相关，待验证 | 无（需网关）；有 TLS | 可复用；需按句替换 | CPU：官方 4 vCPU/8 GB≈32 路；2 vCPU/2 GB 待验证 | 自有硬件 | runtime MIT；模型 metadata Apache-2.0 + FunASR MODEL_LICENSE 适用性待验证 | 中 | 仅文档/源码 |
 | S2 Fun-ASR-Nano（FunASR realtime） | Self-hosted | 模拟流式（VAD 段 + 窗口重解码） | 文本命令 + 二进制 int16 WS | 是 | 有（反复改写） | 段锁定 | 上游定位 | 无（需网关）；无 TLS | 可复用 | **NVIDIA GPU（vLLM）** | 自有硬件 | Apache-2.0 metadata | 中高（GPU、vLLM 运维） | 仅源码 |
 | S2′ Fun-ASR-Nano via sherpa offline server | Self-hosted | 整段 | 8 字节头 + float32 WS | 需转 float32 | 无 | 仅 final | 同上 | 无；无 TLS | 可复用（stop 后发整段） | CPU，需 benchmark | 自有硬件 | 同 Local B | 中（未运行验证） | 仅源码推断 |
@@ -205,7 +225,7 @@ Android 侧对照基线：`choicky/fcitx5-android` `phase4-voice-poc` @ `a8a0e1b
    - Self-hosted **候选最小配置 schema——待第一个 Self-hosted PoC 验证**：可能涉及协议类型（决定 backend）、endpoint URL（ws/wss），以及视服务器而定的鉴权 header/token、TLS 策略、热词、语言。这些字段**不是**通用协议契约；由第一个 Self-hosted PoC 决定最小的共同配置边界。
    - Custom（OpenAI-compatible）：base URL、model、可选 API key、language。
 6. **正式冻结 Provider 架构前必须由 PoC 证明的事实**：
-   - Alibaba：Qwen-Audio-3.x 句内中间结果是否改写；临时 API Key 能否用于实时 WebSocket；每分钟音频的实际 token 用量（成本）；北京/新加坡在中国大陆设备上的延迟。
+   - Alibaba：Qwen-Audio-3.x 句内中间结果是否改写；临时 API Key 能否用于实时 WebSocket；3.1 每分钟音频的实际 token 用量（成本）；3.1 选用 `near_meeting_16k` 的近场效果；北京/新加坡在中国大陆设备上的延迟。
    - Tencent：`Hy-ASR-3.0-preview` 与 `16k_zh_en` 的中英混说质量；slice_type=1 改写频度对 IME 的影响；签名时钟偏差处理。
    - Self-hosted：S1 在 2 vCPU/2 GB 与 4–8 vCPU 上的内存/延迟；S2 的 GPU 显存与延迟、S2′ 在 CPU 上的整段延迟；S3 可用且许可清晰的中文 streaming 模型；经反向代理（TLS + token）后 Android 客户端的连接与错误行为。
    - 共通：D035 所需的“启动/早期技术失败”判定（见 §6）；release 构建引入 `INTERNET` 后的数据流披露（D018）。
@@ -221,7 +241,7 @@ Android 侧对照基线：`choicky/fcitx5-android` `phase4-voice-poc` @ `a8a0e1b
 ## 7. 未解决问题
 
 - Doubao 官方价格、试用额度、临时 token：火山引擎文档本次无法抓取。
-- Alibaba：Qwen-Audio-3.x 是否支持 AOQ；AOQ SDK 的外部 PCM 输入 API、token 有效期、版本与体积；Qwen-Audio-3.x 免费额度；`fun-asr-realtime` 与 `qwen3-asr-flash-realtime` 价格；数据保存内容/期限/地域。
+- Alibaba：Qwen-Audio-3.x 是否支持 AOQ；AOQ SDK 的外部 PCM 输入 API、token 有效期、版本与体积；3.1 每分钟音频的实际 token 用量；`max_sentence_silence` 对 3.1 是否生效、`near_meeting_16k` 对手机输入的实际效果；`qwen-audio-3.1-asr-flash-message` 的协议与适用性；数据保存内容/期限/地域。价格与免费额度实现前须再次核对。
 - Tencent：STS 临时凭据是否可用于实时 WebSocket；云 API（非 SDK）的数据保留与训练使用条款。
 - FunASR `MODEL_LICENSE` 与模型卡 Apache-2.0 metadata 的关系（逐模型核对）。
 - sherpa-onnx 可用于 Self-hosted 的中文/中英 streaming 模型及其权重许可；官方 server Docker 镜像是否存在。
