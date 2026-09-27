@@ -66,3 +66,10 @@
 - 文档：计划 §2 状态表按服务/模型更新；新增 `docs/asr-productization-acceptance.md`（设备、凭据、服务器验收步骤与预期，实测列全空）；THIRD_PARTY 记录 A 仅导入、B 从固定上游下载（依据平台元数据，待所有者复核）；network checkpoint §9 记录实现期间的源码/互通事实。
 - 本地纯 JVM 测试：95 项通过（另有 interop/emulator 测试按环境变量启用）。
 - 下一步：等 CI；复核 Android UI 代码中的风险点（生命周期、线程、Keystore 异常）；为 Local 研究模型 fallback 设计保持 D035/D037 不变。
+
+## 2026-09-27T20:01Z — 加固、失败状态显示、长语音时延实测
+
+- Tencent + Nano（`9d9b9dba` + `e9035b81`）CI `36345161542` PASS；加固 `62a565b0` CI `36345756992` PASS（连接异常不再使输入法崩溃；Keystore 保存失败只提示；自建服务 final 超时 20 s）；`0e45df24`（设置页显示当前服务的上次失败，便于看到无效/被撤销的密钥）CI 进行中。
+- 实测（本机 2 核 aarch64 CPU，上游 FunASR 1.4.16 Python 2pass 服务器）：stop→final 17.6 s 语音 5.4 s、46.3 s 语音 8.3 s——后者超过原 8 s 超时，支持自建 20 s 的决定。
+- 推送前检查脚本新增：HEAD 中存在、工作区中被删除但仍被调用的函数会报错；已用模拟删除 `newInstanceId` 验证能拦截 A4 那类回归。
+- 研究：ModelScope `zengshuishui/FunASR-nano-onnx` 当前文件与 HF 镜像（B 所用）大小不同——导出者已更新导出；另有 `llm_int8_max_token_768/1024`。正在下载同一导出的 512 与 1024 两个 LLM，用 sherpa-onnx 1.13.8 Python OfflineRecognizer 在本机测 10/30/38/46 s 是否仍空 final。
