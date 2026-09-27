@@ -329,6 +329,7 @@ B. 由源码推断、需实机确认的风险：
 - [ ] 4B.3c — realtime preedit UX PoC（后续、有条件，不属于 4B.3a）：provisional 结果 → Fcitx preedit → 修订 → final 替换；单独研究 preedit 所有权、与现有 composition/候选的交互、provisional 修订/替换、stop 到 final 的过渡、cancel 回滚/丢弃；
 - [x] **Provider 分类 / 设置 UX / 默认 Auto / 自动 fallback 规划 checkpoint：ACCEPTED（2026-09-27，D033–D035；纯文档，未实现）**：Provider 逻辑分类扩展为 System / Local / Managed Cloud / Self-hosted，所有 Provider 共用同一 VoiceInputFlow，Self-hosted 不建独立 pipeline；用户术语“语音识别服务”；默认 Auto = 健康的 Local → 可用且已授权的 System（未授权则先一次性披露/授权）→ 提示配置，Auto 不静默选择 BYOK Managed Cloud 或 Self-hosted；自动 fallback 默认开启，未经事先授权不得扩大语音数据接收方——System ASR 不视为与 Local 隐私等价，仅在用户已授权时进入 fallback 链；V1 仅处理启动/早期技术失败，不做中途 PCM 迁移。
 - [x] **Local A/B checkpoint：CLOSED（2026-09-27，D036）**：A、B 均不选为正式/默认 Local ASR；保留共同 Local 架构；不为研究候选实现 Model Manager/Downloader；首次使用引导是否推荐/下载 Local 模型待正式候选确定后再定（D034 未冻结项）。
+- [~] **ASR Provider Settings Foundation（D034）：IMPLEMENTED，CI PASS；双机设备验收未执行**。`fcitx5-android` `818dc671`（设置页、System ASR 授权、单一 Provider 解析）+ `fb3b0c26`（先解析服务再请求麦克风；首次使用 2 次触发即可开始识别），CI `36329322686` / `36330310566` PASS（debug 构建 + 单元测试）。验收脚本：`docs/provider-settings-acceptance.md`。release 构建编译未验证。**D035 运行时 fallback 未实现**，另排批次。Candidate B 设备测试基线仍为 `a8a0e1b3`。
 - [ ] **Local ASR 正式发布候选**：识别并验证许可清晰、Android 体积/延迟合适、中文与中英混说质量合适的模型，或能解决体积/内存与上下文长度风险的实质改进 FunASR Nano 导出/配置；须通过含长语音的双机设备 gate。除非有具体未决问题，不重开 A/B 设备测试。
 - [~] **Managed Cloud + Self-hosted checkpoint**：Managed Cloud 以 Doubao（已有基线）对比 Alibaba Qwen ASR 系列与 Tencent Realtime ASR；Self-hosted 研究 FunASR 2-pass / Paraformer、Fun-ASR-Nano Server、sherpa-onnx Server。比较维度与核实项见 D033。**文档研究部分已完成（2026-09-27，与 B 实测并行）**，见 `docs/network-asr-checkpoint.md`：全部候选可留在现有 `VoiceBackend` 之后并复用 `AudioCapture`，无需 JNI；V1 继续采用 Provider-specific backend，不建通用网络协议抽象；Alibaba 官方面向输入法的实时族为 Qwen-Audio-3.x-ASR-Flash-Streaming（模型名不冻结）。Cloud B/C 与 S1–S3 均尚无 PoC，不预选胜者；各项 PoC 待证事实见该文档 §5.6。
 - [ ] Default Provider checkpoint：默认**设置**已定为 Auto（D034）；剩余问题（Local 模型是否进入默认体验、各 Provider 的正式地位）在上述两个 checkpoint 之后决定；不预设 sherpa-onnx runtime 或任何具体模型必然胜出，也不预设 Doubao 为默认。
@@ -443,7 +444,7 @@ Android 架构稳定后再评估 Windows、Linux、macOS、iOS，并保持 Trigg
 1. ~~Candidate B 真机实测~~：已完成（双机基础 gate PASS，双机长语音 gate FAIL）；
 2. ~~Local A/B checkpoint~~：已关闭（D036）；
 3. **Managed Cloud + Self-hosted checkpoint**（D033；文档研究已先行完成，PoC 待定，见 `docs/network-asr-checkpoint.md`）；与之独立的 Local 线：**识别/验证 Local ASR 正式发布候选**（D036）；
-4. 之后才确定下一个最小实现批次（Provider Settings UI、Auto/fallback、新 Provider 均不提前实现）。
+4. **Provider Settings Foundation 双机设备验收**（已实现，见上；脚本 `docs/provider-settings-acceptance.md`）；之后才确定下一个最小实现批次（D035 运行时 fallback、新 Provider 均不提前实现）。
 
 各项背景：
 
