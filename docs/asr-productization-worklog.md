@@ -73,3 +73,9 @@
 - 实测（本机 2 核 aarch64 CPU，上游 FunASR 1.4.16 Python 2pass 服务器）：stop→final 17.6 s 语音 5.4 s、46.3 s 语音 8.3 s——后者超过原 8 s 超时，支持自建 20 s 的决定。
 - 推送前检查脚本新增：HEAD 中存在、工作区中被删除但仍被调用的函数会报错；已用模拟删除 `newInstanceId` 验证能拦截 A4 那类回归。
 - 研究：ModelScope `zengshuishui/FunASR-nano-onnx` 当前文件与 HF 镜像（B 所用）大小不同——导出者已更新导出；另有 `llm_int8_max_token_768/1024`。正在下载同一导出的 512 与 1024 两个 LLM，用 sherpa-onnx 1.13.8 Python OfflineRecognizer 在本机测 10/30/38/46 s 是否仍空 final。
+
+## 2026-09-27T20:09Z — Local 候选研究：Nano 1024 上下文导出
+
+- `0e45df24` CI `36346285616` PASS。至此本批全部 Android 提交均 CI 通过。
+- 研究结果写入 `local-asr-checkpoint.md` §12：同一 ModelScope 导出中，512 版在 30/38/46 s 均空 final（复现 B 的失败）；1024 版在 30、38 s 正常，46 s 退化为重复文本，且解码超线性变慢。**不是已验证的修复**；D036/D037 不变。ModelScope 当前导出与 B 所用 HF 镜像文件不同，导出者已更新。
+- 决定：不把 1024 导出加入 Model Manager 目录（未经设备验证、46 s 退化），只记录为研究线索。
