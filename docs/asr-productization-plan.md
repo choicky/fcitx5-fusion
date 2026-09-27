@@ -44,6 +44,7 @@ OpenAI-compatible 整段转写是可选独立适配器，不在本计划必需�
 | System | A1 | 沿用旧披露/授权；新 UI DEVICE UNTESTED |
 | Local A（streaming Zipformer） | A4 `4a8f7856` + `5c71b109` | 研究模型；仅导入（许可门槛未过）；CI-VERIFIED（`36343281876`）；DEVICE UNTESTED |
 | Local B（FunASR Nano INT8） | A4 | 研究模型；从 HF 固定 revision 下载——真实上游下载 + SHA-256 + 原子安装在本机 JVM 验证；已测限制照旧；DEVICE UNTESTED |
+| Local C（streaming Zipformer 中英双语） | `7bc28523` | 许可清晰的候选（Apache-2.0，训练数据未公开）；可下载（真实上游下载 + SHA-256 本机验证）；本机 CPU RTF 0.13–0.15、46 s 无失败；非正式模型；DEVICE UNTESTED |
 | Doubao（BYOK） | A3 `849f0eda` | IMPLEMENTED，CI-VERIFIED（`36340993548`）；协议沿用 4B.3a 已双机验证的 backend；用户凭据路径 DEVICE/SERVICE UNTESTED |
 | Qwen（Model Studio） | `04785c66` | IMPLEMENTED，CI-VERIFIED（`36344526847`，含于其后提交）；EMULATION-VERIFIED；真实服务 UNTESTED（无凭据） |
 | Tencent | `9d9b9dba` | IMPLEMENTED；签名与独立实现一致；EMULATION-VERIFIED；真实服务 UNTESTED（无凭据）；CI 见工作日志 |

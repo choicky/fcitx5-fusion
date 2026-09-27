@@ -79,3 +79,10 @@
 - `0e45df24` CI `36346285616` PASS。至此本批全部 Android 提交均 CI 通过。
 - 研究结果写入 `local-asr-checkpoint.md` §12：同一 ModelScope 导出中，512 版在 30/38/46 s 均空 final（复现 B 的失败）；1024 版在 30、38 s 正常，46 s 退化为重复文本，且解码超线性变慢。**不是已验证的修复**；D036/D037 不变。ModelScope 当前导出与 B 所用 HF 镜像文件不同，导出者已更新。
 - 决定：不把 1024 导出加入 Model Manager 目录（未经设备验证、46 s 退化），只记录为研究线索。
+
+## 2026-09-27T20:15Z — 候选 C 加入 Model Manager
+
+- 许可筛选：C1 流式 Zipformer 中英双语（镜像与上游均 Apache-2.0）、C2 流式 Paraformer 中英双语（镜像 Apache-2.0；FunASR MODEL_LICENSE 适用性未核实）；其余候选 HF 无 license 或为 other。
+- 本机 CPU 比较（sherpa-onnx 1.13.8，无参考文本，只作定性）：两者 46 s 均无失败；C1 样本中英混说更好；均无标点。
+- 决定：C1 作为候选 C 加入 Model Manager（`7bc28523`），可从 HF 固定 revision 下载；真实下载 + SHA-256 在本机验证。非正式模型、不推荐、不作 fallback，待双机设备 gate。理由：所有者要求继续评估许可清晰、适合手机的正式候选；让设备评估无需 adb。
+- 本地纯 JVM 测试 96 项通过；`7bc28523` CI 进行中。

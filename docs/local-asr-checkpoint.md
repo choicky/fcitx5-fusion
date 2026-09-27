@@ -226,3 +226,17 @@ B 设备测试需记录：首次/缓存加载时间、`pss`、3 s/10 s/30 s 语�
 - 在当前导出上复现了 B 的“长语音空 final”（本例 30 s 即出现；阈值取决于音频 token 数）。
 - 1024 导出把可用范围延长到至少 38 s，但 46 s 出现退化重复，且解码时间随长度超线性增长（本机 CPU 上 12 → 20 → 40 s）。**不是已验证的修复**，也不是正式候选；手机上的内存/时延未测。
 - 若继续这条线，需要：设备上 1024 导出的 PSS/时延、在 60 s 会话上限内的输出质量、重复退化的原因（如 `max_new_tokens`、分段解码），以及 HF 与 ModelScope 两版导出的差异来源。
+
+## 13. 候选 C：许可清晰的流式中英双语模型（2026-09-27，本机 CPU，非设备）
+
+在 sherpa-onnx 预训练模型中筛选许可清晰的流式候选：
+
+| 候选 | 许可证据 | 体积（int8） | 本机 CPU（sherpa-onnx 1.13.8，2 线程） |
+|---|---|---|---|
+| C1 `sherpa-onnx-streaming-zipformer-bilingual-zh-en-2023-02-20` | 镜像与上游 `pfluo/k2fsa-zipformer-chinese-english-mixed` 均声明 Apache-2.0；训练数据未公开 | 约 199 MB | RTF 0.13–0.15；46 s 无失败；样本中英混说较好；无标点 |
+| C2 `sherpa-onnx-streaming-paraformer-bilingual-zh-en` | 镜像 Apache-2.0；上游 damo ModelScope 元数据 Apache License 2.0（FunASR `MODEL_LICENSE` 是否适用未核实） | 约 237 MB | RTF 0.10–0.12；46 s 无失败；样本中错字较多（“零八二”“现代式”）；无标点 |
+| （排除）`…-zipformer-small-bilingual-zh-en-2023-02-16`、`sense-voice-…-2024-07-17`、`paraformer-zh-small-2024-03-09` | HF 元数据无 license；SenseVoiceSmall 为 `other` | — | 未测 |
+
+样本：sherpa-onnx 上游测试 wav 0/1/3/4 与 46 s 拼接文件；无参考文本、未计算 CER，只作定性比较。
+
+决定（研究→评估）：把 C1 作为候选 **C** 加入 Model Manager（`fcitx5-android` `7bc28523`），可从 HF 固定 revision 下载（真实下载 + SHA-256 已在本机验证）。C **不是**正式模型：不参与首次推荐、不是 D035 fallback 目标，直到通过含长语音的双机设备 gate。设备 gate 需要：加载时间、PSS、RTF、stop→final、60 s 长语音、中文/中英混说（与 A、B、云端同语料）、标点缺失对输入体验的影响。
