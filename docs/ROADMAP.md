@@ -323,7 +323,7 @@ B. 由源码推断、需实机确认的风险：
 - [x] **硬关口 — vivo X100 Pro + Redmi K90 Pro Max 真机：PASS（2026-09-27）**：两台设备都须证明真实**非静音**采集（不仅是 `AudioRecord.read()` 成功；API 29+ 以 client-silenced 状态作辅助证据），以及 stop / cancel / release 与各 lifecycle 路径正确、系统麦克风占用指示及时消失；System ASR 行为不回退。**STOP 条件：若 Redmi 上 Direct capture 被拒绝或被静音，停止，不接入真实 Direct ASR Provider，先重新评估。**（未触发，见下方关口结果）
 - [ ] 4B.2 — 长按 Space：独立的 Voice Trigger 任务，在 `VoiceBackend` 边界与 capture 关口通过之后实现，可在真实 Direct ASR PoC 之前或同时进行，不阻塞 4B.3a/4B.3b；长按阈值达到 → start，松开 → stop，按住上滑 → cancel；需要空格键 gesture Down/Move/Up 接入；与麦克风进入同一 Voice Input flow；
 - [x] **Provider Selection / 4B.3 设计 checkpoint：ACCEPTED（2026-09-27，D028）**：Provider 逻辑分类 Local（sherpa-onnx）/ Cloud-BYOK（Doubao/Seed-ASR、Qwen、Tencent、iFlytek 等）/ Custom（OpenAI-compatible、self-hosted/custom endpoint）；sherpa-onnx 为 Local 首选实现及正式默认 Provider 的首位候选（尚未验证、未定为默认）；正式构建不内置维护者云端凭据，云端采用 BYOK；Direct ASR 边界须区分 provisional/partial 与 final/stable 结果；首个真实 Direct ASR PoC 为 Doubao（4B.3a）；
-- [ ] **4B.3a — Doubao Direct Cloud ASR PoC（下一实现目标）**：Fcitx-owned `AudioRecord` → PCM 流式发送 → Doubao Seed-ASR 2.0（`bigmodel_async`，`enable_nonstream=true`）→ provisional 结果 + 第二遍 stable/final 结果 → Raw Transcript → IME。provisional 结果须接收、解析并可观测，但不写入 Fcitx preedit；只有 stable/final 进入 IME；不实现自动回退到 `bigmodel_nostream`；优先直接 WebSocket 集成（编码前核对最新官方 API 与 Android 源码）；需要时可增加 `android.permission.INTERNET`；开发凭据只放在本地、不提交的 debug 配置中，正式 BYOK 凭据存储/UI 不在本批次；
+- [ ] **4B.3a — Doubao Direct Cloud ASR PoC（下一实现目标）**：Fcitx-owned `AudioRecord` → PCM 流式发送 → Doubao Seed-ASR 2.0（`bigmodel_async`，`enable_nonstream=true`）→ provisional 结果 + 第二遍 stable/final 结果 → Raw Transcript → IME。provisional 结果须接收、解析并可观测，但不写入 Fcitx preedit；只有 stable/final 进入 IME；不实现自动回退到 `bigmodel_nostream`；优先直接 WebSocket 集成（编码前核对最新官方 API 与 Android 源码）；需要时可增加 `android.permission.INTERNET`；开发凭据只经本地、不提交的配置注入 debug 构建（环境变量或用户级 Gradle 属性 → debug `BuildConfig`，仅限 PoC，不是正式凭据路径，见 D028），正式 BYOK 凭据存储/UI 不在本批次；
 - [ ] 4B.3b — sherpa-onnx Local PoC：同一 Voice flow 与 Direct ASR 结果语义，尽量用同一固定语音测试语料与 Doubao 对比识别质量、中英混合、首个 partial 延迟、final 延迟、partial 稳定性、CPU、RAM、电量/发热、模型大小、模型许可/再分发、离线表现、vivo 与 Redmi 差异；此前不为覆盖面增加其他云端 Provider（如需第二个云端 benchmark，首选 Qwen）；
 - [ ] 4B.3c — realtime preedit UX PoC（后续、有条件，不属于 4B.3a）：provisional 结果 → Fcitx preedit → 修订 → final 替换；单独研究 preedit 所有权、与现有 composition/候选的交互、provisional 修订/替换、stop 到 final 的过渡、cancel 回滚/丢弃；
 - [ ] Default Provider checkpoint（4B.3a 与 4B.3b 之后）：若 sherpa-onnx 质量/性能/模型约束可接受，可将 Local 冻结为正式默认 Provider；否则依据实测证据重新评估；结果不预先决定。
@@ -408,7 +408,7 @@ ASR
 
 - Auxiliary Filter settings；
 - Voice settings；
-- ASR Provider settings；
+- ASR Provider settings（含按 Provider 的 BYOK 凭据配置，见 D028）；
 - optional LLM settings；
 - privacy/data-flow UI；
 - packaging/release。
@@ -433,7 +433,7 @@ Android 架构稳定后再评估 Windows、Linux、macOS、iOS，并保持 Trigg
 **Provider Selection / Phase 4B.3 设计 checkpoint 已接受（D028），下一实现目标为 Phase 4B.3a Doubao Direct Cloud ASR PoC：**
 
 - 4B.3a：Fcitx-owned `AudioRecord` → Doubao Seed-ASR 2.0（`bigmodel_async` + `enable_nonstream=true`）→ provisional（仅接收/解析/可观测，不写入 preedit）+ stable/final → Raw Transcript → IME；编码前核对最新官方 API 与 Android 源码；按 4B.3a Exit Criteria 在 vivo 与 Redmi 上验证；
-- 开发凭据只放在本地、不提交的 debug 配置；正式 BYOK 凭据存储/UI 不在 4B.3a；
+- 开发凭据只经本地、不提交的配置注入 debug 构建，仅限 PoC；正式凭据采用 BYOK（运行时按 Provider 配置、设备本地安全存储，见 D028），其存储/UI 不在 4B.3a；
 - 其后：4B.3b sherpa-onnx Local PoC（同一语料对比），再到 Default Provider checkpoint；4B.3c realtime preedit UX 为后续有条件 PoC；
 - 4B.2 长按 Space 为独立 Voice Trigger 任务，不阻塞 4B.3a/4B.3b，与麦克风进入同一 Voice Input flow；
 - 不预先选定 Doubao 为默认 Provider，不认定 sherpa-onnx 已通过验证，不选定 realtime preedit、自动 local/cloud fallback 或独立 RecognitionService APK/模块架构；

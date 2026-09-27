@@ -279,10 +279,14 @@ ASR Provider
 - 模型许可须按所选模型逐一核对；sherpa-onnx 框架本身的许可不足以批准模型再分发。
 - 以后可考虑可下载/本地模型分发方式；当前不冻结具体模型打包或下载 UX。
 
-**Cloud 凭据**
+**Cloud 凭据（BYOK）**（2026-09-27 明确正式凭据策略）
 
-- 正式公开构建**不得**在 Git 或 APK 中内置维护者持有的长期云端 ASR 凭据；正式云端使用预期采用 BYOK（用户自有凭据）。
-- 开发 PoC 只可通过本地、不提交的 debug 配置使用开发者测试凭据。
+- 正式云端 ASR Provider 采用 BYOK（Bring Your Own Key，用户自有凭据）。
+- 维护者持有的长期云端凭据**不得**内置于 APK、Git 仓库、CI 配置或 CI 产物，以及任何 release 构建；CI 与公开/release APK 必须在没有任何维护者云端凭据的情况下可以构建。
+- 云端 Provider 凭据由用户在运行时按 Provider 分别配置，存放在 Android 设备本地、采用合适的安全凭据存储机制；具体 Android 存储实现尚未冻结，实现前须对照当前 Android 与 fcitx5-android API 核实。
+- Local Provider（如 sherpa-onnx）不需要云端凭据。
+- 运行时 Provider 配置保持 ASR 与 LLM 分离（D017）：配置 ASR 凭据不会配置或启用任何 LLM 凭据/Provider。
+- 开发 PoC 只可通过本地、不提交的 debug 配置使用开发者测试凭据。Phase 4B.3a 的 Doubao 凭据注入（环境变量或用户级 Gradle 属性 → debug `BuildConfig`）**仅限 PoC**，不得演变为正式凭据路径。
 - 正式 BYOK 的凭据存储与 UI **不属于** Phase 4B.3a。
 
 **Custom**

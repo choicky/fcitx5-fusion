@@ -236,7 +236,7 @@ Raw Transcript
 
 PoC 使用某个 Provider 不得使 Voice Trigger、Audio Capture 或 IME 层绑定该 Provider。对于 Android System ASR，不强制要求 Fcitx5 提供 PCM；对于 direct cloud/local Provider，使用最小的 Fcitx5-owned Audio Capture 边界，不提前建立复杂 Provider framework。
 
-Provider 逻辑分类与选择见 D028：Phase 4B.3a 选定 Doubao Seed-ASR 2.0 作为首个真实 Direct Cloud ASR PoC 的 Provider/路径；这**不**表示 Doubao 是正式/默认 ASR Provider。正式默认 Provider 仍未决定，须在 Doubao 云端 PoC（4B.3a）、sherpa-onnx Local PoC（4B.3b）与 Default Provider checkpoint 之后依据实测决定。`android.permission.INTERNET` 在 capture-only 的 Phase 4B.1 中有意未声明；Phase 4B.3a 的真实云端 ASR 集成需要时可以增加，其数据流须满足第 11 节；这不意味着 Local ASR 需要联网。正式公开构建不得在 Git 或 APK 中内置维护者持有的长期云端 ASR 凭据。
+Provider 逻辑分类与选择见 D028：Phase 4B.3a 选定 Doubao Seed-ASR 2.0 作为首个真实 Direct Cloud ASR PoC 的 Provider/路径；这**不**表示 Doubao 是正式/默认 ASR Provider。正式默认 Provider 仍未决定，须在 Doubao 云端 PoC（4B.3a）、sherpa-onnx Local PoC（4B.3b）与 Default Provider checkpoint 之后依据实测决定。`android.permission.INTERNET` 在 capture-only 的 Phase 4B.1 中有意未声明；Phase 4B.3a 的真实云端 ASR 集成需要时可以增加，其数据流须满足第 11 节；这不意味着 Local ASR 需要联网。云端 Provider 采用 BYOK；凭据策略（用户运行时按 Provider 配置、设备本地安全存储、维护者凭据不进入 APK/仓库/CI/release 且 CI 与公开 APK 无需其即可构建、Local Provider 无需云端凭据、ASR 凭据与 LLM 分离）见 D028。
 
 ## 10. ASR 与 LLM 解耦
 
