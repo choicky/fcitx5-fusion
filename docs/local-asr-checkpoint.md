@@ -130,7 +130,19 @@ VoiceInputFlow（不变）
 - A 的 partial 在本 PoC 中仅写日志，不写入 preedit/composing。
 - A 的进一步测试按决定**已停止**。
 
-### B — FunASR Nano INT8：待设备实测
+### B — FunASR Nano INT8：Redmi 首次 E2E 已跑通；设备 gate 未完成
+
+冻结的 Android 设备测试基线仍为 `fcitx5-android` `phase4-voice-poc` @ `a8a0e1b3`；B 的设备 gate 不使用之后的 Android 提交。
+
+Redmi K90 Pro Max 首批实测（`numThreads` = 2）：真机端到端识别结果已提交到 IME。一次测量会话：
+
+| audio | decode | RTF | stopToFinal | finalChars | firstPartial / partials | PSS |
+|---|---|---|---|---|---|---|
+| 7740 ms | 795 ms | 0.103 | 846 ms | 21 | 无 / 0 | ≈ 1985 MB |
+
+- final-only 行为符合 `OfflineRecognizer` 预期（无 partial）。
+- 这只是单次会话数据。**Redmi B 设备 gate 尚未完成**：连续 session、Space stop/cancel、中英混说、更长语音（含下述 `max_total_len` 截断检查）以及内存/进程存活检查仍待测；**vivo 上的 B 验证尚未开始**。
+- B **未**被选为正式/默认 Local ASR。
 
 `a8a0e1b3` 对照 sherpa-onnx 1.13.8 源码复核 B 后的调整：
 
@@ -142,4 +154,4 @@ B 设备测试需记录：首次/缓存加载时间、`pss`、3 s/10 s/30 s 语�
 
 已知风险（源码事实）：FunASR Nano 的 prompt + 音频 token 受模型元数据 `max_total_len` 限制；超出时 sherpa-onnx 会截断音频并只在原生日志（logcat `LOGE`）中提示。该 int8 模型的 `max_total_len` 未核实，需用接近 60 s 上限的长语音确认是否截断。
 
-交叉引用：Local 在默认 Auto 与自动 fallback 中的角色见 D034/D035（健康的 Local 优先于 System；Local 失败只在用户已事先授权 System ASR 时回退到 System，不回退到 Managed Cloud；System ASR 与 Local 隐私不等价）。首次使用引导是否推荐/下载 Local 模型等待 B 实测后的 Local A/B checkpoint。
+交叉引用：Local 在默认 Auto 与自动 fallback 中的角色见 D034/D035（健康的 Local 优先于 System；Local 失败只在用户已事先授权 System ASR 时回退到 System，不回退到 Managed Cloud；System ASR 与 Local 隐私不等价）。首次使用引导是否推荐/下载 Local 模型等待 B 设备 gate 完成后的 Local A/B checkpoint。

@@ -1,6 +1,6 @@
 # Managed Cloud + Self-hosted ASR 研究 checkpoint（Phase 4B）
 
-日期：2026-09-27。性质：**研究/文档**，不含任何实现；没有新 Provider 被实现或真机验证；不选胜者、不选默认 Provider。与 Local ASR Candidate B 真机实测并行（B 状态不变：待设备实测）。
+日期：2026-09-27。性质：**研究/文档**，不含任何实现；没有新 Provider 被实现或真机验证；不选胜者、不选默认 Provider。与 Local ASR Candidate B 真机实测并行。B 的状态以 `docs/local-asr-checkpoint.md` §10 为准（撰写本文时尚未开始；2026-09-27 后续更新：Redmi 首次 E2E 已跑通，设备 gate 未完成，未被选定）。
 
 标记约定：
 
@@ -22,6 +22,8 @@ Android 侧对照基线：`choicky/fcitx5-android` `phase4-voice-poc` @ `a8a0e1b
 | Alibaba qwen-audio-3.1-asr-flash-streaming 模型页（含价格） | <https://docs.modelstudio.console.alibabacloud.com/en/model-studio/qwen-audio-3-1-asr-flash-streaming> | 页面未标日期 |
 | Alibaba 临时 API Key | <https://www.alibabacloud.com/help/en/model-studio/generate-temporary-api-key> | 2026-09-11 |
 | Alibaba Model Studio 隐私声明 | <https://www.alibabacloud.com/help/en/model-studio/privacy-notice> | 2026-09-20 |
+| Alibaba Realtime API 协议总览（WebSocket / WebRTC / AOQ） | <https://www.alibabacloud.com/help/en/model-studio/realtime-api-overview> | 2026-09-23 |
+| Alibaba fun-asr-realtime over AOQ | <https://www.alibabacloud.com/help/en/model-studio/real-time-speech-recognition-using-aoq-access-fun-asr-realtime> | 2026-09-22 |
 | Tencent 实时语音识别（WebSocket） | <https://cloud.tencent.com/document/product/1093/48982> | 2026-09-20 |
 | Tencent 计费概述（在线版） | <https://cloud.tencent.com/document/product/1093/35686> | 2026-09-08 |
 | Tencent 语音识别 SDK 个人信息保护规则 | <https://cloud.tencent.com/document/product/1093/73072> | 2024-12-23 |
@@ -71,7 +73,12 @@ Android 侧对照基线：`choicky/fcitx5-android` `phase4-voice-poc` @ `a8a0e1b
 
 **隐私 [官方]**：“will never use your data for model training”；“Model Studio stores data generated from model and application calls”。保存内容是否含音频、保存期限、地域驻留：**[待验证]**。
 
-**最小 PoC 建议**：一个 `AlibabaAsrBackend`（debug-only，结构同 Doubao），目标 `qwen-audio-3.1-asr-flash-streaming`，同代码切 `fun-asr-realtime` 对比；记录首个中间结果延迟、句内改写行为、stop→final、token usage（用于成本）、弱网与鉴权失败的错误分类；并测试临时 key 是否可用于 WebSocket。
+**AOQ（AI over QUIC）/ 客户端 SDK [官方]**：Alibaba Realtime API 提供 WebSocket、WebRTC、AOQ 三种接入；实时 ASR 支持 WebSocket 与 AOQ（不支持 WebRTC）。官方定位：WebSocket 适合“server-side integration, rapid prototyping, and scenarios that require a minimal integration barrier”；AOQ 适合对延迟、弱网韧性和多模态传输要求最高的实时 AI 交互。AOQ 实时 ASR 文档目前只列出 `fun-asr-realtime`（Qwen-Audio-3.x 是否支持 AOQ **[待验证]**）。Android SDK 为 `AoqClientSdk-release.aar`（放入 `app/libs`，minSdk 21，armeabi-v7a/arm64-v8a；文档未给 Maven 坐标/版本号）。鉴权：**应用服务器**用 API Key 调用 Inference token URL，换取 `sid`、`aoqTokenForClient`、relay endpoints 与证书指纹后下发客户端；token 不得在连接关闭后复用（有效期未写明）。结果仍为 `result-generated` / `sentence_end` JSON。文档称 SDK 可用内置麦克风或外部输入（PCM/Opus）；外部 PCM 输入的具体 API、以及能否让麦克风所有权留在 Fcitx `AudioCapture` **[待验证]**。
+
+- **WebSocket = 第一个 Alibaba 最小 PoC 的首选**：契合现有 Fcitx-owned `AudioCapture` + OkHttp WebSocket + Provider-specific backend 边界，改动最小，且不引入厂商预编译 AAR（其开源与否本次未核实）。
+- **AOQ / Android SDK = 以后的对比项**，当前不实现：比较 Android 客户端行为、延迟、弱网恢复、依赖体积（含 native ABI）、SDK 生命周期与麦克风所有权、协议锁定与维护成本。AOQ 本身要求服务端换取 token，即天然需要 §5.5 的 Credential Broker 路径。
+
+**最小 PoC 建议**：一个 `AlibabaAsrBackend`（debug-only，WebSocket，结构同 Doubao），目标 `qwen-audio-3.1-asr-flash-streaming`，同代码切 `fun-asr-realtime` 对比；记录 §2.4 的共同指标以及 token usage（用于成本）；并测试临时 key 是否可用于 WebSocket。
 
 ### 2.3 Cloud C — Tencent 实时语音识别
 
@@ -89,7 +96,22 @@ Android 侧对照基线：`choicky/fcitx5-android` `phase4-voice-poc` @ `a8a0e1b
 
 **隐私**：仅找到 **SDK** 个人信息保护规则（2024-12-23）：音频加密传输、“为实现目的所必需的最短时间”保留；不覆盖云 API 本身；是否用于训练、云端保留期限 **[待验证]**。
 
-**最小 PoC 建议**：一个 `TencentAsrBackend`（debug-only），先比较 `Hy-ASR-3.0-preview` 与 `16k_zh_en`；重点验证 slice_type=1 的改写行为与 IME 可用性、stop（`end`）→ final 延迟、签名/时钟偏差错误、弱网。
+**最小 PoC 建议**：一个 `TencentAsrBackend`（debug-only），先比较 `Hy-ASR-3.0-preview` 与 `16k_zh_en`；重点验证 slice_type=1 的改写行为与 IME 可用性、stop（`end`）→ final 延迟、签名/时钟偏差错误、弱网；另记录 §2.4 的共同指标。
+
+### 2.4 Managed Cloud 同条件真机 PoC 共同指标
+
+以后各 Managed Cloud PoC（含 Doubao 基线复测）至少记录以下 IME 相关指标；尽量在**同一设备、同一组语料、同一网络条件**下比较：
+
+1. 中文识别质量；
+2. 中英混说质量；
+3. 首个 partial 延迟；
+4. partial 改写行为（句内是否改写、改写多频繁）；
+5. stop → final 延迟；
+6. 弱网/断网与恢复行为；
+7. 鉴权失败行为（错误能否区分、是否在会话建立前报告，关系到 D035 fallback）；
+8. 连续会话稳定性。
+
+只记录实测数据与现象；不打综合分、不选胜者。
 
 ## 3. Self-hosted
 
@@ -165,9 +187,22 @@ Android 侧对照基线：`choicky/fcitx5-android` `phase4-voice-poc` @ `a8a0e1b
 2. **能否复用 Fcitx-owned `AudioCapture`？能。** 全部接受 16 kHz 单声道；差异仅在帧长聚合（20 ms → 100/200/600 ms）与 PCM16→float32 转换（sherpa，已有 `pcm16ToFloat`）。
 3. **是否需要新的 JNI/native 边界？不需要。** 全部为网络协议；OkHttp WebSocket/HTTP 已在 debug 构建中使用。
 4. **是否现在就建通用 network ASR backend？不建议。** 各协议的控制消息、音频格式、结束信号和结果语义差异大；V1 继续采用 Provider-specific backend（每个几百行，与 Doubao 同形）。至多在第二个网络 backend 落地后抽取**小工具**（帧聚合器、WebSocket 会话/超时骨架、错误分类），不建协议抽象层，也不建 `SelfHostedAsrBackend` 通用适配层。OpenAI-compatible 可以是一个独立的“整段上传” backend。
-5. **将来最小配置 schema [推断]**：
-   - Managed Cloud：Provider 类型、region/endpoint（Alibaba 另需 WorkspaceId）、model/engine、凭据（Doubao：API key 或 app key + access key + resource id；Alibaba：API key；Tencent：AppId + SecretId + SecretKey）、可选热词/词表 ID。凭据按 D028 独立安全存储。
-   - Self-hosted：协议类型（S1 / S2 / S3 之一，决定 backend）、endpoint URL（ws/wss）、可选鉴权 header/token、TLS 策略（仅系统信任 / 用户 CA）、可选热词、可选语言。
+5. **配置与凭据路径 [推断]**：
+   - Managed Cloud 候选配置：Provider 类型、region/endpoint（Alibaba 另需 WorkspaceId）、model/engine、凭据（Doubao：API key 或 app key + access key + resource id；Alibaba：API key；Tencent：AppId + SecretId + SecretKey）、可选热词/词表 ID。ASR 凭据与将来 LLM 凭据相互独立（D017/D028）。
+   - Managed Cloud 概念上可支持两条**不同**的凭据路径：
+
+     ```text
+     Managed Cloud Provider
+     ├─ Direct BYOK
+     │  └─ 用户凭据 → Android 安全存储 → Provider
+     └─ Credential Broker / Proxy（可选）
+        └─ Android → 用户/组织自控的 broker → 临时凭据 / 签名 URL → Provider
+     ```
+
+     - D028 禁止**维护者**长期凭据进入 APK、仓库、CI 或 release artifact；用户自有 BYOK 凭据存在本机与之概念不同，但属于用户知情承担的风险。
+     - Alibaba 官方建议不可信/移动客户端使用后端发放的临时凭据 **[官方]**；Tencent 的 URL 签名依赖长期 SecretKey，用户自控的签名服务可避免在设备上保存 SecretKey **[推断]**；Alibaba AOQ 本身要求服务端换取 token **[官方]**。
+     - V1 **不要求** broker，本批**不实现** broker；Android 安全存储的具体机制**不在此冻结**（仍按 D028 在实现前核实）。
+   - Self-hosted **候选最小配置 schema——待第一个 Self-hosted PoC 验证**：可能涉及协议类型（决定 backend）、endpoint URL（ws/wss），以及视服务器而定的鉴权 header/token、TLS 策略、热词、语言。这些字段**不是**通用协议契约；由第一个 Self-hosted PoC 决定最小的共同配置边界。
    - Custom（OpenAI-compatible）：base URL、model、可选 API key、language。
 6. **正式冻结 Provider 架构前必须由 PoC 证明的事实**：
    - Alibaba：Qwen-Audio-3.x 句内中间结果是否改写；临时 API Key 能否用于实时 WebSocket；每分钟音频的实际 token 用量（成本）；北京/新加坡在中国大陆设备上的延迟。
@@ -180,13 +215,13 @@ Android 侧对照基线：`choicky/fcitx5-android` `phase4-voice-poc` @ `a8a0e1b
 - 未发现与 D033–D035 或 `VoiceBackend` 架构冲突的源码/文档事实；不需要 STOP 任何设计结论。
 - 需要在后续实现批次中**补充**（不是冲突）的点：
   1. **D035 fallback 需要区分“会话建立前”与“会话中”的失败**。现有 `VoiceError.Service(detail)` 不区分二者（`app/src/main/java/org/fcitx/fcitx5/android/input/voice/VoiceBackend.kt`）。最小调整：在实现 fallback 的批次中给 Direct backend 的错误增加一个“是否已建立可用会话”的标记（例如 `onStarted` 之前/之后），不改其他接口。
-  2. **BYOK 与官方安全建议的张力**：Alibaba 官方建议移动端由后端发放临时 key；Tencent 签名依赖长期 SecretKey。D028 禁止的是**维护者**凭据进入 APK，用户自带凭据存于本机并不违反 D028，但属于用户知情承担的风险。最小调整：正式 BYOK UI 说明“使用最小权限子账号/专用 key”，并把“用户自建临时 token 服务（可选）”列为以后 Self-hosted/网关场景的配置项；本批不改决策。
+  2. **BYOK 与官方安全建议的张力**：Alibaba 官方建议移动端由后端发放临时 key；Tencent 签名依赖长期 SecretKey。D028 禁止的是**维护者**凭据进入 APK，用户自带凭据存于本机并不违反 D028，但属于用户知情承担的风险。处理方式：Direct BYOK 与可选 Credential Broker / Proxy 两条路径并存（§5.5）；正式 BYOK UI 建议“使用最小权限子账号/专用 key”；V1 不要求、不实现 broker；本批不改决策。
   3. **Self-hosted 的 TLS/明文与证书策略**是 Android release 构建的真实约束（§3.4），需在 Self-hosted 设置设计时单独决定。
 
 ## 7. 未解决问题
 
 - Doubao 官方价格、试用额度、临时 token：火山引擎文档本次无法抓取。
-- Alibaba：Qwen-Audio-3.x 免费额度；`fun-asr-realtime` 与 `qwen3-asr-flash-realtime` 价格；数据保存内容/期限/地域。
+- Alibaba：Qwen-Audio-3.x 是否支持 AOQ；AOQ SDK 的外部 PCM 输入 API、token 有效期、版本与体积；Qwen-Audio-3.x 免费额度；`fun-asr-realtime` 与 `qwen3-asr-flash-realtime` 价格；数据保存内容/期限/地域。
 - Tencent：STS 临时凭据是否可用于实时 WebSocket；云 API（非 SDK）的数据保留与训练使用条款。
 - FunASR `MODEL_LICENSE` 与模型卡 Apache-2.0 metadata 的关系（逐模型核对）。
 - sherpa-onnx 可用于 Self-hosted 的中文/中英 streaming 模型及其权重许可；官方 server Docker 镜像是否存在。
