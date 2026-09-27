@@ -151,10 +151,11 @@ Long-press Space ──┘
 
 两种入口共用同一个 Voice Input 会话及其 start/stop/cancel 操作：
 
-- 麦克风按钮：点击开始，再次点击停止，随后等待最终识别结果；
-- 空格键：按住开始，正常松开停止并等待最终识别结果；按住期间上滑进入取消状态，松开则取消；
+- 麦克风按钮：点击开始；active session 显示共享 Voice Session Panel，并提供“取消 / 完成”；“完成”停止录音并等待最终识别结果，“取消”立即放弃本次输入；
+- 空格键：按住开始，正常松开停止并等待最终识别结果；按住期间上滑越过阈值进入 cancel-armed，滑回阈值内恢复正常 finish 状态，越界状态下松开才取消；
+- active Voice session 期间，Voice Session Panel 覆盖主键盘按键区域但不得销毁正在持有 Space gesture 的 keyboard/gesture owner；状态提示放在手指不会遮挡的位置；
 - stop 表示结束录音并等待 final transcript；cancel 表示放弃本次输入，清除临时 partial transcript，不提交文本，并丢弃迟到的回调；
-- 上滑取消应显示明确反馈并设置防误触阈值，距离与反馈样式待真机验证。
+- Direct/Fcitx-owned Audio Capture 能提供 microphone input level 时，Panel 显示由真实 PCM 音量级驱动的实时波形/电平；UI 只消费归一化 level，不取得或拥有 PCM/AudioRecord。System ASR 等不能提供 level 的 backend 使用不依赖 PCM 的静态 Listening indicator。
 
 长按 Space 作为 `SpaceLongPressBehavior.VoiceInput` 接入统一 Voice Input flow，不建立第二套 pipeline。Phase 4B.2 已实现 gesture Down/Move/Up：长按阈值达到 → start，正常松开 → stop，按住上滑越过阈值 → cancel；未显式保存该设置的新安装默认使用 VoiceInput，已有用户已保存的选择保持不变。麦克风与 Space 共用同一个 `VoiceInputSession` 状态：Listening/Recording、Cancel-armed、Processing/Recognizing 均应提供明确反馈。实现提交与真机状态见 ROADMAP。
 
@@ -236,7 +237,7 @@ Raw Transcript
 
 PoC 使用某个 Provider 不得使 Voice Trigger、Audio Capture 或 IME 层绑定该 Provider。对于 Android System ASR，不强制要求 Fcitx5 提供 PCM；对于 direct cloud/local Provider，使用最小的 Fcitx5-owned Audio Capture 边界，不提前建立复杂 Provider framework。
 
-Provider 逻辑分类与选择见 D028：Phase 4B.3a 选定 Doubao Seed-ASR 2.0 作为首个真实 Direct Cloud ASR PoC 的 Provider/路径，并已在 vivo X100 Pro 与 Redmi K90 Pro Max 完成 Direct Cloud E2E 真机验证；这**不**表示 Doubao 是正式/默认 ASR Provider。正式默认 Provider 仍未决定。Local ASR 在进入 Fcitx 集成前先做窄范围 runtime/model checkpoint：当前优先以 sherpa-onnx 作为 runtime 候选，对比适合输入法低延迟的中文 streaming Zipformer INT8 与高质量本地候选 FunASR Nano INT8；具体模型不得在实测前冻结。`android.permission.INTERNET` 在 capture-only 的 Phase 4B.1 中有意未声明；Phase 4B.3a 的真实云端 ASR 集成需要时可以增加，其数据流须满足第 11 节；这不意味着 Local ASR 需要联网。云端 Provider 采用 BYOK；API Key/credential 必须是 **Provider-specific runtime configuration**：各 Provider 独立配置、独立安全存储、独立使用，切换 Provider 不删除其他 Provider 已保存凭据，也不得跨 Provider 复用凭据；Local Provider 不需要云端凭据；ASR 与 LLM 的 Provider/credential 完全分离。维护者凭据不得进入 APK、仓库、CI 或 release，CI 与公开 APK 无需维护者凭据即可构建。Provider 的普通配置（model/endpoint 等）与 secret storage 应逻辑分离；secret 默认遮蔽，不得进入日志、普通配置导出或诊断信息。具体 Android 安全存储 API 在实现前按最新 Android/fcitx5-android 源码核实。详见 D028/D029。
+Provider 逻辑分类与选择见 D028：Phase 4B.3a 选定 Doubao Seed-ASR 2.0 作为首个真实 Direct Cloud ASR PoC 的 Provider/路径，并已在 vivo X100 Pro 与 Redmi K90 Pro Max 完成 Direct Cloud E2E 真机验证；这**不**表示 Doubao 是正式/默认 ASR Provider。正式默认 Provider 仍未决定。Local ASR 的窄范围 runtime/model checkpoint 已完成：当前以 sherpa-onnx 作为首个 runtime 候选，并保留两个代表性模型进入同条件真机 A/B PoC：A) streaming Zipformer zh INT8（OnlineRecognizer，真流式、约 168 MB），仅作 research/device-evaluation，模型权重许可未澄清前不得进入正式 release/distribution；B) FunASR Nano INT8（OfflineRecognizer，约 1 GB），作为高质量/多语言本地候选。A/B 均未被选定为正式或默认 Local ASR。`android.permission.INTERNET` 在 capture-only 的 Phase 4B.1 中有意未声明；Phase 4B.3a 的真实云端 ASR 集成需要时可以增加，其数据流须满足第 11 节；这不意味着 Local ASR 需要联网。云端 Provider 采用 BYOK；API Key/credential 必须是 **Provider-specific runtime configuration**：各 Provider 独立配置、独立安全存储、独立使用，切换 Provider 不删除其他 Provider 已保存凭据，也不得跨 Provider 复用凭据；Local Provider 不需要云端凭据；ASR 与 LLM 的 Provider/credential 完全分离。维护者凭据不得进入 APK、仓库、CI 或 release，CI 与公开 APK 无需维护者凭据即可构建。Provider 的普通配置（model/endpoint 等）与 secret storage 应逻辑分离；secret 默认遮蔽，不得进入日志、普通配置导出或诊断信息。具体 Android 安全存储 API 在实现前按最新 Android/fcitx5-android 源码核实。详见 D028/D029。
 
 ### 9.1 正式 Android Provider 设置与 Local Model Manager
 
@@ -245,6 +246,8 @@ Provider 逻辑分类与选择见 D028：Phase 4B.3a 选定 Doubao Seed-ASR 2.0 
 Local ASR 的 **Provider / runtime / model** 必须区分：例如 Local Provider 可使用 sherpa-onnx runtime，而 Zipformer、FunASR Nano 等是具体 model；runtime 可用不等于任一模型已获准打包或再分发，模型许可须逐一核对。
 
 正式版应提供 Local Model Manager/Downloader，至少覆盖 model catalog、大小/版本/License 展示、下载/重试（是否支持暂停/断点续传按实现验证）、完整性校验、原子安装、更新与删除。大型 Local 模型原则上不因启用 Voice 而强制内置 APK；模型安装完成后，Local ASR 的日常识别应能完全离线工作。Downloader/Model Manager 不属于 4B.3b 最小 PoC，须在实际 runtime/model 的文件结构、加载方式和许可确认后设计。
+
+4B.3b A/B PoC 的模型均不打包进 APK，也不实现下载器；使用固定模型文件/hash，通过 `adb` 放入测试设备可访问的应用目录。正式产品不要求用户使用 adb，而是在后续 Model Manager/Downloader 中按需获取已通过许可审查的模型。A 的模型权重许可未明确前，不得进入正式模型目录、release artifact 或由项目提供下载。第三方 runtime、模型与训练数据许可必须分层记录；Local ASR 引入前建立并维护 `docs/THIRD_PARTY_LICENSES.md`。
 
 ## 10. ASR 与 LLM 解耦
 
