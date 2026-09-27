@@ -217,8 +217,9 @@ Voice Input Flow
 internal VoiceBackend
 ├─ SystemAsrBackend → SpeechRecognizer → RecognitionService
 └─ DirectAsrBackend → Fcitx5-owned Audio Capture
-                      ├─ Direct Cloud ASR → Provider API
-                      └─ Local/Self-hosted → local/remote engine
+                      ├─ Local（如 sherpa-onnx）→ on-device engine
+                      ├─ Cloud / BYOK → Provider API
+                      └─ Custom（OpenAI-compatible / self-hosted endpoint）→ custom endpoint
 ↓
 Raw Transcript
 ```
@@ -235,7 +236,7 @@ Raw Transcript
 
 PoC 使用某个 Provider 不得使 Voice Trigger、Audio Capture 或 IME 层绑定该 Provider。对于 Android System ASR，不强制要求 Fcitx5 提供 PCM；对于 direct cloud/local Provider，使用最小的 Fcitx5-owned Audio Capture 边界，不提前建立复杂 Provider framework。
 
-当前不选择默认 Provider，也不选择首个真实 Direct ASR Provider；Provider selection 是 capture 关口（8.2）通过后的独立研究。当前 Android 应用未声明 `android.permission.INTERNET`，暂不增加；云端/自建 Provider 所需的联网权限及其隐私影响，在 Provider selection checkpoint 一并决定。
+Provider 逻辑分类与选择见 D028：Phase 4B.3a 选定 Doubao Seed-ASR 2.0 作为首个真实 Direct Cloud ASR PoC 的 Provider/路径；这**不**表示 Doubao 是正式/默认 ASR Provider。正式默认 Provider 仍未决定，须在 Doubao 云端 PoC（4B.3a）、sherpa-onnx Local PoC（4B.3b）与 Default Provider checkpoint 之后依据实测决定。`android.permission.INTERNET` 在 capture-only 的 Phase 4B.1 中有意未声明；Phase 4B.3a 的真实云端 ASR 集成需要时可以增加，其数据流须满足第 11 节；这不意味着 Local ASR 需要联网。正式公开构建不得在 Git 或 APK 中内置维护者持有的长期云端 ASR 凭据。
 
 ## 10. ASR 与 LLM 解耦
 
