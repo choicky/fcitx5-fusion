@@ -93,3 +93,7 @@
 - `d7cb83f2`（设置页：分离后不再渲染；导入等待中的模型写入 saved state）CI `36347967249` PASS；`7bc28523`（候选 C）CI `36347362463` PASS。
 - `91dd1708`（可选 OpenAI 兼容 `/v1/audio/transcriptions` 整段上传适配器，端点策略按协议区分 wss/https，实例增加 model 字段）已推送，CI 进行中。验证：WAV 头、multipart、响应解析、端点策略的单测，以及与本地仿真端点的往返（32000 字节）。真实兼容服务器 UNTESTED。本地纯测试 101 项通过。
 - 新增 `docs/asr-productization-handoff.md`：恢复步骤、互通测试命令、需所有者决定的三件事（B 下载依据、release 是否带 Local runtime、候选 C 转正）。
+
+## 2026-09-27T21:53Z — sherpa-onnx C++ 服务器互通
+
+- 官方 v1.13.8 发布包 linux-aarch64-shared-cpu 中的 C++ 在线 websocket 服务器（会发 is_eof）本机运行；同一 Kotlin 客户端送 3 个 wav：32/17/56 partial，final 正确。sherpa-onnx 的 Python 与 C++ 两种上游服务器均 INTEROP-VERIFIED。
