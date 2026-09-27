@@ -97,4 +97,6 @@ APK：`fcitx5-android` `phase4-voice-poc` @ `fb3b0c26`（debug）。
 - 设备限制：Redmi 上 System ASR 不可用（Phase 4 曾观察到 Xiaomi RecognitionService 返回 error 9），导致 Redmi 的披露/授权/System 识别路径无法验证；这些路径仅在 vivo 上验证。
 - 未确认：Redmi 上隐藏的直接原因是 `SpeechRecognizer.isRecognitionAvailable()` 返回 false，还是保留了先前的“不允许”状态（未能 `pm clear`）。两者都是设计内行为，不是缺陷；如需区分，可用 `adb shell cmd package query-services -a android.speech.RecognitionService` 与 logcat 核对。
 
-未完成/未验证：release 构建编译（`:app:assembleRelease`，本环境无 JDK/Android SDK，待定）。D035 运行时 fallback 未实现。Candidate B 的历史设备测试基线仍为 `a8a0e1b3`。
+release 构建：本地编译通过（2026-09-28，项目所有者在 Windows 上对 `fb3b0c26` 执行 arm64 `.\gradlew.bat :app:assembleRelease`：BUILD SUCCESSFUL，6m 22s，272 tasks：264 executed、8 up-to-date）；release APK 的安装与设备运行行为未测试。这不是 release 发布，也不是 release 设备验收 PASS；上述设备结果均来自 debug APK。
+
+未完成/未验证：release APK 的安装与设备运行行为。D035 运行时 fallback 未实现。Candidate B 的历史设备测试基线仍为 `a8a0e1b3`。
