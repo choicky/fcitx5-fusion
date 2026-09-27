@@ -252,3 +252,12 @@ Android 侧对照基线：`choicky/fcitx5-android` `phase4-voice-poc` @ `a8a0e1b
 - 不改变：`VoiceInputFlow` / `VoiceBackend` / `AudioCapture` / Trigger ≠ Provider / 单一 Voice pipeline / 无 JNI。
 - 以后 PoC 预计只新增 Provider-specific backend 文件（debug-only），模式同 `DoubaoAsrBackend`。
 - 以后需补的小点（不在本批）：Direct 错误的“建立前/后”标记（D035）；Self-hosted 的明文/自签证书策略；release 构建的 `INTERNET` 权限与披露。
+
+## 9. 实现期间补充的源码/互通事实（2026-09-27，Phase 4C）
+
+- FunASR v1.4.16 Python 实时服务器（`funasr_wss_server.py`）只接受提供 `binary` WebSocket 子协议的连接，否则 HTTP 400；其官方客户端总是发送该子协议。协议文档未写明。结束时服务器回 `{"is_end": true, "is_final": …}` 确认；客户端应以 60 ms 为包发送 PCM16（在线模型每 10 包解码一次）。
+- Fun-ASR-Nano 服务器（`funasr/bin/realtime_ws.py`）协议：`START` → `{"event":"started"}`，int16 PCM，`STOP` → `is_final` 结果与 `{"event":"stopped"}`；每条结果携带全部已锁定句子加当前 partial。与 2-pass 协议不同。
+- sherpa-onnx 服务器按端点切段；英文词跨段拼接须补空格（互通中发现）。
+- Qwen 官方事件示例：`result-generated` 带 `sentence_id`、`sentence_end`，心跳 `sentence_id` 为 0；`task-failed` 带 `error_code`/`error_message`。
+- Tencent 官方示例：握手成功返回 `code` 0，签名原文使用未编码的参数值，仅签名结果做 URL 编码；`final` 1 表示结束。
+- 以上客户端与验证状态见 `docs/asr-productization-plan.md` §2。

@@ -33,19 +33,25 @@
 
 OpenAI-compatible 整段转写是可选独立适配器，不在本计划必需范围。
 
-## 2. 服务与模型状态（2026-09-27T18:10Z 起点）
+## 2. 服务与模型状态
 
-| 项 | 状态 |
-|---|---|
-| System | 旧设置基础（`fb3b0c26`）已设备验收；修订后的 UI 未实现 |
-| Local A（streaming Zipformer zh INT8） | 研究；权重许可未声明 → 仅导入，不下载/不镜像/不打包 |
-| Local B（FunASR Nano INT8） | 研究；约 1 GB、Redmi 约 2 GB PSS、34–39 s 空 final（`max_total_len` 512）；许可元数据三层 Apache-2.0，导出者 GitHub 无 LICENSE 文件 |
-| Doubao | debug PoC（build-time 凭据）双机 PASS；产品 BYOK 未实现 |
-| Qwen | 未实现；无凭据 |
-| Tencent | 未实现；无凭据 |
-| FunASR 2-pass | 未实现 |
-| Fun-ASR-Nano Server | 未实现；上游服务器需 GPU |
-| sherpa-onnx Server | 未实现 |
+起点状态见 git 历史（2026-09-27T18:10Z 版本）。2026-09-27T19:40Z 更新（Android `e9035b81`）：
+
+| 项 | 批次 / 提交 | 状态 |
+|---|---|---|
+| 设置结构、首次推荐、迁移、当前/实际使用 | A1 `1f62c3a0` | IMPLEMENTED，LOCAL-JVM-VERIFIED，CI-VERIFIED（`36339927619`）；DEVICE UNTESTED |
+| 就绪信号 + D035 fallback | A2 `820616b0` | IMPLEMENTED，LOCAL-JVM-VERIFIED，CI-VERIFIED（`36340502719`）；无正式 Local 模型 → 实际不会回落；DEVICE UNTESTED |
+| System | A1 | 沿用旧披露/授权；新 UI DEVICE UNTESTED |
+| Local A（streaming Zipformer） | A4 `4a8f7856` + `5c71b109` | 研究模型；仅导入（许可门槛未过）；CI-VERIFIED（`36343281876`）；DEVICE UNTESTED |
+| Local B（FunASR Nano INT8） | A4 | 研究模型；从 HF 固定 revision 下载——真实上游下载 + SHA-256 + 原子安装在本机 JVM 验证；已测限制照旧；DEVICE UNTESTED |
+| Doubao（BYOK） | A3 `849f0eda` | IMPLEMENTED，CI-VERIFIED（`36340993548`）；协议沿用 4B.3a 已双机验证的 backend；用户凭据路径 DEVICE/SERVICE UNTESTED |
+| Qwen（Model Studio） | `04785c66` | IMPLEMENTED，CI-VERIFIED（`36344526847`，含于其后提交）；EMULATION-VERIFIED；真实服务 UNTESTED（无凭据） |
+| Tencent | `9d9b9dba` | IMPLEMENTED；签名与独立实现一致；EMULATION-VERIFIED；真实服务 UNTESTED（无凭据）；CI 见工作日志 |
+| sherpa-onnx Server | A5 `21f37e3c` | IMPLEMENTED，CI-VERIFIED（`36341823349`），**INTEROP-VERIFIED**（上游 Python 服务器）；Android DEVICE UNTESTED |
+| FunASR 2-pass | `5fcc495f` | IMPLEMENTED，CI-VERIFIED（`36344526847`），**INTEROP-VERIFIED**（上游 Python 2pass 服务器，CPU）；C++ 服务器 UNTESTED |
+| Fun-ASR-Nano Server | `e9035b81` | IMPLEMENTED；EMULATION-VERIFIED；上游服务器需 GPU → INTEROP UNTESTED；CI 见工作日志 |
+
+设备、云凭据与 GPU 服务器的验收步骤：`docs/asr-productization-acceptance.md`。
 
 ## 3. 环境限制（如实）
 

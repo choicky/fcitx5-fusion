@@ -55,3 +55,14 @@
 - FunASR 2-pass：已写客户端（60 ms 包、2pass-online 追加、2pass-offline 替换整句、is_end 结束，按上游 v1.4.16 `funasr_wss_client.py` 的组句逻辑）；协议单测通过。本机上游 Python 服务器（CPU）正在下载模型，互通测试待服务器就绪。
 - 环境事故：scratchpad 所在 /tmp 是 5.9 GB tmpfs（占用内存），模型与 venv 把它写满，导致工具输出丢失。已删除已验证的 B 下载副本，并把大文件移到 `~/asr-scratch`（仓库外，约 4 GB，结束时应清理）。
 - 下一步：FunASR 互通 → 提交；Tencent 实时 ASR 客户端与设置；Fun-ASR-Nano（上游需 GPU，只做协议）。
+
+## 2026-09-27T19:41Z — A6–A9 全部实现；文档与验收脚本
+
+- Qwen `04785c66` 与 FunASR 2-pass `5fcc495f`：CI `36344526847` PASS（Qwen 的单独 CI run `36344164441` 因工作流 `cancel-in-progress` 被后续推送取消，其提交包含在该通过的 run 中）。
+- FunASR 2-pass **INTEROP-VERIFIED**：上游 FunASR 1.4.16 Python 2pass 服务器（CPU，默认 Paraformer-large 在线/离线 + FSMN-VAD + CT-punc）本机运行；Kotlin 客户端送 3 个 wav：8/30/13 个 partial，final 带离线修正后的标点。互通中发现并修复：服务器要求 `binary` 子协议（否则 HTTP 400），文档未写。
+- Tencent `9d9b9dba`：签名与独立 Python HMAC-SHA1 实现一致；协议仿真器独立复核签名、握手确认前不发音频、错误密钥在就绪前失败（4002）。真实服务 UNTESTED。
+- Fun-ASR-Nano `e9035b81`：按 `realtime_ws.py` 源码实现 START/STOP 协议；上游服务器需 GPU，只做仿真验证。
+- CI：`e9035b81` 的 run 进行中（覆盖 Tencent + Nano）。
+- 文档：计划 §2 状态表按服务/模型更新；新增 `docs/asr-productization-acceptance.md`（设备、凭据、服务器验收步骤与预期，实测列全空）；THIRD_PARTY 记录 A 仅导入、B 从固定上游下载（依据平台元数据，待所有者复核）；network checkpoint §9 记录实现期间的源码/互通事实。
+- 本地纯 JVM 测试：95 项通过（另有 interop/emulator 测试按环境变量启用）。
+- 下一步：等 CI；复核 Android UI 代码中的风险点（生命周期、线程、Keystore 异常）；为 Local 研究模型 fallback 设计保持 D035/D037 不变。

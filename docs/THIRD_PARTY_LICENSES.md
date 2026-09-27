@@ -18,8 +18,8 @@
 | gaboolic/moqima-tables / moqima_gb18030.txt | MoQi table | MIT；固定 commit 6d8ba8f1c57466f358e682baefe11bbd0fe389ab | 可商业使用/再分发；保留 copyright + MIT license | 已验证项目基线 |
 | sherpa-onnx v1.13.8 | Local ASR runtime candidate | Apache-2.0 | PoC runtime；正式分发时保留适用 license/copyright/NOTICE | 4B.3b-0 已核 |
 | ONNX Runtime used by sherpa-onnx | inference runtime | MIT（checkpoint 中尚未直接读取最终引入版本 LICENSE） | PoC 前/正式引入时核最终 artifact 与 LICENSE | 待最终 artifact 复核 |
-| A: sherpa-onnx-streaming-zipformer-zh-int8-2025-06-30 | Local ASR model A / OnlineRecognizer | **模型权重未声明明确 license**；训练数据含若干 non-commercial 条款，条款对权重的法律效果未判定 | **research/device-evaluation only**；许可澄清前不得进入 release、正式模型目录或由项目提供下载 | BLOCKED for distribution |
-| B: sherpa-onnx-funasr-nano-int8-2025-12-30 | Local ASR model B / OfflineRecognizer | Fun-ASR-Nano HF metadata Apache-2.0；第三方 ONNX export metadata Apache-2.0；Qwen3-0.6B Apache-2.0 | 4B.3b PoC 已完成；当前 artifact 未被选为正式/默认模型（D036：体积/内存与长语音失败，非许可原因）。若将来进入正式分发，仍须读取/保存第三方 ONNX 导出原始 LICENSE，并核实际打包文件 | 部分验证，release gate pending |
+| A: sherpa-onnx-streaming-zipformer-zh-int8-2025-06-30 | Local ASR model A / OnlineRecognizer | **模型权重未声明明确 license**；训练数据含若干 non-commercial 条款，条款对权重的法律效果未判定 | **research/device-evaluation only**；许可澄清前不得进入 release、正式模型目录或由项目提供下载 | BLOCKED for distribution；D037 Model Manager 仅支持用户导入（固定 SHA-256 校验），不下载 |
+| B: sherpa-onnx-funasr-nano-int8-2025-12-30 | Local ASR model B / OfflineRecognizer | Fun-ASR-Nano HF metadata Apache-2.0；第三方 ONNX export metadata Apache-2.0；Qwen3-0.6B Apache-2.0 | 4B.3b PoC 已完成；当前 artifact 未被选为正式/默认模型（D036：体积/内存与长语音失败，非许可原因）。D037：Model Manager 从上游固定 revision（HF csukuangfj @ `6f16bd37`）逐文件下载并校验 SHA-256，项目不托管、不镜像；UI 显示 Apache-2.0 归属。导出者 GitHub 仓库（Wasser1462/FunASR-nano-onnx）无 LICENSE 文件，许可依据为 ModelScope 元数据——此下载决定待所有者复核 | 部分验证；下载许可依据为平台元数据 |
 | Doubao Seed-ASR 2.0 API | Direct Cloud ASR PoC | 服务/API条款，不是 OSS model/runtime license | BYOK；维护者 credential 不进入 repo/APK/CI/release；正式产品按届时服务条款复核 | PoC only |
 
 ## Phase 4B.3b PoC policy
@@ -40,3 +40,5 @@
 3. 核 LGPL covered code 的 source availability 与修改源码对应关系；
 4. 对每个随包或由产品提供下载的 ASR model 单独核权重 license 与 redistribution；
 5. 对许可证不明确的模型从 release artifact、catalog 与项目托管下载中剥离。
+| Self-hosted 服务器（sherpa-onnx、FunASR、Fun-ASR-Nano） | 用户自建的识别服务 | 本项目只实现客户端协议；服务器、模型由用户自行部署与取得许可 | 不随 APK 分发；互通测试所用的上游模型仅用于本机测试，未提交、未分发 | 不适用于分发 |
+| Qwen（阿里云百炼）、腾讯云实时语音识别 | Managed Cloud 服务 | 服务条款，不是开源许可 | BYOK；维护者凭据不进入仓库/APK/CI/release | 服务条款未逐条复核 |

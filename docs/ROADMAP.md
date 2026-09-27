@@ -446,7 +446,7 @@ Android 架构稳定后再评估 Windows、Linux、macOS、iOS，并保持 Trigg
 3. **Managed Cloud + Self-hosted checkpoint**（D033；文档研究已先行完成，PoC 待定，见 `docs/network-asr-checkpoint.md`）；与之独立的 Local 线：**识别/验证 Local ASR 正式发布候选**（D036）；
 4. ~~Provider Settings Foundation 设备验收~~：已关闭（vivo 全部通过；Redmi 可测部分通过，System ASR 路径因设备限制不可测）；下一个最小实现批次待定（修订后的多服务设置/首次推荐、D035 运行时 fallback、新 Provider 均尚未实现）；release 构建已本地编译通过，release APK 安装与设备运行未测试。
 
-5. **ASR 服务产品化（Phase 4C，所有者 2026-09-28 指示）**：四类服务可由普通用户配置；多批次计划见 `docs/asr-productization-plan.md`，进度与证据见 `docs/asr-productization-worklog.md`；Model Manager 以研究模型身份提供 A/B（D037）。
+5. **ASR 服务产品化（Phase 4C，所有者 2026-09-28 指示）**：四类服务可由普通用户配置；多批次计划见 `docs/asr-productization-plan.md`，进度与证据见 `docs/asr-productization-worklog.md`；Model Manager 以研究模型身份提供 A/B（D037）。**截至 Android `e9035b81`：A1–A9 均已实现并推送**——设置/推荐/迁移、就绪信号与 D035 fallback、凭据库、豆包/Qwen/腾讯 BYOK、Model Manager、sherpa-onnx/FunASR 2-pass/Fun-ASR-Nano 自建实例。sherpa-onnx 与 FunASR 2-pass 与上游服务器本机互通验证；Qwen/腾讯/Nano 仅协议仿真；**所有 Android UI 与真实云端均未经设备/服务验证**，验收脚本见 `docs/asr-productization-acceptance.md`。
 
 各项背景：
 
