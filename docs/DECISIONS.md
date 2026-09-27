@@ -307,7 +307,7 @@ ASR Provider
   - 若能复用已验证的 Fcitx-owned `AudioRecord` 路径并让麦克风所有权留在 Fcitx，优先直接 WebSocket 集成，而非引入 Provider SDK；编码前仍须核对最新官方 API 与最新 Android 源码。
   - 真实云端 Provider 实现需要时可增加 `android.permission.INTERNET`（Phase 4B.1 capture-only 批次有意不含）。
   - 通过 4B.3a 只证明 Cloud Direct ASR 端到端路径可行，**不**选定 Doubao 为正式默认 Provider。
-- **4B.3b — sherpa-onnx Local PoC**：沿用同一 Voice flow 与 Direct ASR 结果语义，尽量用同一固定语音测试语料与 Doubao 对比。4B.3b 之前不为覆盖面增加其他云端 Provider；若日后需要第二个云端 benchmark，Qwen 为首选。
+- **4B.3b — sherpa-onnx Local A/B PoC**：4B.3b-0 研究 checkpoint 已完成。保留 A) streaming Zipformer zh INT8 / `OnlineRecognizer` 与 B) FunASR Nano INT8 / `OfflineRecognizer` 同时进入最小真机比较；两者沿用同一 Voice flow、Fcitx-owned `AudioCapture` 与结果语义，使用尽可能相同的设备、语料和测试条件。A 仅作 research/device-evaluation，模型权重许可未澄清前不得进入正式 release/distribution；B 也只是候选，不因许可较清晰而预先成为默认。PoC 模型通过 `adb` 外置，不打包 APK、不实现 Downloader。4B.3b 之前不为覆盖面增加其他云端 Provider；若日后需要第二个云端 benchmark，Qwen 为首选。
 - **4B.3c — realtime preedit UX PoC（后续、有条件）**：provisional 结果 → Fcitx preedit → 修订 → final 替换；须单独研究 preedit 所有权、与现有 composition 及候选的交互、provisional 修订/替换、stop 到 final 的过渡、cancel 回滚/丢弃语义。收到 provisional 结果不代表应经现有 composition 路径显示或提交。
 - **Default Provider checkpoint**（4B.3a 与 4B.3b 之后）：若 sherpa-onnx 的质量、性能与模型约束可接受，可将 Local 冻结为正式默认 Provider；否则依据实测证据重新评估默认 Provider/UX。结果不预先决定。
 
@@ -332,3 +332,30 @@ Local ASR 的 Provider、runtime、model 分层管理。正式版需要 Local Mo
 麦克风/Voice Trigger 的可用性必须依据当前 configured backend 判断；只有 configured backend 为 System ASR 时，`SpeechRecognizer.isRecognitionAvailable()` 才参与可用性判断。Direct Cloud/Local backend 不得因 OEM/system RecognitionService 不可用而隐藏 Voice Trigger。
 
 该规则在 `fcitx5-android` commit `8accd92f` 中通过统一 `configuredBackend` 的 visibility/start 判断实现。它是 D026/D027 “System ASR 不得成为正式 Voice 唯一路径”的 UI/dispatch 落地，不意味着当前 debug backend selector 已是正式 Provider settings；正式配置见 D029。
+
+## D031 — Active Voice 使用共享 Voice Session Panel 与可选真实音量可视化
+
+**状态：Accepted / Implemented，双机 device gate pending（2026-09-27）**
+
+麦克风按钮与长按 Space 继续共用一个 `VoiceInputSession` / Voice flow。active session 期间使用共享 Voice Session Panel 覆盖主键盘按键区域；不得为 Mic/Space 建立两套状态机，也不得通过移除正在持有 Space gesture 的 keyboard/gesture owner 来显示 Panel。
+
+- Mic：Panel 提供“取消 / 完成”；取消立即 discard，完成 stop 后进入 Recognizing，final 后恢复键盘并提交。
+- Space：Panel 显示“松开结束 · 上滑取消”；越过阈值显示“松开取消”，滑回阈值内必须恢复 finish 状态；松开时按当时状态 stop 或 cancel。
+- 能提供 Fcitx-owned PCM 的 backend 可通过 optional audio-level event 提供归一化 microphone level；UI 仅消费 level，不取得 PCM、不拥有或另开 `AudioRecord`。System ASR 等无 level backend 使用静态 Listening indicator，识别功能不得依赖波形。
+- 实现 commit `89e964885af14f87832a2008ca1fa9271241364e` 已通过代码审查与 CI run `36318396011`；是否在 Panel overlay 后仍完整保留 Space Move/Up gesture，以及双机实际波形/交互效果，仍以 vivo X100 Pro + Redmi K90 Pro Max 真机 gate 为准。
+
+## D032 — Local ASR 第一轮采用 A/B comparative device PoC；PoC 模型外置
+
+**状态：Accepted（2026-09-27）**
+
+4B.3b-0 研究后，不在纸面阶段从 A/B 中选出唯一 Local ASR，而让两者同时进入第一轮真机比较：
+
+- A：`sherpa-onnx-streaming-zipformer-zh-int8-2025-06-30`，`OnlineRecognizer`，真 streaming，约 168 MB。用于验证低延迟/实时 partial/资源基准；模型权重许可未明确，因此仅限 research/device-evaluation，在许可澄清前不得作为正式模型分发或由项目提供下载。
+- B：`sherpa-onnx-funasr-nano-int8-2025-12-30`，`OfflineRecognizer`，约 1 GB。用于验证高质量/中英混合候选在 Android IME 中的模型加载、RAM 与 stop→final 可行性。B 不是预选默认模型。
+
+A/B 均复用 D027 的 Voice flow、Fcitx-owned `AudioCapture` 与 Local ASR 边界；不得因 B 为 offline 而把公共 Local ASR abstraction 设计成 offline-only。PoC 使用固定模型文件/hash，通过 `adb` 放入测试设备，不把模型打进 APK、不实现 Downloader。正式版由 D029 的 Model Manager/Downloader 按需获取通过许可审查的模型。
+
+同设备/同语料重点比较 model load、peak/steady RAM、CPU/发热、3s/10s/30s stop→final、RTF、连续 session、中文/中英混合、Mic/Space/cancel 与完全离线；A 另测首个 partial、partial 更新与 streaming/finalization latency。A/B 均不因此被选定为正式/默认 Local ASR；若两者均不满足产品要求，再依据实测证据启动第二轮模型研究。
+
+第三方许可作为 Local ASR 引入 gate：runtime、model weights、必要时 training-data provenance 分层记录，并维护 `docs/THIRD_PARTY_LICENSES.md`。
+
