@@ -411,7 +411,7 @@ Self-hosted checkpoint 须依据当时上游源码/文档核实：实际 streami
 
 ## D034 — 语音识别服务设置方向与默认 Auto
 
-**状态：Accepted（2026-09-27）；UI 未实现**
+**状态：Accepted（2026-09-27）；UI 未实现；2026-09-27 修订：System ASR 需事先授权**
 
 - 面向用户的术语优先使用“语音识别服务”，不要求普通用户理解“ASR Provider”。
 - 顶层 Voice 设置方向（细化 D029，不是最终 UI 规格）：
@@ -431,35 +431,44 @@ Self-hosted checkpoint 须依据当时上游源码/文档核实：实际 streami
 - 服务选择按数据/处理去向分组：自动（推荐）、设备端 / Local、云端服务 / Managed Cloud、自托管 / Self-hosted、系统 / Android System ASR。凭据、endpoint、model 等放在各 Provider 自己的设置中；Local 提供模型管理而非 API 凭据（D029）。
 - 产品目标“开箱即用优先”。默认值 **ASR Provider = Auto**，初始 Auto 策略：
   1. 已安装且健康的 Local 模型 → Local；
-  2. 否则 System ASR 可用 → System；
+  2. 否则 System ASR 可用：用户已授权 System ASR → System；尚未授权 → 使用前先显示一次性披露/授权（用户不授权则按第 3 步处理）；
   3. 否则提示当前没有可用的识别服务，并给出配置入口：安装 Local 模型、配置 Managed Cloud、配置 Self-hosted。
 - Auto **不得**静默选择 BYOK Managed Cloud Provider，也**不得**静默选择用户配置的 Self-hosted endpoint；这两类只在用户显式选择时使用。
+- **System ASR 授权**：System ASR 与 Local ASR 在隐私上不等价（见 D035）。使用 System ASR 需要用户**事先一次性授权**，不在每次识别或每次 fallback 时询问。未来设置可提供概念上类似“允许使用 Android 系统语音识别 [开/关]”的开关，并披露：该服务由 Android/设备系统服务提供；语音数据如何处理取决于该系统服务，可能涉及远程处理。最终文案与 UI 未冻结；用户显式选择“系统”作为服务时同样须展示该披露，其与授权开关的具体关系在 UI 设计时确定。
 - 未冻结：首次使用引导是否推荐/下载 Local 模型（等待 Local A/B checkpoint）；“健康”的具体判定；System 可用性判定沿用 D026/D030（存在 RecognitionService ≠ session 可用）。
 - 本决策细化 D028 的 Default Provider checkpoint：默认**设置**为 Auto；Local A/B checkpoint 仍决定 Local 模型是否及如何进入默认体验。
 
-## D035 — 自动 fallback：默认开启，只保持或缩小数据暴露边界
+## D035 — 自动 fallback：默认开启，不得未经授权扩大语音数据接收方
 
-**状态：Accepted（2026-09-27）；未实现**
+**状态：Accepted（2026-09-27）；未实现；2026-09-27 修订：System ASR 不视为与 Local 隐私等价**
 
-自动 fallback 默认开启。用户显式选择 Managed Cloud 或 Self-hosted 时：
+**核心隐私规则**：未经用户事先明确授权，自动 fallback 不得扩大可能接收用户语音数据的参与方/处理方集合。
+
+- **Local ASR** 是 Fcitx 控制的设备端处理。
+- **System ASR** 是独立的信任/数据处理边界：实现由 Android/OEM/system `RecognitionService` 控制，处理可能在本地也可能在远程；Fcitx 不得假定 System ASR 仅在本地处理。
+
+自动 fallback 默认开启。用户显式选择 Managed Cloud 或 Self-hosted，且发生 V1 范围内的启动/早期技术失败时：
 
 ```text
 Primary Managed Cloud / Self-hosted
   ↓ 技术失败
 Local ASR（若已安装且健康）
   ↓ 不可用/失败
-System ASR（若可用）
+System ASR（仅当用户已事先授权 System ASR）
   ↓
 识别失败
 ```
 
-用户显式选择 Local 时：Local →（失败）System ASR（若可用）→ 识别失败。
+Primary → Local 可自动发生，因为它缩小了外部数据处理边界；进入 System ASR 需要事先授权，因为其实际处理去向不受 Fcitx 控制。
 
-**核心隐私规则**：自动 fallback 可以保持或缩小用户所选的数据暴露边界，但不得静默扩大到新的第三方 ASR Provider。因此不得静默发生：Doubao → Alibaba、Alibaba → Tencent、Self-hosted → Managed Cloud、Local → Managed Cloud、System ASR → Managed Cloud 等。
+用户显式选择 Local 时：Local →（失败）System ASR（仅当已事先授权）→ 识别失败。不得静默认定 Local → System 在隐私上等价。
+
+授权为一次性事先授权（见 D034），不在每次 fallback 时询问；未授权时 fallback 链跳过 System ASR。
+
+同样不得静默发生：Doubao → Alibaba、Alibaba → Tencent、Self-hosted → Managed Cloud、Local → Managed Cloud、System ASR → Managed Cloud 等。
 
 **V1 范围**：只处理启动/早期技术失败——Provider 不可用、无网络/连接失败、endpoint 不可用、认证/服务初始化失败、Local 模型不可用/加载失败、可用识别会话建立前的早期超时。
 
 **V1 不实现**：会话中途跨 Provider 的 PCM replay/迁移；因识别质量看起来差而自动换 Provider 重识别；双 Provider 同时识别；把已采集音频静默重放给其他第三方。会话中途失败报告识别失败/允许重试，而不迁移会话。
 
 - fallback 发生时须可观测（D018），具体提示 UI 未冻结；关闭 fallback 的设置位置未冻结。
-- 待核实（实现前）：System ASR 的数据去向由 OEM/system `RecognitionService` 决定，可能是联网服务；Cloud/Self-hosted/Local → System 的 fallback 是否及如何满足上面的核心隐私规则（例如明确披露或在用户选择 Local 时的处理），须在实现前结合 OEM 行为确认。

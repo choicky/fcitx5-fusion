@@ -327,7 +327,7 @@ B. 由源码推断、需实机确认的风险：
 - [x] **4B.3b-0 — Local ASR runtime/model 窄 checkpoint：COMPLETE（2026-09-27）**。研究记录见 `docs/local-asr-checkpoint.md`。确认 sherpa-onnx v1.13.8 下：A = streaming Zipformer zh INT8 / `OnlineRecognizer` / 真 streaming / 约 168 MB；B = FunASR Nano INT8 / `OfflineRecognizer` / 非真 streaming / 约 1 GB。A 的权重许可未声明且训练数据许可存在进一步风险，故仅限 research/device-evaluation，许可澄清前不得进入正式 release/distribution；B 的许可链当前更清晰，但 Android RAM/load/stop→final 尚未实测。经后续复核，没有发现推翻 Online/Offline 核心结论的新证据；训练数据条款对模型权重的法律效果不作推断。决定见 D032：第一轮不从 A/B 纸面选唯一胜者，而让 A/B 同时进入 comparative device PoC；
 - [~] **4B.3b-1 — Local ASR A/B comparative device PoC：IMPLEMENTED（`204fc324` + `a8a0e1b3`，CI `36320274118` / `36323060020` PASS）；A 基础双机 gate PASS、测试已停止；B 待设备实测**（记录见 `docs/local-asr-checkpoint.md` §10；A 通过设备 gate 不代表被选为产品/发布模型，A 的许可阻碍不变）。原定范围：debug-only/arm64，复用现有 `AudioCapture` / `VoiceBackend` / `VoiceInputSession`，同时接入 A（Online）与 B（Offline），不得建立两套 Voice pipeline。模型不打包 APK、不实现 Downloader；固定文件/hash 后通过 `adb` 放入测试设备。vivo + Redmi 用同设备/同语料比较 model load、peak/steady RAM、CPU/发热、3s/10s/30s stop→final、RTF、连续 session、中文/中英混合、Mic/Space/cancel 与完全离线；A 另测 first partial、partial 更新、streaming/finalization latency。A/B 均不是正式/默认 Local ASR；若两者均不满足，再启动第二轮模型研究；
 - [ ] 4B.3c — realtime preedit UX PoC（后续、有条件，不属于 4B.3a）：provisional 结果 → Fcitx preedit → 修订 → final 替换；单独研究 preedit 所有权、与现有 composition/候选的交互、provisional 修订/替换、stop 到 final 的过渡、cancel 回滚/丢弃；
-- [x] **Provider 分类 / 设置 UX / 默认 Auto / 自动 fallback 规划 checkpoint：ACCEPTED（2026-09-27，D033–D035；纯文档，未实现）**：Provider 逻辑分类扩展为 System / Local / Managed Cloud / Self-hosted，所有 Provider 共用同一 VoiceInputFlow，Self-hosted 不建独立 pipeline；用户术语“语音识别服务”；默认 Auto = 健康的 Local → 可用的 System → 提示配置，Auto 不静默选择 BYOK Managed Cloud 或 Self-hosted；自动 fallback 默认开启，只保持或缩小数据暴露边界，V1 仅处理启动/早期技术失败，不做中途 PCM 迁移。
+- [x] **Provider 分类 / 设置 UX / 默认 Auto / 自动 fallback 规划 checkpoint：ACCEPTED（2026-09-27，D033–D035；纯文档，未实现）**：Provider 逻辑分类扩展为 System / Local / Managed Cloud / Self-hosted，所有 Provider 共用同一 VoiceInputFlow，Self-hosted 不建独立 pipeline；用户术语“语音识别服务”；默认 Auto = 健康的 Local → 可用且已授权的 System（未授权则先一次性披露/授权）→ 提示配置，Auto 不静默选择 BYOK Managed Cloud 或 Self-hosted；自动 fallback 默认开启，未经事先授权不得扩大语音数据接收方——System ASR 不视为与 Local 隐私等价，仅在用户已授权时进入 fallback 链；V1 仅处理启动/早期技术失败，不做中途 PCM 迁移。
 - [ ] **Local A/B checkpoint**（B 真机实测之后）：依据 A/B 实测与许可状态决定 Local 的下一步，包括是否及如何在首次使用引导中推荐/下载 Local 模型（D034 未冻结项）；若 A/B 均不满足，再启动第二轮模型研究。
 - [ ] **Managed Cloud + Self-hosted checkpoint**（Local A/B checkpoint 之后）：Managed Cloud 以 Doubao（已有基线）对比 Alibaba Qwen ASR 系列与 Tencent Realtime ASR；Self-hosted 研究 FunASR 2-pass / Paraformer、Fun-ASR-Nano Server、sherpa-onnx Server。比较维度与核实项见 D033；Cloud B/C 与 S1–S3 均尚无 PoC，不预选胜者。
 - [ ] Default Provider checkpoint：默认**设置**已定为 Auto（D034）；剩余问题（Local 模型是否进入默认体验、各 Provider 的正式地位）在上述两个 checkpoint 之后决定；不预设 sherpa-onnx runtime 或任何具体模型必然胜出，也不预设 Doubao 为默认。
@@ -383,7 +383,7 @@ B. 由源码推断、需实机确认的风险：
 - Managed Cloud（checkpoint 选出的候选）；
 - Self-hosted（含 OpenAI-compatible 等协议适配）；
 - Local；
-- Auto 与自动 fallback（D034/D035：仅启动/早期技术失败，不扩大数据暴露边界）；
+- Auto 与自动 fallback（D034/D035：仅启动/早期技术失败；未经授权不扩大语音数据接收方；System ASR 需事先一次性授权）；
 - streaming/non-streaming；
 - 中文质量、延迟和数据流。
 

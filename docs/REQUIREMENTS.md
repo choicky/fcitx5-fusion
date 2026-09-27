@@ -301,21 +301,27 @@ Local ASR 的 **Provider / runtime / model** 必须区分：例如 Local Provide
 产品目标为“开箱即用优先”，默认“语音识别服务”= 自动（Auto）。初始 Auto 策略：
 
 1. 已安装且健康的 Local 模型 → Local；
-2. 否则 System ASR 可用 → System；
+2. 否则 System ASR 可用：用户已授权 System ASR → System；尚未授权 → 使用前先显示一次性披露/授权（不授权则按第 3 步处理）；
 3. 否则提示当前没有可用的识别服务，并提供配置入口：安装 Local 模型、配置 Managed Cloud、配置 Self-hosted。
 
-Auto 不得静默选择 BYOK Managed Cloud，也不得静默选择用户配置的 Self-hosted endpoint。首次使用引导是否推荐/下载 Local 模型尚未冻结，等待 Local A/B checkpoint。
+Auto 不得静默选择 BYOK Managed Cloud，也不得静默选择用户配置的 Self-hosted endpoint。
+
+System ASR 授权：System ASR 与 Local ASR 在隐私上不等价，使用前需要用户事先一次性授权，不在每次识别或 fallback 时询问。未来设置可提供概念上类似“允许使用 Android 系统语音识别 [开/关]”的开关，并披露该服务由 Android/设备系统服务提供、语音数据处理取决于该系统服务且可能涉及远程处理；最终文案与 UI 未冻结。
+
+首次使用引导是否推荐/下载 Local 模型尚未冻结，等待 Local A/B checkpoint。
 
 ### 9.3 自动 fallback（D035）
 
+核心隐私规则：未经用户事先明确授权，自动 fallback 不得扩大可能接收用户语音数据的参与方/处理方集合。Local ASR 是 Fcitx 控制的设备端处理；System ASR 是独立的信任/数据处理边界，由 Android/OEM/system `RecognitionService` 实现，可能在本地或远程处理，Fcitx 不得假定其仅在本地处理。
+
 自动 fallback 默认开启：
 
-- 显式选择 Managed Cloud / Self-hosted：Primary →（技术失败）Local（若已安装且健康）→（不可用/失败）System（若可用）→ 识别失败；
-- 显式选择 Local：Local →（失败）System（若可用）→ 识别失败。
+- 显式选择 Managed Cloud / Self-hosted：Primary →（技术失败）Local（若已安装且健康，可自动进入）→（不可用/失败）System（仅当用户已事先授权）→ 识别失败；
+- 显式选择 Local：Local →（失败）System（仅当已事先授权）→ 识别失败。
 
-核心隐私规则：自动 fallback 可以保持或缩小用户所选的数据暴露边界，但不得静默扩大到新的第三方 ASR Provider（例如不得 Doubao → Alibaba、Alibaba → Tencent、Self-hosted → Managed Cloud、Local → Managed Cloud、System → Managed Cloud）。
+未授权 System ASR 时 fallback 链跳过它。同样不得静默发生 Doubao → Alibaba、Alibaba → Tencent、Self-hosted → Managed Cloud、Local → Managed Cloud、System → Managed Cloud 等。
 
-V1 只处理启动/早期技术失败：Provider 不可用、无网络/连接失败、endpoint 不可用、认证/服务初始化失败、Local 模型不可用/加载失败、可用识别会话建立前的早期超时。V1 不做会话中途跨 Provider PCM replay/迁移、不因质量差自动重识别、不做双 Provider 同时识别、不把已采集音频静默重放给其他第三方；会话中途失败报告失败/允许重试。fallback 须可观测（第 11 节）。System ASR 的数据去向由 OEM 决定（可能联网），fallback 到 System 如何满足核心隐私规则须在实现前确认（D035 待核实项）。
+V1 只处理启动/早期技术失败：Provider 不可用、无网络/连接失败、endpoint 不可用、认证/服务初始化失败、Local 模型不可用/加载失败、可用识别会话建立前的早期超时。V1 不做会话中途跨 Provider PCM replay/迁移、不因质量差自动重识别、不做双 Provider 同时识别、不把已采集音频静默重放给其他第三方；会话中途失败报告失败/允许重试。fallback 须可观测（第 11 节）。
 
 ## 10. ASR 与 LLM 解耦
 
@@ -347,7 +353,7 @@ LLM 必须可以完全关闭。ASR Provider 与 LLM Provider 分别选择和配�
 - 最终提交给 IME 的文本；
 - 是否发生自动 fallback，以及实际使用的 ASR Provider。
 
-启用词库更新不等于上传用户输入；启用 Voice Trigger 不等于选择某家云 ASR；启用 ASR 不等于把 transcript 自动发送给 LLM；Auto 与自动 fallback 不得静默把音频发送给用户未选择的 Managed Cloud 或 Self-hosted 服务（D034/D035）。
+启用词库更新不等于上传用户输入；启用 Voice Trigger 不等于选择某家云 ASR；启用 ASR 不等于把 transcript 自动发送给 LLM；Auto 与自动 fallback 不得静默把音频发送给用户未选择的 Managed Cloud 或 Self-hosted 服务，也不得在用户未事先授权时使用 System ASR（D034/D035）。
 
 ## 12. 最小修改边界
 
