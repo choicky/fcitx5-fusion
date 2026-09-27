@@ -46,3 +46,12 @@
 - 本机纯 JVM 测试共 80 项通过。
 - 事故：多个并发 CI 轮询耗尽 GitHub 未认证 API 额度（60/小时），导致一次误报“无结果”。改为：一次 API 查询 run id，之后轮询 HTML 页面状态。
 - 下一步：A6 Qwen（Model Studio WebSocket）与 A7 Tencent 的协议客户端 + 设置（无凭据，只能做协议单测，真实识别 UNTESTED）；随后尝试本机运行 FunASR 2-pass 服务器做互通。
+
+## 2026-09-27T19:23Z — A4 回归与修复；Qwen 推送；FunASR 2-pass 进行中
+
+- **回归（本人造成）**：A4 `4a8f7856` 的编辑脚本用区间替换改 `VoiceSettingsFragment`，误删 `editDoubaoCredentials` / `editInstance` / `newInstanceId`（调用仍在），该提交无法编译。本机纯 JVM 测试覆盖不到 Android UI 文件，所以没发现。修复 `5c71b109`：从 `21f37e3c` 原样恢复三函数（该提交还附带了此前已暂存、内容不变的文件改名 `SherpaOnnxServerBackend.kt → NetworkAsrBackend.kt`，提交说明未提及）。CI `36343281876` PASS（A4 + 修复）。预防：新增推送前检查脚本（R.string 引用存在性、中英资源齐全），并改为在唯一锚点插入而非区间替换。
+- Qwen `04785c66` 已推送：Model Studio 实时识别（Workspace 专属 wss 端点、run-task/finish-task、task-started 前缓存音频、按 sentence_id 组句、心跳忽略）；凭据与豆包隔离。抽出 `NetworkAsrBackend` / `NetworkAsrClient`：采集、就绪、final 超时与取消共用，各厂商协议客户端各自实现（未做通用协议抽象）。
+- Qwen 验证：官方事件示例的协议单测；本地按文档事件流写的**协议仿真器**（不是真实服务）验证了“task-started 前不发音频、finish-task 后得 final、无效 key 在就绪前失败”。真实服务 UNTESTED（无凭据）。
+- FunASR 2-pass：已写客户端（60 ms 包、2pass-online 追加、2pass-offline 替换整句、is_end 结束，按上游 v1.4.16 `funasr_wss_client.py` 的组句逻辑）；协议单测通过。本机上游 Python 服务器（CPU）正在下载模型，互通测试待服务器就绪。
+- 环境事故：scratchpad 所在 /tmp 是 5.9 GB tmpfs（占用内存），模型与 venv 把它写满，导致工具输出丢失。已删除已验证的 B 下载副本，并把大文件移到 `~/asr-scratch`（仓库外，约 4 GB，结束时应清理）。
+- 下一步：FunASR 互通 → 提交；Tencent 实时 ASR 客户端与设置；Fun-ASR-Nano（上游需 GPU，只做协议）。
