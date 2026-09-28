@@ -181,3 +181,13 @@
   - 回归检查：`ModelRowsTest`（JVM）；`ActionListDialogTest`（仪器测试，真机上创建对话框并断言条目列表确实挂在对话框中，另一项断言 message 会使列表脱离——证明检查有效）。CI 无设备，只编译仪器测试；在手机上运行的命令见验收脚本 §2.0b（不卸载 App、不清数据）。
 - CI：第一次推送的 run `36377026826` 失败——我新增的 CI 步骤名含“: ”，工作流 YAML 无效，未启动任何 job；`6007c8ca` 修正步骤名后 run `36377100363` success：debug 单元测试（含 Windows 相关测试）、arm64 debug APK、release Kotlin 编译、仪器测试编译。本机 153 项纯 JVM 测试通过。
 - **修复后的 APK 尚未在手机上检查**；验收脚本 §2.0a 记录观察，§2.0b 为复测步骤；下载、安装、本地识别仍为未测。
+
+## 2026-09-28 — vivo：A/B/C 下载完成；下载期间设置页闪烁（FAIL）与修复；每个本地模型单独启用（D038）
+
+- **设备观察（所有者，vivo X100 Pro，debug `6007c8ca`）**：A、B、C 各自下载完成并显示为已安装；任一模型下载期间，语音设置页在正常内容与大部分空白之间快速闪烁，下载完成后立即停止 → **FAIL**（UI）。模型加载、离线识别、长语音、Redmi 均未测。`3116a7b8` 的操作对话框修复保留。
+- **根因（源码）**：`ModelTasks` 每 1% 通知一次 → `ModelJobs` 在主线程调用监听器 → `VoiceSettingsFragment.jobListener` 调用 `render()` → `screen.removeAll()` 并重建全部 Preference。`PreferenceGroupAdapter` 使用稳定 id，取自每个 Preference 对象，重建后所有条目 id 改变，RecyclerView 默认 `ItemAnimator` 把整页当作删除 + 插入做淡出淡入；每秒多次 → 闪烁/空白。另外每次重建都在主线程检查三个模型的文件与暂存目录。
+- **修复（Android `7ed0fa78`）**：监听器带上模型；`onModelChanged()` 只在该行状态不变时更新该行摘要（同一 Preference），状态变化（开始/完成/失败/取消）才整页重建一次（终态不丢失）；列表 `itemAnimator = null`；任务进行中不做文件检查。下载速度不受影响（节流仍在 `ModelTasks`，只影响通知）；取消/继续照常。
+- **设计变更（D038，所有者要求）**：A/B/C 各为一个服务，单独启用；安装/启用/当前使用分开；去掉总开关与“本地识别模型”；服务列表只列已启用、已安装、可运行的模型；一次会话只运行选中的模型，无多模型并行、无模型间回落。迁移：启用本地 + 配置模型 → 启用该模型；当前本地 → 当前该模型；当前本地无模型 → 不选择；更早的 Auto/Local/System 中的本地 → Developer 研究模型。
+- **测试**：`AsrSelectionTest`（每模型独立服务、只有已启用且已安装的可用、当前模型被删/停用时不被他者替代、研究模型不回落、迁移各情形）；`VoicePrefsTest`（两种旧格式的存储级迁移与一次性）；`ModelRowsTest`（已安装/已启用/使用中区分、未安装永不显示为可用、任务进行中不读暂存）；**仪器测试** `VoiceSettingsProgressTest`（对 A/B/C 假进度：不整页重建、同一 Preference、条目数与滚动位置不变、结束恰好重建一次；任务中关闭再打开页面）——CI 只编译，需在手机上运行。本机 158 项纯 JVM 测试通过。
+- **CI**：run `36380142431`（`7ed0fa78`）success：debug 单元测试、arm64 debug APK、release Kotlin、仪器测试编译。
+- **未验证**：闪烁修复与新的启用/选择语义都还没有在手机上看过；验收脚本 §2.0c 为复测步骤（含升级迁移 2.0c.9）。
