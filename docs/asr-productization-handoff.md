@@ -9,7 +9,7 @@
 
 ## 2. 本批 Android 提交（按顺序）
 
-`1f62c3a0` 服务选择/推荐/迁移 → `820616b0` 就绪信号 + D035 fallback → `849f0eda` 凭据库 + 豆包 BYOK → `21f37e3c` sherpa-onnx 自建 → `4a8f7856` Model Manager（**此提交单独无法编译**）→ `5c71b109` 修复 → `04785c66` Qwen → `5fcc495f` FunASR 2-pass → `9d9b9dba` Tencent → `e9035b81` Fun-ASR-Nano → `62a565b0` 加固 → `0e45df24` 上次失败显示 → `7bc28523` 候选 C → `d7cb83f2` 设置页生命周期修复 → `91dd1708` OpenAI 兼容整段转写适配器（可选）→ `e85fc547` 其互通测试 → `f0cd0d1b` 评审风险修复（FunASR 首包、采集错误分类、错误脱敏、last-error 移出 prefs）→ `e12dfab5` A/B/C 下载（A 仅测试构建）、续传、用户地址、旧 adb 副本删除 → `ebfbc591` CI 编译 release Kotlin → `8ce87660` 导出排除 `local-asr` → `a75e5d21` ModelJobs 也强制测试构建限制。
+`1f62c3a0` 服务选择/推荐/迁移 → `820616b0` 就绪信号 + D035 fallback → `849f0eda` 凭据库 + 豆包 BYOK → `21f37e3c` sherpa-onnx 自建 → `4a8f7856` Model Manager（**此提交单独无法编译**）→ `5c71b109` 修复 → `04785c66` Qwen → `5fcc495f` FunASR 2-pass → `9d9b9dba` Tencent → `e9035b81` Fun-ASR-Nano → `62a565b0` 加固 → `0e45df24` 上次失败显示 → `7bc28523` 候选 C → `d7cb83f2` 设置页生命周期修复 → `91dd1708` OpenAI 兼容整段转写适配器（可选）→ `e85fc547` 其互通测试 → `f0cd0d1b` 评审风险修复（FunASR 首包、采集错误分类、错误脱敏、last-error 移出 prefs）→ `e12dfab5` A/B/C 下载（A 仅测试构建）、续传、用户地址、旧 adb 副本删除 → `ebfbc591` CI 编译 release Kotlin → `8ce87660` 导出排除 `local-asr` → `a75e5d21` ModelJobs 也强制测试构建限制 → `318c4d02` 下载取消竞态（`ModelTasks`）→ `93d8e03e` 导出前同步清除旧 `voice_last_error`。
 
 ## 3. 如何在无 Android SDK 的机器上验证纯逻辑
 

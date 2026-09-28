@@ -55,6 +55,7 @@ OpenAI-compatible 整段转写是可选独立适配器，不在本计划必需�
 
 | Model Manager 下载可靠性（续传、取消、校验失败、旧 adb 副本删除、用户填写地址、导出排除） | `e12dfab5`、`8ce87660`、`a75e5d21` | IMPLEMENTED，LOCAL-JVM-VERIFIED（`LocalModelInstallerTest`、`ModelSourcesTest` 含真实 OkHttp + 本机 HTTP 服务器），CI 见工作日志；DEVICE UNTESTED |
 | 评审风险修复：FunASR 首包顺序、采集错误不回落、错误详情脱敏、last-error 移出 prefs | `f0cd0d1b` | IMPLEMENTED，CI-VERIFIED（`36365569695`）；FunASR 首包在慢握手服务器上复现并验证修复；backend 的采集错误分类无 backend 级单测（无 Robolectric），经 CI 编译与审查；DEVICE UNTESTED |
+| 独立评审修复：下载取消竞态、导出前同步清除旧错误偏好 | `318c4d02`、`93d8e03e` | IMPLEMENTED，LOCAL-JVM-VERIFIED（`ModelTasksTest`、`UserDataArchiveTest`），CI-VERIFIED（`36369645177`，含 `VoicePrefsTest`）；DEVICE UNTESTED |
 | release 变体 | `ebfbc591` | CI 编译 release Kotlin（`:app:compileReleaseKotlin`）通过（`36365569695`）；未打包/签名 release APK |
 
 设备、云凭据与 GPU 服务器的验收步骤：`docs/asr-productization-acceptance.md`。

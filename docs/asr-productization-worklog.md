@@ -149,3 +149,14 @@
   - D034/D035：当前选择为具体已启用服务；推荐为一次性；外部服务（云端与自建同层）只回落到可用的**正式** Local，A/B/C 均非正式 → 实际不回落；System 从不作为回落目标；回落时 toast 提示并记录“实际使用”；不重放音频。
 - 验收脚本 §2 重写为 A/B/C 下载的双机步骤（PowerShell：取 APK、`adb install --no-streaming -r`、日志、中断/续传、假文件校验失败、空间不足、切换、识别、删除含旧 adb 副本、导出）。**手机与真实云端结果全部留空**。
 - 最短设备测试路径：验收脚本 §2.0（取 APK + 安装）→ 2.2–2.4（下载 A、C、B）→ 2.5–2.8（中断/续传/取消）→ 2.10（假文件校验失败）→ 2.13–2.15（A/C/B 识别）→ 2.16–2.18（删除与导出）；2.12 空间不足为可选。
+
+## 2026-09-28T02:40Z — 独立评审修复（Android `93d8e03e`）
+
+- 起点核对：fetch 后 Android `phase4-voice-poc` @ `a75e5d21`、planning `main` @ `2cbd631`，均干净且与 origin 一致。所有者提到的参考补丁 `asr-android-review-fix.patch` / `asr-planning-review-fix.patch` 在本机不存在（全盘搜索，除禁止访问的目录外），因此按评审意见独立实现；它们未被使用，也未被验证。
+- **下载取消竞态**（`318c4d02`）：确认问题——`cancel()` 使协程立即 inactive，而阻塞的 HTTP 读仍在进行；`isRunning` 基于 `isActive`，因此可立刻再启动第二个 worker 写同一暂存目录，旧 worker 的进度/结果也会覆盖新任务状态。修复：新增纯 Kotlin `ModelTasks`，每个模型一个任务，从启动到 worker 真正退出（或启动前被取消的 job 完成）都占用该模型；只有占用者能改状态，取消后不再上报进度；取消同时取消进行中的 HTTP call；因取消导致的读失败记为“已取消”并清除暂存。设置页显示“正在停止…”，此时拒绝新的下载/导入并提示，也不在运行任务下删除文件。
+  - 回归测试 `ModelTasksTest`：worker 卡在不响应中断的阻塞读中 → 取消 → 立即重试被拒绝、迟到进度不改变状态 → 放开读 → 旧 worker 退出、暂存清除 → 新任务单独运行并安装（同时在内的 worker 数最大为 1）；另测启动前取消、取消回调只执行一次、失败详情脱敏。变异检查：把 `cancel()` 改为立即释放模型，两个竞态测试即失败。本机 3 次重复运行均通过。
+- **旧错误偏好进入导出**（`93d8e03e`）：确认问题——`voice_last_error` 只在读取 `lastError` 时清空，升级后立即导出会把旧值随 `shared_prefs` 打包。修复：`UserDataManager.export` 在读取 `shared_prefs` 之前用同步 `commit()` 仅删除该键；写入失败则导出失败（目标流不写任何内容）；其他偏好不动。`VoiceSelectionStore` 也改用同一删除。zip 写入移到无 Android 依赖的 `UserDataArchive` 以便测试。
+  - 测试：`UserDataArchiveTest`（升级后的偏好 XML → 立即导出 → 不含旧值与其中的 URL 密钥，其他偏好与外部文件照常，`local-asr` 排除；删除失败 → 导出失败且无输出）；`VoicePrefsTest`（只删该键、其余偏好保持；无该键时不写；commit 失败返回 false）。限制：本仓库无 Robolectric，SharedPreferences 真实写 XML 的行为由测试中的文件改写代替；真实设备上的“升级后立即导出”未测。
+  - 另注：导入旧的导出文件可能把旧值带回，下一次导出或读取时同样会被删除。
+- 验证：本机 138 项纯 JVM 测试通过；`git diff --check`、字符串资源检查通过；推送前凭据扫描无命中。CI `36369645177`（`93d8e03e`，含 `318c4d02`）success：单元测试、arm64 debug APK、release 变体 Kotlin 编译。
+- ROADMAP：把 Phase 4C 前后互相矛盾的“未实现”表述改为历史说明，并把第 5 项分为“代码已实现 / CI 通过 / 待设备与真实云端验收”三层；A/B/C 个人测试决定与 A 公开发布许可、B 许可依据等未决问题保留。
