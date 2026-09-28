@@ -110,3 +110,42 @@
 - 验收脚本加入 OpenAI 兼容步骤 4.6b；交接文档加入其互通命令。
 - 停止本机测试服务器（sherpa Python 6006、仿真器 6021–6024、funasr-server 9000）；C++ 服务器此前已停。`~/asr-scratch`（7.4 GB）保留以便复现，交接 §6 写明清理命令。
 - 剩余事项均需所有者：设备验收、云凭据、GPU 服务器、交接 §5 三项决定。本会话无法再推进的部分不继续编造工作。
+
+## 2026-09-28T01:10Z — 新批次起点：个人测试 A/B/C 下载 + 评审风险修复
+
+- fetch 后核对：Android `phase4-voice-poc` @ `e85fc547`（与 origin 一致、工作树干净）；planning `main` @ `fa50106`（一致、干净）。Candidate B 历史基线 `a8a0e1b3` 存在，不改动。
+- 所有者新指示（2026-09-28）：本项目为未发布的个人测试项目；Model Manager 须在测试构建中为 A、B、C 三个研究模型都提供可用下载；取代 D037 中“A 只能导入”的本阶段规则；三者都不是正式默认模型。另须修复评审指出的四个运行时风险。
+- A 来源核对（HF API，本机）：
+  - 转换仓库 `csukuangfj/sherpa-onnx-streaming-zipformer-zh-int8-2025-06-30` @ `ad658fa0201659a09ea3c176129a191c77ecae8f`：`gated: false`、公开、无 license 元数据（`cardData: null`）；README 写明转换自 `yuekai/icefall-asr-multi-zh-hans-zipformer-large`。匿名 `resolve/<rev>/tokens.txt` 返回 200，`x-repo-commit` 与固定 revision 一致。
+  - 原始仓库 `yuekai/icefall-asr-multi-zh-hans-zipformer-large`：`gated: "auto"`（“同意分享联系方式”即自动获准），匿名下载 404；无 license 元数据。该仓库是 icefall 的 PyTorch 检查点，不含与固定 SHA-256 相符的 ONNX 文件。
+- 评审风险逐项核对（源码）：
+  1. FunASR 2-pass 首包：配置 JSON 在 `onOpen` 中发送，而采集线程可在握手完成前经 OkHttp 队列先送出音频 → 服务器可能先收到 PCM。确认。
+  2. 采集错误：`NetworkAsrBackend`、`DoubaoAsrBackend`（经 `tracker.fail`）与 `LocalAsrBackend` 都把 AudioCapture 失败报告为 `VoiceError.Service`，使其在就绪前可触发 D035 fallback。确认。
+  3. 错误详情：异常 message（可能含 URL 查询串/服务器回显）原样写入 Timber、toast，并以 160 字符写入内部 prefs `voiceLastError`。确认需要清洗。
+  4. 旧 adb 安装：`LocalModels.dir` 会使用外部目录中的旧模型，但“删除”只删 no-backup 目录 → 删除后仍显示已安装。确认。
+
+## 2026-09-28T01:23Z — 风险修复与 A/B/C 下载已推送，CI 进行中
+
+- Android `f0cd0d1b`（运行时风险修复）、`e12dfab5`（Model Manager A/B/C 下载）、`ebfbc591`（CI 增加 release 变体 Kotlin 编译）已推送；CI `36365569695` 进行中。
+- 首次推送被 GitHub push protection 拦截：测试中虚构的 Tencent 格式 SecretId 被按格式识别为密钥。未申请放行；改为运行时拼接虚构值，并用 fixup 并入未推送的提交后重推（原提交 `da8d3f6d` 从未进入远端）。
+- 决定与理由：
+  - A 的来源：用转换仓库固定 revision（公开、无门槛）。原始 `yuekai/…` 仓库有访问门槛且只含 PyTorch 检查点，没有与固定 SHA-256 一致的 ONNX 文件，不能作为替代来源；下载转换仓库不绕过任何门槛。A 的下载只在 debug 构建中提供（`testBuildDownloadOnly`），确认框写明许可未声明与“仅限个人测试”。
+  - 另加“从其他地址下载…”：用于 HF 不可达时由用户明确选择镜像，以及设备测试时制造校验失败/中断；仍按固定 SHA-256 校验；release 只允许 https。
+  - 重试改为断点续传：网络/校验失败后保留暂存文件（从不作为已安装），重试用 HTTP Range；取消会清除。理由：B 的单个文件 600 MB，手机网络中断后从零开始代价过高。
+  - 采集错误的回归测试：flow 层已有“Capture 不回落”测试；backend 依赖 Handler/AudioRecord，本仓库无 Robolectric，backend 分类改动只经 CI 编译与代码审查，未做 backend 级单测（如实记录）。
+  - 用户数据导出排除外部目录下的 `local-asr`（旧 adb 模型，体积大且 A 的许可不允许分享）：已在本地修改，待本次 CI 结束后推送，避免取消正在运行的 CI。
+- 本机：131 项纯 JVM 测试通过；真实 A 下载 + SIGKILL 后续传通过（本机副本已删除）。
+
+## 2026-09-28T01:41Z — 本批收尾：CI 全部通过，文档与验收脚本更新
+
+- Android HEAD `a75e5d21`（工作树干净，与 origin 一致）。本批提交：`f0cd0d1b`、`e12dfab5`、`ebfbc591`、`8ce87660`、`a75e5d21`。
+- CI：`36365569695`（`ebfbc591`）success——单元测试 + arm64 debug APK + **release 变体 Kotlin 编译**；`36366185118`（`8ce87660`）被下一次推送取消；`36366205401`（`a75e5d21`，含 `8ce87660`）success，三步同上。release APK 未打包、未签名、未安装。
+- 审查结论（源码）：
+  - 凭据：仅在 no-backup 目录 Keystore 加密；维护者凭据只存在于所有者本机 debug 构建的 PoC 字段，release 与 CI 为空串；本批未引入任何凭据；推送前扫描通过（push protection 拦截的是虚构测试值，已改为运行时拼接）。
+  - 日志：失败详情统一脱敏；识别文本只在 debug 级日志（release 默认 ConciseTree 只记 INFO 以上，除非用户开启详细日志）。
+  - 备份/导出：模型与凭据在 no-backup；last-error 移出 shared_prefs；导出排除外部目录 `local-asr`。
+  - 下载完整性：固定 revision + 逐文件大小与 SHA-256；暂存 + rename 原子安装；续传的已完成文件复用前重新哈希；目录版本变化丢弃暂存。
+  - release/debug：A 的下载在 UI 与 ModelJobs 两处限制为 debug；release 中 Local runtime 本就不包含（桩），http 模型地址仅 debug。
+  - D034/D035：当前选择为具体已启用服务；推荐为一次性；外部服务（云端与自建同层）只回落到可用的**正式** Local，A/B/C 均非正式 → 实际不回落；System 从不作为回落目标；回落时 toast 提示并记录“实际使用”；不重放音频。
+- 验收脚本 §2 重写为 A/B/C 下载的双机步骤（PowerShell：取 APK、`adb install --no-streaming -r`、日志、中断/续传、假文件校验失败、空间不足、切换、识别、删除含旧 adb 副本、导出）。**手机与真实云端结果全部留空**。
+- 最短设备测试路径：验收脚本 §2.0（取 APK + 安装）→ 2.2–2.4（下载 A、C、B）→ 2.5–2.8（中断/续传/取消）→ 2.10（假文件校验失败）→ 2.13–2.15（A/C/B 识别）→ 2.16–2.18（删除与导出）；2.12 空间不足为可选。

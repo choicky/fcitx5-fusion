@@ -42,8 +42,8 @@ OpenAI-compatible 整段转写是可选独立适配器，不在本计划必需�
 | 设置结构、首次推荐、迁移、当前/实际使用 | A1 `1f62c3a0` | IMPLEMENTED，LOCAL-JVM-VERIFIED，CI-VERIFIED（`36339927619`）；DEVICE UNTESTED |
 | 就绪信号 + D035 fallback | A2 `820616b0` | IMPLEMENTED，LOCAL-JVM-VERIFIED，CI-VERIFIED（`36340502719`）；无正式 Local 模型 → 实际不会回落；DEVICE UNTESTED |
 | System | A1 | 沿用旧披露/授权；新 UI DEVICE UNTESTED |
-| Local A（streaming Zipformer） | A4 `4a8f7856` + `5c71b109` | 研究模型；仅导入（许可门槛未过）；CI-VERIFIED（`36343281876`）；DEVICE UNTESTED |
-| Local B（FunASR Nano INT8） | A4 | 研究模型；从 HF 固定 revision 下载——真实上游下载 + SHA-256 + 原子安装在本机 JVM 验证；已测限制照旧；DEVICE UNTESTED |
+| Local A（streaming Zipformer） | A4 `4a8f7856` + `5c71b109`；下载 `e12dfab5` | 研究模型；2026-09-28 起**仅测试构建可下载**（HF 转换仓库固定 revision `ad658fa0`；个人测试例外，D037 修订）+ 导入；真实上游下载、SHA-256、SIGKILL 后 Range 续传在本机 JVM 验证；公开发布许可仍 BLOCKED；DEVICE UNTESTED |
+| Local B（FunASR Nano INT8） | A4 | 研究模型；从 HF 固定 revision 下载——真实上游下载 + SHA-256 + 原子安装在本机 JVM 验证；许可依据（导出者仓库无 LICENSE）与 34–39 s 空结果在 UI 中显示；DEVICE UNTESTED |
 | Local C（streaming Zipformer 中英双语） | `7bc28523` | 许可清晰的候选（Apache-2.0，训练数据未公开）；可下载（真实上游下载 + SHA-256 本机验证）；本机 CPU RTF 0.13–0.15、46 s 无失败；非正式模型；DEVICE UNTESTED |
 | Doubao（BYOK） | A3 `849f0eda` | IMPLEMENTED，CI-VERIFIED（`36340993548`）；协议沿用 4B.3a 已双机验证的 backend；用户凭据路径 DEVICE/SERVICE UNTESTED |
 | Qwen（Model Studio） | `04785c66` | IMPLEMENTED，CI-VERIFIED（`36344526847`，含于其后提交）；EMULATION-VERIFIED；真实服务 UNTESTED（无凭据） |
@@ -52,6 +52,10 @@ OpenAI-compatible 整段转写是可选独立适配器，不在本计划必需�
 | FunASR 2-pass | `5fcc495f` | IMPLEMENTED，CI-VERIFIED（`36344526847`），**INTEROP-VERIFIED**（上游 Python 2pass 服务器，CPU）；C++ 服务器 UNTESTED |
 | OpenAI-compatible 整段转写（可选适配器） | `91dd1708` | IMPLEMENTED，CI-VERIFIED（`36352793131`）；https 端点（debug 可 http）；**INTEROP-VERIFIED**（上游 FunASR 1.4.16 `funasr-server --model sensevoice --device cpu`，stop→final 2.1/3.0 s）；无实时文字 |
 | Fun-ASR-Nano Server | `e9035b81` | IMPLEMENTED；EMULATION-VERIFIED；上游服务器需 GPU → INTEROP UNTESTED；CI 见工作日志 |
+
+| Model Manager 下载可靠性（续传、取消、校验失败、旧 adb 副本删除、用户填写地址、导出排除） | `e12dfab5`、`8ce87660`、`a75e5d21` | IMPLEMENTED，LOCAL-JVM-VERIFIED（`LocalModelInstallerTest`、`ModelSourcesTest` 含真实 OkHttp + 本机 HTTP 服务器），CI 见工作日志；DEVICE UNTESTED |
+| 评审风险修复：FunASR 首包顺序、采集错误不回落、错误详情脱敏、last-error 移出 prefs | `f0cd0d1b` | IMPLEMENTED，CI-VERIFIED（`36365569695`）；FunASR 首包在慢握手服务器上复现并验证修复；backend 的采集错误分类无 backend 级单测（无 Robolectric），经 CI 编译与审查；DEVICE UNTESTED |
+| release 变体 | `ebfbc591` | CI 编译 release Kotlin（`:app:compileReleaseKotlin`）通过（`36365569695`）；未打包/签名 release APK |
 
 设备、云凭据与 GPU 服务器的验收步骤：`docs/asr-productization-acceptance.md`。
 

@@ -1,8 +1,8 @@
 # ASR 服务产品化 — 设备 / 凭据 / 服务器验收脚本
 
-对象：`fcitx5-android` `phase4-voice-poc` @ `e9035b81`（或更新的已通过 CI 的提交；记录实际 SHA）；debug APK = CI artifact `moqi-debug-apk`。Candidate B 历史基线 `a8a0e1b3` 不变；此前 `fb3b0c26` 的设置基础验收不覆盖本批。
+对象：`fcitx5-android` `phase4-voice-poc` 最新已通过 CI 的提交（见工作日志最后一条；记录实际 SHA）；debug APK = CI artifact `moqi-debug-apk`。Candidate B 历史基线 `a8a0e1b3` 不变；此前 `fb3b0c26` 的设置基础验收不覆盖本批。
 
-**状态：全部未执行。** 执行环境没有设备、云凭据或 GPU。下列“预期”来自源码与本机测试；实测列留空，不可测记“不可测”，不得记 PASS。
+**状态：全部未执行。** 执行环境没有设备、云凭据或 GPU。下列“预期”来自源码与本机测试；实测列留空，不可测记“不可测”，不得记 PASS。证据分三类，不得混写：代码/CI 结果、本机服务器或 JVM 测试、手机实测（只有所有者执行后才填写）。
 
 ## 0. 已有的非设备证据（供对照）
 
@@ -14,6 +14,10 @@
 | OpenAI-compatible 整段转写 | 上游 FunASR 1.4.16 `funasr-server --model sensevoice --device cpu` 本机互通（2 个 wav，stop→final 2.1/3.0 s） | INTEROP |
 | Qwen / Tencent / Fun-ASR-Nano 客户端 | 按文档/源码的本地协议仿真器；Tencent 签名与独立 Python 实现一致 | EMULATION（非真实服务） |
 | B 模型下载 | 真实上游 HF 固定 revision 下载 1,009,605,061 字节，6 文件 SHA-256 匹配，原子安装 | JVM + 真实上游 |
+| A、C 模型下载 | 真实上游 HF 固定 revision 下载并 SHA-256 校验、原子安装（A 167,360,920 字节）；A 下载进程在约 98 MB 处被 SIGKILL 后重跑，经 HTTP Range 续传完成（HF CDN 返回 206） | JVM + 真实上游 |
+| 断点续传 / 校验失败 / 取消 / 旧 adb 目录删除 / 用户地址策略 | `LocalModelInstallerTest`、`ModelSourcesTest`（JDK HttpServer + 真实 OkHttp：Range、无 Range、416、错误文件、404） | LOCAL-JVM + CI |
+| FunASR 2-pass 首包顺序 | 慢握手本机服务器复现：修复前首帧为音频，修复后为配置 JSON；`FunAsr2PassClientTest` | LOCAL + CI |
+| 错误详情脱敏、last-error 移出 prefs | `ErrorRedactionTest`、`VoicePrefsTest` | LOCAL-JVM + CI |
 | Android UI、Keystore、AudioCapture 路径、真实云端 | — | UNTESTED |
 
 ## 1. 设置结构与迁移（vivo + Redmi）
@@ -28,20 +32,100 @@
 | 1.6 | 停用当前服务 | 摘要显示“已停用”；不改选 | | |
 | 1.7 | 当前服务选择列表 | 只列出已启用的服务；未接入的服务不出现 | | |
 
-## 2. Local 与 Model Manager
+## 2. Local Model Manager：A/B/C 下载（个人测试 checkpoint，D037 2026-09-28 修订）
+
+范围：debug（测试）构建。A、B、C 都是研究模型：不推荐、不作 fallback；A 的下载仅限个人测试，许可对公开发布仍未解决。两台手机各执行一遍；PC 为 Windows，PowerShell。
+
+### 2.0 准备（PowerShell）
+
+```powershell
+# 0) 工具：adb（platform-tools）、gh（GitHub CLI，已登录）、python（仅 2.5/2.6 需要）
+adb devices -l                                   # 记下两台手机的 serial
+$vivo  = "<vivo serial>"
+$redmi = "<redmi serial>"
+$pkg   = "org.fcitx.fcitx5.android.debug"
+
+# 1) 取最新的已通过 CI 的 debug APK（HEAD 见工作日志最后一条；两种方式任选其一）
+#    a. 下载 CI 产物
+gh run list -R choicky/fcitx5-android -b phase4-voice-poc -w "MoQi test APK" -L 3
+gh run download <run id> -R choicky/fcitx5-android -n moqi-debug-apk -D .\moqi-debug-apk
+$apk = (Get-ChildItem .\moqi-debug-apk\*.apk | Select-Object -First 1).FullName
+#    b. 或本机构建（仓库已按 CI 的方式切换 chinese-addons 子模块到 feature/moqi-filter）
+#    git fetch origin; git checkout phase4-voice-poc; git pull --ff-only
+#    git submodule update --init --recursive
+#    $env:BUILD_ABI = "arm64-v8a"; .\gradlew.bat :app:assembleDebug
+#    $apk = (Get-ChildItem .\app\build\outputs\apk\debug\*.apk | Select-Object -First 1).FullName
+
+# 2) 安装（保留数据）
+adb -s $vivo  install --no-streaming -r $apk
+adb -s $redmi install --no-streaming -r $apk
+adb -s $vivo shell dumpsys package $pkg | Select-String versionName   # 记录版本
+
+# 3) 看日志（另开一个窗口；每台手机一个）
+adb -s $vivo logcat -c; adb -s $vivo logcat | Select-String "Local model|Local ASR|capture failed"
+```
+
+打开：Fcitx5 设置 → 语音输入 → “本地集成”分组中的 A、B、C 三行。
+
+若手机网络无法访问 huggingface.co：对该模型用“从其他地址下载…”，把地址中的 `https://huggingface.co` 换成你选择的镜像（例如第三方镜像 `https://hf-mirror.com`，路径保持 `/<仓库>/resolve/<完整 revision>`）。这是你主动选择的来源，App 不会自动切换；文件仍逐个按固定 SHA-256 校验，不符即不安装。记录实际使用的地址。
+
+### 2.1 显示与下载
 
 | # | 步骤 | 预期 | vivo | Redmi |
 |---|---|---|---|---|
-| 2.1 | 本地模型列表 | A、B 均标“研究模型”，显示版本、大小、许可/限制说明 | | |
-| 2.2 | 点 A | 只有“导入模型文件…”，**没有**下载 | | |
-| 2.3 | B → 下载（Wi-Fi，约 1010 MB） | 确认框显示来源（HF 固定 revision）与 Apache-2.0 归属；进度按百分比更新；可离开设置页，回来仍显示进度 | | |
-| 2.4 | 下载中点“取消” | 显示已取消；无残留（此前已安装版本保持可用） | | |
-| 2.5 | 空间不足设备（或填满存储后） | “存储空间不足（约需 N MB）” | | |
-| 2.6 | 下载完成 → 设为本地识别模型 → 当前 = 本地 → 说话 | 本地识别可用（首次加载较慢）；B 仍有 34–39 s 空结果限制 | | |
-| 2.7 | 从 adb 推送目录/手机存储选取 A 的 4 个文件导入 | 校验通过即安装；改动任一文件 → “与预期校验值不符” | | |
-| 2.7b | C → 下载（约 199 MB）→ 设为本地识别模型 → 说 10 s、30 s、接近 60 s 的中英混说 | 流式识别；长语音无空结果；记录 PSS、RTF、stop→final、有无标点 | | |
-| 2.8 | 会话进行中删除当前模型 | 当前会话结束不崩溃；之后当前服务显示“模型文件缺失”，不改选 | | |
-| 2.9 | 设置 → 高级 → 导出用户数据 | 导出包中**不含**已安装模型与凭据文件（位于 no-backup 目录） | | |
+| 2.1 | 查看 A/B/C 三行 | 每行：版本、约 N MB、状态（未安装/已安装/已部分下载 N MB）、来源 `huggingface.co/<仓库> @ <revision 前 8 位>`、说明（A：仅个人测试、许可未声明；B：许可依据 + 34–39 s 空结果；C：实验性候选） | | |
+| 2.2 | 点 A →“下载（约 168 MB）” | 确认框写明：HF 转换仓库固定 revision ad658fa0、未声明许可、原始检查点在 HF 有访问门槛、仅限个人测试、不得分享文件 | | |
+| 2.3 | 确认下载 A；离开设置页再回来 | 进度按百分比与 MB 更新；返回后仍显示进度；完成后“已安装” | | |
+| 2.4 | 同样下载 C（约 199 MB）与 B（约 1010 MB，建议 Wi-Fi） | 确认框分别显示来源与许可；完成后“已安装” | | |
+
+### 2.2 中断、取消、重试
+
+| # | 步骤 | 预期 | vivo | Redmi |
+|---|---|---|---|---|
+| 2.5 | B 下载到约 30% 时打开飞行模式 | 自动重试后显示“失败：…”（网络错误）；**不**显示为已安装；行内显示“已部分下载（N MB）” | | |
+| 2.6 | 关闭飞行模式，再点“下载” | 进度从已下载处继续（不是从 0% 开始） | | |
+| 2.7 | C 下载中途执行 `adb -s $vivo shell am force-stop $pkg`，重新打开设置页 | 显示“已部分下载（N MB）”；再点下载 → 从断点继续并完成 | | |
+| 2.8 | 任一模型下载中点“取消” | 显示“已取消”；部分文件被清除（不再显示已部分下载）；此前已安装的版本仍可用 | | |
+| 2.9 | 对某个“已部分下载”的模型点“丢弃未完成的下载” | 部分文件被删除 | | |
+
+### 2.3 校验失败与空间不足
+
+2.10 用 PC 上的假文件制造校验失败（不需要任何真实模型文件）：
+
+```powershell
+$d = "$env:TEMP\fake-model"; New-Item -ItemType Directory -Force $d | Out-Null
+Set-Content -Path "$d\encoder.int8.onnx" -Value "not a model"   # A 的第一个文件，大小与哈希都不对
+python -m http.server 8000 --directory $d                          # 保持运行
+# 另一个窗口：
+adb -s $vivo reverse tcp:8000 tcp:8000
+```
+
+| # | 步骤 | 预期 | vivo | Redmi |
+|---|---|---|---|---|
+| 2.10 | 先删除 A（若已安装）；A →“从其他地址下载…”→ 填 `http://127.0.0.1:8000` → 确认 | 确认框提示这是你填写的地址、仍按固定 SHA-256 校验；结果“失败：encoder.int8.onnx 与预期校验值不符”；A 不显示为已安装 | | |
+| 2.11 | 同一对话框填 `http://127.0.0.1:8000/?x=1` 或 `ftp://…` | 提示地址无效，不开始下载 | | |
+| 2.12 | （可选，会让手机存储暂时几乎占满）空间不足：见下方命令 | 下载前即提示“存储空间不足（约需 N MB）”；不留下文件 | | |
+
+```powershell
+# 2.12：先看可用空间（KB），再占用到只剩约 100 MB，下载 A（约需 168 MB + 余量）
+adb -s $vivo shell df -k /data
+$freeKb = <上一行 Available 列>
+adb -s $vivo shell run-as $pkg fallocate -l "$([int64](($freeKb - 100*1024)*1024))" no_backup/fill
+#   ……在 App 中下载 A，观察提示……
+adb -s $vivo shell run-as $pkg rm no_backup/fill                    # 测完必须删除
+adb -s $vivo reverse --remove-all
+```
+
+### 2.4 切换、识别、删除
+
+| # | 步骤 | 预期 | vivo | Redmi |
+|---|---|---|---|---|
+| 2.13 | “本地识别模型”选择 A；当前服务 = 本地；麦克风与长按空格各说一句约 10 s 中文 | 提交最终文本；logcat 有 `Local ASR result`（记录 RTF、stop→final、PSS） | | |
+| 2.14 | 切换到 C，说 10 s、30 s、接近 60 s 的中英混说 | 流式识别；长语音无空结果；记录上述指标；有无标点 | | |
+| 2.15 | 切换到 B，说约 10 s 与约 40 s | 10 s 正常；约 34–39 s 以上可能为空结果（已知问题，照实记录） | | |
+| 2.16 | 用 A 识别时（说话中）删除 A | 当前会话结束且不崩溃；之后当前服务显示“模型文件缺失”，**不**自动改选 | | |
+| 2.17 | 旧 adb 副本：若手机上仍有 4B.3b 时推送的模型（`adb -s $vivo shell ls /sdcard/Android/data/$pkg/files/local-asr/`），在 App 中对该模型点“删除” | 该目录被删除（再次 `ls` 不再列出）；该模型显示“未安装” | | |
+| 2.18 | 设置 → 高级 → 导出用户数据；解压查看 | 不含 `local-asr`、已安装模型、`no_backup` 下的凭据或 `voice/last-error` | | |
 
 ## 3. Managed Cloud（需所有者凭据；无凭据则整节不可测）
 
