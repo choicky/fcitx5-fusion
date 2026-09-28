@@ -2,7 +2,7 @@
 
 对象：`fcitx5-android` `phase4-voice-poc` 最新已通过 CI 的提交（见工作日志最后一条；记录实际 SHA）；debug APK = CI artifact `moqi-debug-apk`。Candidate B 历史基线 `a8a0e1b3` 不变；此前 `fb3b0c26` 的设置基础验收不覆盖本批。
 
-**状态：全部未执行。** 执行环境没有设备、云凭据或 GPU。下列“预期”来自源码与本机测试；实测列留空，不可测记“不可测”，不得记 PASS。证据分三类，不得混写：代码/CI 结果、本机服务器或 JVM 测试、手机实测（只有所有者执行后才填写）。
+**状态：部分执行。** 2026-09-28 所有者在 vivo 上报告：服务选择与豆包 BYOK 识别 PASS；Model Manager 操作对话框 FAIL（见 §2.0a），已修复待复测。其余全部未执行。本执行环境没有设备、云凭据或 GPU。下列“预期”来自源码与本机测试；实测列留空，不可测记“不可测”，不得记 PASS。证据分三类，不得混写：代码/CI 结果、本机服务器或 JVM 测试、手机实测（只有所有者执行后才填写）。
 
 ## 0. 已有的非设备证据（供对照）
 
@@ -69,11 +69,46 @@ adb -s $vivo logcat -c; adb -s $vivo logcat | Select-String "Local model|Local A
 
 若手机网络无法访问 huggingface.co：对该模型用“从其他地址下载…”，把地址中的 `https://huggingface.co` 换成你选择的镜像（例如第三方镜像 `https://hf-mirror.com`，路径保持 `/<仓库>/resolve/<完整 revision>`）。这是你主动选择的来源，App 不会自动切换；文件仍逐个按固定 SHA-256 校验，不符即不安装。记录实际使用的地址。
 
+### 2.0a 设备观察记录（所有者报告）
+
+| 日期 | 设备 | APK | 观察 | 结论 |
+|---|---|---|---|---|
+| 2026-09-28 | vivo X100 Pro | `7af0cc16` debug | 语音识别服务选择正常；豆包 BYOK 识别正常（见 3.1） | PASS（所有者报告） |
+| 2026-09-28 | vivo X100 Pro | `7af0cc16` debug | A/B/C 三行可见；点按任一行，对话框只显示模型说明与“取消”，**没有**下载、从其他地址下载、导入、使用、删除等操作 | **FAIL**——模型下载 checkpoint 被阻塞；下载、安装、本地识别均**未测** |
+
+原因（源码）：`modelActions()` 在同一个 AlertDialog 上同时 `setMessage()` 与 `setItems()`，AlertDialog 只有在没有 message 时才把列表放进对话框。修复：Android `3116a7b8`（操作列表对话框不再带 message；详情作为单独一项）。修复后的 APK 尚未在手机上检查。
+
+### 2.0b 修复后先确认操作可见（每台手机）
+
+| # | 步骤 | 预期 | vivo | Redmi |
+|---|---|---|---|---|
+| 2.0b.1 | 未安装的 A/B/C 行 | 行内第一行为状态与下一步（如“未安装 · 约 168 MB · 点按下载”），第二行为一句简短说明；不再列出完整来源 URL 与长许可说明 | | |
+| 2.0b.2 | 点按未安装的模型 | 列表中可见：下载（约 N MB）、从其他地址下载…、导入模型文件…、详情：来源、许可、限制；以及“取消”按钮 | | |
+| 2.0b.3 | 点“详情” | 显示版本、大小、SHA-256 校验说明、来源（仅可下载的构建）、完整许可与限制说明 | | |
+| 2.0b.4 | 下载中点按该行 | 显示“取消”；行内显示百分比与 MB | | |
+| 2.0b.5 | 下载完成后点按 | 显示“使用”“删除”；点“使用”后：若本地语音识别未启用或不是当前服务，弹窗说明并提供“启用本地并使用” | | |
+
+可选的仪器测试（不清除 App 数据；需本机构建，CI 只编译不运行）：
+
+```powershell
+.\gradlew.bat :app:assembleDebug :app:assembleDebugAndroidTest
+$apk  = (Get-ChildItem .\app\build\outputs\apk\debug\*.apk | Select-Object -First 1).FullName
+$tapk = (Get-ChildItem .\app\build\outputs\apk\androidTest\debug\*.apk | Select-Object -First 1).FullName
+adb -s $vivo install --no-streaming -r $apk
+adb -s $vivo install --no-streaming -r -t $tapk
+# 找到测试 APK 注册的 instrumentation（形如 <测试包>/androidx.test.runner.AndroidJUnitRunner）
+$inst = ((adb -s $vivo shell pm list instrumentation | Select-String "target=$pkg\)").ToString() -split ' ')[0] -replace '^instrumentation:', ''
+adb -s $vivo shell am instrument -w -e class org.fcitx.fcitx5.android.ui.main.settings.behavior.ActionListDialogTest $inst
+adb -s $vivo uninstall ($inst -split '/')[0]    # 只卸载测试 APK，App 数据保留
+```
+
+预期输出 `OK (2 tests)`。不要用 `gradlew connectedDebugAndroidTest`：它在结束时会卸载 App，清除设置与凭据。
+
 ### 2.1 显示与下载
 
 | # | 步骤 | 预期 | vivo | Redmi |
 |---|---|---|---|---|
-| 2.1 | 查看 A/B/C 三行 | 每行：版本、约 N MB、状态（未安装/已安装/已部分下载 N MB）、来源 `huggingface.co/<仓库> @ <revision 前 8 位>`、说明（A：仅个人测试、许可未声明；B：许可依据 + 34–39 s 空结果；C：实验性候选） | | |
+| 2.1 | 查看 A/B/C 三行 | 每行：状态与下一步、约 N MB、一句简短说明（A：仅个人测试；B：约 1 GB、长语音可能无结果；C：实验性候选）；来源、许可与限制在“详情”中（`3116a7b8` 起） | 行可见（`7af0cc16`，旧布局）；新布局未测 | |
 | 2.2 | 点 A →“下载（约 168 MB）” | 确认框写明：HF 转换仓库固定 revision ad658fa0、未声明许可、原始检查点在 HF 有访问门槛、仅限个人测试、不得分享文件 | | |
 | 2.3 | 确认下载 A；离开设置页再回来 | 进度按百分比与 MB 更新；返回后仍显示进度；完成后“已安装” | | |
 | 2.4 | 同样下载 C（约 199 MB）与 B（约 1010 MB，建议 Wi-Fi） | 确认框分别显示来源与许可；完成后“已安装” | | |
@@ -131,7 +166,7 @@ adb -s $vivo reverse --remove-all
 
 | # | 步骤 | 预期 | vivo | Redmi |
 |---|---|---|---|---|
-| 3.1 | 豆包：填 API Key（或 App Key + Access Token），启用，选为当前，Mic 与长按空格各说一句 | 最终文本提交；logcat 有 `Doubao ASR final` | | |
+| 3.1 | 豆包：填 API Key（或 App Key + Access Token），启用，选为当前，Mic 与长按空格各说一句 | 最终文本提交；logcat 有 `Doubao ASR final` | PASS（所有者报告，2026-09-28，`7af0cc16`；细节未另行记录） | |
 | 3.2 | 重新打开豆包凭据 | 密钥字段为空、提示“已保存，留空则保持不变”；不回显 | | |
 | 3.3 | Qwen：API Key + Workspace ID + 地域 + 模型（默认 qwen-audio-3.1-asr-flash-streaming），同上 | 最终文本提交；logcat `Qwen … final` | | |
 | 3.4 | Qwen 填错 Key | 失败提示（InvalidApiKey 类）；未建立会话即失败 | | |

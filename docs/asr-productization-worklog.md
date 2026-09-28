@@ -168,3 +168,16 @@
   2. `UserDataArchiveTest`：zip 条目名取自 `File.path`，Windows 上为反斜杠。改用 `invariantSeparatorsPath`（排除判断同样）。导入路径 `ZipInputStream.extract` 以 `File(dest, name)` 处理 `/`，在各平台均可；新增导出→extract 往返测试。
 - 测试：`FileReplaceTest`（注入 Windows 式 rename、替换失败保留旧内容、中断恢复、所报告的 last-error 用例）、`CredentialStoreTest`（二次保存、带遗留备份的清除）、`UserDataArchiveTest`（嵌套条目用 `/`、往返）。本机（Linux）147 项纯 JVM 测试通过。**限制**：本环境无 Windows；rename 行为以注入方式模拟，zip 分隔符问题只有在 Windows JVM 上才会让旧代码失败——需所有者在 Windows 上重新运行 `:app:testDebugUnitTest` 确认。
 - CI `36371783455`（`7af0cc16`）success：完整 debug 单元测试、arm64 debug APK、release 变体 Kotlin 编译。设备验收仍全部未执行。
+
+## 2026-09-28 — vivo 设备观察：Model Manager 操作被隐藏（FAIL）与修复
+
+- **设备观察（所有者，vivo X100 Pro，debug `7af0cc16`）**：服务选择与豆包 BYOK 识别 PASS。A/B/C 行可见，但点按任一行时对话框只有模型说明与“取消”，没有下载/从其他地址下载/导入/使用/删除 → **FAIL**，模型下载 checkpoint 被阻塞；下载、安装、本地识别均未在手机上测试。
+- 原因（源码核对）：`VoiceSettingsFragment.modelActions()` 在同一 AlertDialog 上同时 `setMessage()` 与 `setItems()`；AlertDialog 只在没有 message 时把条目列表放进对话框。本页其他对话框已逐一检查：没有其他同时使用 message 与条目列表的（单选列表对话框无 message；其余 message 对话框无条目）。
+- 修复（Android `3116a7b8`）：
+  - `ActionListDialog`：只有标题与操作列表、没有 message；“详情：来源、许可、限制”作为一项，打开单独的详情对话框（版本、大小、SHA-256 校验、来源、完整说明）。下载前的披露确认框与 SHA-256 校验不变。
+  - 操作按状态给出（纯 Kotlin `modelRow`，有单测）：未安装 → 下载、从其他地址下载、导入（下载仍受许可门槛：A 仅 debug）；部分下载 → 继续下载、丢弃；下载中 → 取消；已安装 → 使用（已是本地模型时不显示）、删除。
+  - 行摘要改为“状态 + 下一步”加一句简短说明，不再在列表里重复完整来源 URL 与长许可说明。
+  - “启用本地语音识别”、选择本地模型、选择当前服务三者保持分离：开关增加说明；“使用”后若本地未启用或不是当前服务，弹窗说明并提供“启用本地并使用”。
+  - 回归检查：`ModelRowsTest`（JVM）；`ActionListDialogTest`（仪器测试，真机上创建对话框并断言条目列表确实挂在对话框中，另一项断言 message 会使列表脱离——证明检查有效）。CI 无设备，只编译仪器测试；在手机上运行的命令见验收脚本 §2.0b（不卸载 App、不清数据）。
+- CI：第一次推送的 run `36377026826` 失败——我新增的 CI 步骤名含“: ”，工作流 YAML 无效，未启动任何 job；`6007c8ca` 修正步骤名后 run `36377100363` success：debug 单元测试（含 Windows 相关测试）、arm64 debug APK、release Kotlin 编译、仪器测试编译。本机 153 项纯 JVM 测试通过。
+- **修复后的 APK 尚未在手机上检查**；验收脚本 §2.0a 记录观察，§2.0b 为复测步骤；下载、安装、本地识别仍为未测。
