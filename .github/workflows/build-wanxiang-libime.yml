@@ -1,0 +1,68 @@
+name: Build Wanxiang LibIME dictionary
+on:
+  push:
+    branches: [tools/wanxiang-libime-build]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install LibIME tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libime-bin python3
+          command -v libime_pinyindict
+      - name: Fetch Wanxiang jichu
+        run: |
+          curl -fL --retry 3 -o jichu.dict.yaml https://raw.githubusercontent.com/amzxyz/rime-wanxiang/wanxiang/dicts/jichu.dict.yaml
+          sha256sum jichu.dict.yaml
+          wc -l -c jichu.dict.yaml
+      - name: Convert W1
+        run: |
+          cat > convert.py <<'PY'
+          import re, unicodedata
+          from pathlib import Path
+          src=Path("jichu.dict.yaml"); dst=Path("wanxiang-jichu-w1.txt"); rej=Path("rejected.tsv")
+          def py(s):
+              s=unicodedata.normalize("NFD",s)
+              s="".join(c for c in s if unicodedata.category(c)!="Mn")
+              s=unicodedata.normalize("NFC",s).replace("ü","v").replace("Ü","V")
+              return "'".join(s.lower().split())
+          seen=set(); total=ok=bad=dup=0; header=False
+          with src.open(encoding="utf-8-sig") as f,dst.open("w",encoding="utf-8") as o,rej.open("w",encoding="utf-8") as e:
+              for n,line in enumerate(f,1):
+                  line=line.rstrip("\r\n")
+                  if not header:
+                      if line.strip()=="...": header=True
+                      continue
+                  if not line or line.lstrip().startswith("#"): continue
+                  total+=1; a=line.split("\t")
+                  if len(a)<2: bad+=1; e.write(f"{n}\tFIELDS\t{line}\n"); continue
+                  word,p=a[0].strip(),py(a[1].strip())
+                  if not word or not re.fullmatch(r"[a-z]+(?:'[a-z]+)*",p):
+                      bad+=1; e.write(f"{n}\tPINYIN\t{line}\n"); continue
+                  k=(word,p)
+                  if k in seen: dup+=1; continue
+                  seen.add(k); o.write(f"{word} {p} 0\n"); ok+=1
+          print(dict(total=total,emitted=ok,rejected=bad,duplicate=dup))
+          PY
+          python3 convert.py | tee stats.txt
+      - name: Compile and round-trip validate
+        run: |
+          libime_pinyindict wanxiang-jichu-w1.txt wanxiang-jichu-w1.dict
+          libime_pinyindict -d wanxiang-jichu-w1.dict roundtrip.txt
+          test -s wanxiang-jichu-w1.dict
+          test -s roundtrip.txt
+          echo "SOURCE_LINES=$(wc -l < wanxiang-jichu-w1.txt)" | tee -a stats.txt
+          echo "ROUNDTRIP_LINES=$(wc -l < roundtrip.txt)" | tee -a stats.txt
+          ls -lh wanxiang-jichu-w1.dict wanxiang-jichu-w1.txt | tee -a stats.txt
+          sha256sum wanxiang-jichu-w1.dict | tee -a stats.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wanxiang-jichu-libime-w1
+          path: |
+            wanxiang-jichu-w1.dict
+            stats.txt
+            rejected.tsv
+          retention-days: 7
