@@ -160,3 +160,11 @@
   - 另注：导入旧的导出文件可能把旧值带回，下一次导出或读取时同样会被删除。
 - 验证：本机 138 项纯 JVM 测试通过；`git diff --check`、字符串资源检查通过；推送前凭据扫描无命中。CI `36369645177`（`93d8e03e`，含 `318c4d02`）success：单元测试、arm64 debug APK、release 变体 Kotlin 编译。
 - ROADMAP：把 Phase 4C 前后互相矛盾的“未实现”表述改为历史说明，并把第 5 项分为“代码已实现 / CI 通过 / 待设备与真实云端验收”三层；A/B/C 个人测试决定与 A 公开发布许可、B 许可依据等未决问题保留。
+
+## 2026-09-28 — Windows 单元测试失败修复（Android `7af0cc16`）
+
+- 所有者在 Windows 上构建 `93d8e03e`，`:app:testDebugUnitTest` 两项失败；Linux CI 未发现（平台差异）。
+  1. `VoicePrefsTest.lastErrorRoundTripsAndIsBounded`：`File.renameTo` 在 Windows 上不能覆盖已存在的目标，第二条 last-error 未写入且被静默忽略。修复：`FileReplace`——先尝试 rename；目标存在时先移到 `.bak`、再移入新文件、失败则恢复旧文件并返回 false；读取时恢复中断的替换。只用 API 1 的 `File.renameTo/delete/exists`（`Files.move` 需 API 26，minSdk 23）。`LastErrorRecord.write` 失败时返回 false（由 `VoiceSelectionStore` 记录日志）；`CredentialStore` 同一问题一并修复（Windows 上第二次保存凭据同样会失败）。
+  2. `UserDataArchiveTest`：zip 条目名取自 `File.path`，Windows 上为反斜杠。改用 `invariantSeparatorsPath`（排除判断同样）。导入路径 `ZipInputStream.extract` 以 `File(dest, name)` 处理 `/`，在各平台均可；新增导出→extract 往返测试。
+- 测试：`FileReplaceTest`（注入 Windows 式 rename、替换失败保留旧内容、中断恢复、所报告的 last-error 用例）、`CredentialStoreTest`（二次保存、带遗留备份的清除）、`UserDataArchiveTest`（嵌套条目用 `/`、往返）。本机（Linux）147 项纯 JVM 测试通过。**限制**：本环境无 Windows；rename 行为以注入方式模拟，zip 分隔符问题只有在 Windows JVM 上才会让旧代码失败——需所有者在 Windows 上重新运行 `:app:testDebugUnitTest` 确认。
+- CI `36371783455`（`7af0cc16`）success：完整 debug 单元测试、arm64 debug APK、release 变体 Kotlin 编译。设备验收仍全部未执行。
