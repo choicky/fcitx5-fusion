@@ -90,8 +90,34 @@ jobs:
             one(os.path.join(root,top))
             return rows,seen
           report={}
-          rows,files=imports("ice","rime_ice.dict.yaml")
-          report["rime-ice"]=write_entries("rime-ice-libime",rows,sorted(files))
+          # Rime Ice uses text<TAB>weight for many entries and lets Rime
+          # auto-annotate from 8105. Build its primary-pronunciation map first.
+          cmap={}
+          for a in raw_rime("ice/cn_dicts/8105.dict.yaml"):
+            if len(a)>=2 and re.fullmatch(r"[A-Za-züÜǖǘǚǜǕǗǙǛ :']+",a[1]):
+              wt=float(a[2]) if len(a)>=3 and re.fullmatch(r"[0-9.]+",a[2]) else 0
+              py=normpy(a[1])
+              if len(a[0])==1 and (a[0] not in cmap or wt>cmap[a[0]][0]): cmap[a[0]]=(wt,py)
+          cmap={k:v[1] for k,v in cmap.items()}
+          # Custom recursion for Ice using its character map.
+          seen=set(); rows=[]
+          def ice_one(path):
+            path=os.path.normpath(path)
+            if path in seen or not os.path.exists(path): return
+            seen.add(path); txt=open(path,encoding="utf-8-sig").read(); ims=[]; active=False
+            for line in txt.splitlines():
+              if re.match(r"^import_tables\\s*:",line): active=True; continue
+              if active:
+                m=re.match(r"^\\s*-\\s*([^#\\s]+)",line)
+                if m: ims.append(m.group(1)); continue
+                if line.strip() and not line.lstrip().startswith("#"): active=False
+            if ims:
+              for q in ims:
+                q=q.strip("'\\\""); q=q if q.endswith(".dict.yaml") else q+".dict.yaml"
+                ice_one(os.path.join("ice",q))
+            else: rows.extend(rime_file(path,cmap))
+          ice_one("ice/rime_ice.dict.yaml")
+          report["rime-ice"]=write_entries("rime-ice-libime",rows,sorted(seen))
           rows,files=imports("frost","rime_frost.dict.yaml")
           report["rime-frost"]=write_entries("rime-frost-libime",rows,sorted(files))
           # Wanxiang: deliberately core jichu only, matching prior W1 experiment.
@@ -111,6 +137,7 @@ jobs:
           open("out/README.txt","w").write("""Fcitx5/LibIME dictionaries built for fcitx5-moqi research.\nRule: third-party entries use value 0; exact (word,pinyin) matches carrying a negative value in official LibIME sc.dict inherit that official negative value.\nWanxiang artifact intentionally uses jichu core only. Rime Ice/Frost follow their top-level dictionary import_tables recursively. Custom starts from its native LibIME release dictionary.\nSee MANIFEST.json for exact source commits and counts.\n""")
           PY
           python3 /tmp/build.py
+          for f in out/*.dict; do libime_pinyindict -d "$f" "$f.roundtrip.txt"; test -s "$f.roundtrip.txt"; rm "$f.roundtrip.txt"; done
           sha256sum out/*.dict > out/SHA256SUMS.txt
           cat out/MANIFEST.json
           ls -lh out
