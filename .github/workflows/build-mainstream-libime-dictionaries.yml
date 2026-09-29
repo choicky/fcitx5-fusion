@@ -54,7 +54,7 @@ jobs:
             subprocess.run(["libime_pinyindict",txt,"out/"+name+".dict"],check=True)
             inherited=sum(v<0 for v in d.values())
             return {"source":source,"entries":len(d),"rejected":rejected,"official_negative_inherited":inherited}
-          def rime_file(path):
+          def raw_rime(path):
             rows=[]; header=True
             for line in open(path,encoding="utf-8-sig"):
               line=line.rstrip("\n")
@@ -62,8 +62,16 @@ jobs:
                 if line.strip()=="...": header=False
                 continue
               if not line or line.lstrip().startswith("#"): continue
-              a=line.split("\t")
-              if len(a)>=2: rows.append((a[0].strip(),a[1].strip()))
+              rows.append([x.strip() for x in line.split("\t")])
+            return rows
+          def rime_file(path,charmap=None):
+            rows=[]
+            for a in raw_rime(path):
+              if len(a)>=2 and re.fullmatch(r"[A-Za-züÜǖǘǚǜǕǗǙǛ :']+",a[1]):
+                rows.append((a[0],a[1])); continue
+              if charmap:
+                ps=[charmap.get(ch) for ch in a[0]]
+                if all(ps): rows.append((a[0]," ".join(ps)))
             return rows
           def imports(root, top):
             # Recursively follow import_tables, otherwise consume the file itself.
