@@ -122,12 +122,17 @@ Phase 5B 已完成研究冻结、固定构建/release 基础设施，并只把 F
 Wanxiang `jichu` 纳入生产 release set；Ice 和 Custom 仍是非发布候选。
 `dictionary-v1.0.0` 指向 Phase 5B 完成提交并已推送。
 
-Phase 5C 的最小实现提交为 Android 分支
-`a2920fb71bcb1ae0b38c74315a8388c02c77a2fd`，包含：
+Phase 5C 的实现位于 Android 分支 `phase5c-dictionary-manager`，最终提交为
+`2e232acde326147a9e3080b53aaf0fb161760ee5`，包含：
 
 - 复用现有 Pinyin dictionary UI 和用户目录，不修改 LibIME 或运行时协议；
 - 使用固定的 Phase 5B catalog，显示版本、许可证、来源和限制；
 - HTTPS 下载、可用空间检查、临时文件、SHA-256/大小校验、原子替换、旧文件保留和删除；
 - 失败或取消不会替换当前可用词库；安装器和 catalog 元数据有 JVM 单元测试。
 
-该批次尚未声称完成 M4 产品验收：可恢复断点下载、双设备性能/候选回归和真实设备生命周期验收仍是后续验证项。首次 Android CI run `36609069520` 在 `Build debug APK (arm64-v8a)` 失败；GitHub 对当前凭据拒绝下载 job log（`403 Must have admin rights to Repository`），本机复现又缺少 Android SDK，因此尚未据此修改源码。实现不得上传输入历史，也不改变 LibIME 用户学习层。
+GitHub Actions run `36614543149` passed the debug APK build, JVM unit tests,
+release Kotlin compilation, instrumented-test compilation, and APK content
+verification. 本机未安装 Android SDK，因此未重复本地 Android Gradle 构建；CI 是
+本批次的可复核构建证据。该批次尚未声称完成 M4 产品验收：可恢复断点下载、
+双设备性能/候选回归和真实设备生命周期验收仍是后续验证项。实现不得上传输入历史，
+也不改变 LibIME 用户学习层。

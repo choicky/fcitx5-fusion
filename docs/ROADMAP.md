@@ -422,15 +422,15 @@ Phase 5B 已将固定构建实现迁入 `tools/dict-builder/build.py`、
 PR #1 review remediation：四项 P2（完整 consumed-source hash、强制 verified
 toolchain manifest、Rime imports + current table parsing、独立 build audit
 artifact）已修复；远端 CI run `36602286082` 通过，PR #1 可进入正常合并
-流程。Phase 5C 的 Android 最小实现已提交到 `choicky/fcitx5-android` 分支
-`phase5c-dictionary-manager`，commit
-`a2920fb71bcb1ae0b38c74315a8388c02c77a2fd`。它复用现有 Pinyin dictionary
+流程。Phase 5C 的 Android 实现已提交到 `choicky/fcitx5-android` 分支
+`phase5c-dictionary-manager`，最终 commit
+`2e232acde326147a9e3080b53aaf0fb161760ee5`。它复用现有 Pinyin dictionary
 UI 和目录，提供固定 catalog、许可证/来源/限制展示、HTTPS 下载、空间检查、
 SHA-256 校验、临时文件、原子替换、旧文件保留和删除；没有修改 LibIME 或上传
-用户学习数据。首次 Android CI run `36609069520` 在 APK 构建步骤失败；当前凭据
-无法下载其详细 job log（GitHub API 返回 `403 Must have admin rights to
-Repository`），本机也缺少 Android SDK，因此不把该分支写成已通过 CI、已合入
-主线或已发布 APK。真实设备的 M4 验收仍待完成。
+用户学习数据。Android CI run `36614543149` 已成功通过 debug APK、JVM unit
+tests、release Kotlin、instrumented-test compile 和 APK 内容验证；本机缺少
+Android SDK，未重复本地构建。该分支尚未合入主线或发布 APK，真实设备的 M4
+验收仍待完成。
 
 ## Phase 6 — Optional LLM Post-processing
 
