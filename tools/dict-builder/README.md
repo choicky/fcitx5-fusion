@@ -32,6 +32,27 @@ cmake --build /tmp/moqi-libime-regression
 ctest --test-dir /tmp/moqi-libime-regression --output-on-failure
 ```
 
-Source commits and input hashes belong in the caller's manifest; the example
-manifest leaves them explicit rather than inventing them. Generated
-dictionaries are intentionally not tracked in this repository.
+`manifest.json` is the production input manifest. It pins every source commit,
+the official `dict-20260907` archive, license-file hashes, and the release set.
+The Phase 5B build driver fetches only the pinned Git revision with a depth-one
+fetch, verifies the revision and licenses, invokes this converter, then calls
+the real `libime_pinyindict` executable. It writes `.dict`, `SHA256SUMS`, and a
+small `index.json`; generated dictionaries are intentionally not tracked.
+
+Run the fixed production build locally:
+
+```text
+python3 tools/dict-builder/build.py --output /tmp/moqi-dictionary-build --source-root /tmp
+```
+
+The release set is Frost and Wanxiang `jichu`. Ice is pinned for provenance but
+excluded because Phase 5A found unresolved phrase-level pronunciation
+mismatches. CustomPinyinDictionary is pinned as a research candidate but
+excluded because its upstream snapshot does not provide a verifiable
+redistribution license and its README identifies multiple third-party data
+sources. No release artifact is made for either excluded source.
+
+The production workflow is `.github/workflows/build-dictionaries.yml`. It has
+no user-controlled source or matrix inputs: `workflow_dispatch` runs the fixed
+build for validation, while a maintainer-created `dictionary-v*` tag performs
+the same build and creates the GitHub Release.

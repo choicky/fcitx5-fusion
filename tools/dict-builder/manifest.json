@@ -1,0 +1,57 @@
+{
+  "schema": "fcitx5-moqi-dictionary-index-v1",
+  "converter": "tools/dict-builder/convert.py",
+  "rule_version": "v1",
+  "libime_commit": "ecd23795ff7ea63a55a1b88fc4767946b999e102",
+  "official": {
+    "url": "https://download.fcitx-im.org/data/dict-20260907.tar.zst",
+    "sha256": "fb75a179065e690dfc4559ce1807cbaf4fbe4f0111a5005615be9f435e6b9d76",
+    "file": "dict_sc.txt",
+    "sha256_unpacked": "0127667cd084ca5932a8e6c023bcde09b8220ce826fa3b1e6214f768c14cc922"
+  },
+  "sources": {
+    "rime-frost": {
+      "release": true,
+      "display_name": "Rime Frost",
+      "repository": "https://github.com/gaboolic/rime-frost.git",
+      "commit": "211de1ca927b6c876e384c6de42e1cc8af868c68",
+      "top": "rime_frost.dict.yaml",
+      "expected": {"accepted": 2026480, "rejected": 17, "duplicates": 23889, "roundtrip_rows": 2010588},
+      "license": "GPL-3.0-only",
+      "license_url": "https://raw.githubusercontent.com/gaboolic/rime-frost/211de1ca927b6c876e384c6de42e1cc8af868c68/LICENSE",
+      "license_sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+    },
+    "rime-wanxiang": {
+      "release": true,
+      "display_name": "Wanxiang (jichu)",
+      "repository": "https://github.com/amzxyz/rime-wanxiang.git",
+      "commit": "94f1e8d7b6d1267a9c8752a2e62145705dd1fb92",
+      "top": "dicts/jichu.dict.yaml",
+      "expected": {"accepted": 1425250, "rejected": 15, "duplicates": 0, "roundtrip_rows": 1425249},
+      "license": "CC-BY-4.0",
+      "license_url": "https://raw.githubusercontent.com/amzxyz/rime-wanxiang/94f1e8d7b6d1267a9c8752a2e62145705dd1fb92/LICENSE",
+      "license_sha256": "9e5f1b3c610b9c2da5c313bf81d577a7d1acec686bdb0384edefa6df0f90cd94"
+    },
+    "custom-pinyin": {
+      "release": false,
+      "display_name": "CustomPinyinDictionary",
+      "repository": "https://github.com/wuhgit/CustomPinyinDictionary.git",
+      "commit": "0673212e83c9db1fef24fdf950b22c994bf27e9c",
+      "asset_url": "https://github.com/wuhgit/CustomPinyinDictionary/releases/download/assets/CustomPinyinDictionary_Fcitx.dict",
+      "asset_sha256": "3a8cdcb844d1ae5f5dab9763b8ad2077a88c4b90b274bbdb6af6b22a304972a8",
+      "license": null,
+      "exclusion_reason": "No upstream redistribution license was found; the README describes multiple third-party data sources."
+    },
+    "rime-ice": {
+      "release": false,
+      "display_name": "Rime Ice",
+      "repository": "https://github.com/iDvel/rime-ice.git",
+      "commit": "3aea6d3694fb3d94ec663641f021f788822897ad",
+      "top": "rime_ice.dict.yaml",
+      "license": "GPL-3.0-only",
+      "license_url": "https://raw.githubusercontent.com/iDvel/rime-ice/3aea6d3694fb3d94ec663641f021f788822897ad/LICENSE",
+      "license_sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
+      "exclusion_reason": "Phase 5A found 9 pronunciation mismatches in 24 verifiable phrase-level comparisons after character-level annotation."
+    }
+  }
+}
