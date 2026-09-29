@@ -43,15 +43,20 @@ manifest before fetching dictionary sources, invokes this converter, then
 calls that real pinned executable. It writes `.dict`, `SHA256SUMS`, and a
 small `index.json`; generated dictionaries are intentionally not tracked.
 
-Run the fixed production build locally:
+Run the fixed production build locally after building the pinned toolchain:
 
 ```text
-python3 tools/dict-builder/build.py --output /tmp/moqi-dictionary-build --source-root /tmp
+tools/dict-builder/build-libime.sh --manifest tools/dict-builder/manifest.json \
+  --source-root /tmp --prefix /tmp/moqi-pinned-libime
+python3 tools/dict-builder/build.py --output /tmp/moqi-dictionary-build \
+  --source-root /tmp \
+  --toolchain-manifest /tmp/moqi-pinned-libime/toolchain.json \
+  --pinyindict /tmp/moqi-pinned-libime/bin/libime_pinyindict
 ```
 
-For a pinned-toolchain build, first run
-`tools/dict-builder/build-libime.sh`, then pass its
-`--toolchain-manifest` and `--pinyindict` paths as the workflow does.
+The build driver requires the verified toolchain manifest and matching
+`libime_pinyindict`; it does not emit pinned provenance for an unverified
+executable.
 
 The release set is Frost and Wanxiang `jichu`. Ice is pinned for provenance but
 excluded because Phase 5A found unresolved phrase-level pronunciation

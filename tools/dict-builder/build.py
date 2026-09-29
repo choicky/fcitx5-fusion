@@ -70,7 +70,7 @@ def main() -> int:
     parser.add_argument("--manifest", type=Path, default=HERE / "manifest.json")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--pinyindict", default="libime_pinyindict")
-    parser.add_argument("--toolchain-manifest", type=Path)
+    parser.add_argument("--toolchain-manifest", type=Path, required=True)
     parser.add_argument("--source-root", type=Path)
     args = parser.parse_args()
     manifest = json.loads(args.manifest.read_text(encoding="utf-8"))
@@ -101,8 +101,7 @@ def main() -> int:
         source_root = temp_root / "sources"
         source_root.mkdir()
         index = {"schema": manifest["schema"], "build": {"converter": manifest["converter"], "rule_version": manifest["rule_version"], "fcitx5_commit": manifest["fcitx5_commit"], "kenlm_commit": manifest["kenlm_commit"], "libime_commit": manifest["libime_commit"]}, "dictionaries": []}
-        if toolchain:
-            index["build"]["pinyindict_sha256"] = toolchain["pinyindict_sha256"]
+        index["build"]["pinyindict_sha256"] = toolchain["pinyindict_sha256"]
         audit_sources = []
         for key, source in manifest["sources"].items():
             if not source.get("release"):
