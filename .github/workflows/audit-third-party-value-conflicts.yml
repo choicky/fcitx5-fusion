@@ -1,0 +1,74 @@
+name: Audit Third Party Value Conflicts
+on:
+  workflow_dispatch:
+  push:
+    branches: [tools/wanxiang-libime-build]
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    steps:
+      - run: |
+          sudo apt-get update && sudo apt-get install -y python3 zstd libime-bin
+          curl -fL -o d.zst https://download.fcitx-im.org/data/dict-20260907.tar.zst
+          echo "fb75a179065e690dfc4559ce1807cbaf4fbe4f0111a5005615be9f435e6b9d76  d.zst" | sha256sum -c -
+          tar --use-compress-program=unzstd -xf d.zst
+          libime_pinyindict dict_sc.txt sc.dict
+          libime_pinyindict -d sc.dict sc.txt
+          curl -fL -o custom.dict https://github.com/wuhgit/CustomPinyinDictionary/releases/download/assets/CustomPinyinDictionary_Fcitx.dict
+          libime_pinyindict -d custom.dict custom.txt
+          curl -fL -o wx.yaml https://raw.githubusercontent.com/amzxyz/rime-wanxiang/wanxiang/dicts/jichu.dict.yaml
+      - run: |
+          cat > /tmp/a.py <<'PY'
+          import unicodedata,re,json,collections
+          def lib(p):
+            d={}
+            for x in open(p,encoding="utf8"):
+              try:w,py,v=x.rstrip().rsplit(" ",2);d[(w,py)]=float(v)
+              except:pass
+            return d
+          def np(s):
+            for c in "ǖǘǚǜü":s=s.replace(c,"v")
+            for c in "ǕǗǙǛÜ":s=s.replace(c,"v")
+            s=unicodedata.normalize("NFD",s)
+            s="".join(c for c in s if unicodedata.category(c)!="Mn")
+            return "'".join(s.lower().replace("u:","v").split())
+          def wx():
+            d={};h=False
+            for x in open("wx.yaml",encoding="utf-8-sig"):
+              x=x.rstrip()
+              if not h:
+                if x=="...":h=True
+                continue
+              if not x or x.lstrip().startswith("#"):continue
+              a=x.split("\t")
+              if len(a)>=2:
+                p=np(a[1].strip())
+                if re.fullmatch(r"[a-z]+(?:'[a-z]+)*",p):d[(a[0].strip(),p)]=0.0
+            return d
+          O,C,W=lib("sc.txt"),lib("custom.txt"),wx()
+          N={k:v for k,v in O.items() if v!=0}
+          def audit(D,name):
+            hit=set(N)&set(D); neg={k:N[k] for k in hit if N[k]<0}; pos={k:N[k] for k in hit if N[k]>0}
+            r={"official_nonzero_total":len(N),"exact_hits":len(hit),"negative_hits":len(neg),"positive_hits":len(pos),
+               "negative_penalty_bypassed_if_parallel_zero_path":len(neg)}
+            with open(name+"-conflicts.tsv","w",encoding="utf8") as f:
+              f.write("word\tpinyin\tofficial_value\tthird_party_value\n")
+              for k in sorted(hit,key=lambda k:N[k]):
+                f.write(f"{k[0]}\t{k[1]}\t{N[k]}\t{D[k]}\n")
+            return r
+          R={"custom":audit(C,"custom"),"wanxiang":audit(W,"wanxiang")}
+          hc=set(N)&set(C); hw=set(N)&set(W)
+          R["both"]={"hit_same_official_nonzero":len(hc&hw),"custom_only":len(hc-hw),"wanxiang_only":len(hw-hc)}
+          print(json.dumps(R,ensure_ascii=False,indent=2))
+          open("report.json","w").write(json.dumps(R,ensure_ascii=False,indent=2))
+          PY
+          python3 /tmp/a.py | tee report.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: third-party-value-conflict-audit
+          path: |
+            report.txt
+            report.json
+            custom-conflicts.tsv
+            wanxiang-conflicts.tsv
+          retention-days: 7
