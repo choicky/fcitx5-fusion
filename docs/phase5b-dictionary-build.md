@@ -79,7 +79,6 @@ verified pinned-toolchain manifest at the build-driver boundary and in the
 production workflow, parses both
 `import_tables` and the current table's own entries, and uploads `audit.json`
 plus conversion/rejection/round-trip logs as a separate CI artifact. The
-source-hash, Rime parsing, and audit-artifact remediation passed local
-validation and the clean remote run above. The additional mandatory
-build-driver provenance enforcement is locally validated in commit `2a29a83`
-and awaits its clean remote run before final closure.
+source-hash, Rime parsing, audit-artifact, and mandatory build-driver
+provenance remediation passed local validation and the clean remote run above,
+closing all four P2 review findings.
