@@ -6,6 +6,8 @@ import argparse, hashlib, json, shutil, subprocess, tempfile
 from pathlib import Path
 from urllib.request import urlopen, Request
 
+import convert
+
 HERE = Path(__file__).resolve().parent
 
 def sha256(path: Path) -> str:
@@ -31,6 +33,18 @@ def check_conversion(log: str, expected: dict, name: str) -> None:
     for key in ("accepted", "rejected", "duplicates"):
         if int(fields.get(key, -1)) != expected[key]:
             raise RuntimeError(f"{name} {key} count changed: {fields.get(key)} != {expected[key]}")
+
+
+def consumed_source(root: Path, top: str) -> tuple[str, list[dict]]:
+    files = sorted(convert.rime_tree_files(root, Path(top)), key=lambda path: str(path.relative_to(root)))
+    digest = hashlib.sha256()
+    evidence = []
+    for path in files:
+        relative = str(path.relative_to(root))
+        data = path.read_bytes()
+        digest.update(relative.encode("utf-8") + b"\0" + str(len(data)).encode("ascii") + b"\0" + data)
+        evidence.append({"path": relative, "bytes": len(data), "sha256": hashlib.sha256(data).hexdigest()})
+    return digest.hexdigest(), evidence
 
 def fetch_source(source: dict, root: Path) -> Path:
     checkout = root / source["display_name"].lower().replace(" ", "-")
@@ -89,10 +103,14 @@ def main() -> int:
         index = {"schema": manifest["schema"], "build": {"converter": manifest["converter"], "rule_version": manifest["rule_version"], "fcitx5_commit": manifest["fcitx5_commit"], "kenlm_commit": manifest["kenlm_commit"], "libime_commit": manifest["libime_commit"]}, "dictionaries": []}
         if toolchain:
             index["build"]["pinyindict_sha256"] = toolchain["pinyindict_sha256"]
+        audit_sources = []
         for key, source in manifest["sources"].items():
             if not source.get("release"):
                 continue
             checkout = fetch_source(source, source_root)
+            input_sha256, source_files = consumed_source(checkout, source["top"])
+            if input_sha256 != source["input_sha256"]:
+                raise RuntimeError(f"source input hash mismatch for {key}: {input_sha256} != {source['input_sha256']}")
             license_hash = verify_license(source, temp_root)
             license_file = args.output / f"{key}.LICENSE"
             shutil.copyfile(temp_root / (source["display_name"].replace(" ", "-") + ".LICENSE"), license_file)
@@ -109,7 +127,10 @@ def main() -> int:
             roundtrip_rows = sum(1 for _ in roundtrip.open(encoding="utf-8"))
             if roundtrip_rows != source["expected"]["roundtrip_rows"]:
                 raise RuntimeError(f"{key} round-trip count changed: {roundtrip_rows} != {source['expected']['roundtrip_rows']}")
-            index["dictionaries"].append({"id": key, "display_name": source["display_name"], "artifact": binary.name, "version": source["commit"], "source_repository": source["repository"].removesuffix(".git"), "source_revision": source["commit"], "sha256": sha256(binary), "size": binary.stat().st_size, "license": source["license"], "license_file": license_file.name, "license_sha256": license_hash, "compatibility": {"format": "LibIME pinyindict", "official_dictionary": "dict-20260907", "converter_rule": manifest["rule_version"]}})
+            binary_sha256 = sha256(binary)
+            index["dictionaries"].append({"id": key, "display_name": source["display_name"], "artifact": binary.name, "version": source["commit"], "source_repository": source["repository"].removesuffix(".git"), "source_revision": source["commit"], "source_input_sha256": input_sha256, "sha256": binary_sha256, "size": binary.stat().st_size, "license": source["license"], "license_file": license_file.name, "license_sha256": license_hash, "compatibility": {"format": "LibIME pinyindict", "official_dictionary": "dict-20260907", "converter_rule": manifest["rule_version"]}})
+            fields = dict(item.split("=") for item in conversion_log.strip().split() if "=" in item)
+            audit_sources.append({"id": key, "source_revision": source["commit"], "source_input_sha256": input_sha256, "source_files": source_files, "accepted": int(fields["accepted"]), "rejected": int(fields["rejected"]), "duplicates": int(fields["duplicates"]), "roundtrip_rows": roundtrip_rows, "conversion_log": f"{key}.convert.log", "rejected_rows": rejects.name, "compile_log": f"{key}.compile.log", "roundtrip_log": f"{key}.roundtrip.log", "artifact": binary.name, "artifact_sha256": binary_sha256})
             roundtrip.unlink()
         sums = args.output / "SHA256SUMS"
         checksum_files = [(item["artifact"], sha256(args.output / item["artifact"])) for item in index["dictionaries"]]
@@ -121,6 +142,8 @@ def main() -> int:
             if item["sha256"] != sha256(args.output / item["artifact"]) or item["size"] != (args.output / item["artifact"]).stat().st_size:
                 raise RuntimeError(f"index mismatch for {item['id']}")
         run("sha256sum", "-c", str(sums), cwd=args.output)
+        audit = {"schema": "fcitx5-moqi-dictionary-audit-v1", "build": index["build"], "official": manifest["official"], "dictionaries": audit_sources, "checksums": sums.name, "index": index_path.name}
+        (args.output / "audit.json").write_text(json.dumps(audit, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         print(json.dumps(index, ensure_ascii=False, indent=2))
     return 0
 

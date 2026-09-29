@@ -20,7 +20,8 @@
       "repository": "https://github.com/gaboolic/rime-frost.git",
       "commit": "211de1ca927b6c876e384c6de42e1cc8af868c68",
       "top": "rime_frost.dict.yaml",
-      "expected": {"accepted": 2026480, "rejected": 17, "duplicates": 23889, "roundtrip_rows": 2010588},
+      "input_sha256": "d14de272e0c39b8c446618bcc0be8bb07e5a7bdfc8d42cfa8c34b5e4f863ae2c",
+      "expected": {"accepted": 2026517, "rejected": 180, "duplicates": 23889, "roundtrip_rows": 2010605},
       "license": "GPL-3.0-only",
       "license_url": "https://raw.githubusercontent.com/gaboolic/rime-frost/211de1ca927b6c876e384c6de42e1cc8af868c68/LICENSE",
       "license_sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
@@ -31,6 +32,7 @@
       "repository": "https://github.com/amzxyz/rime-wanxiang.git",
       "commit": "94f1e8d7b6d1267a9c8752a2e62145705dd1fb92",
       "top": "dicts/jichu.dict.yaml",
+      "input_sha256": "4a6b1d17b812048f217cce0118a44c9ab7b9369768f0ce4ed5a9b6ae40100074",
       "expected": {"accepted": 1425250, "rejected": 15, "duplicates": 0, "roundtrip_rows": 1425249},
       "license": "CC-BY-4.0",
       "license_url": "https://raw.githubusercontent.com/amzxyz/rime-wanxiang/94f1e8d7b6d1267a9c8752a2e62145705dd1fb92/LICENSE",
