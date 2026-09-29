@@ -56,9 +56,21 @@ def main() -> int:
     parser.add_argument("--manifest", type=Path, default=HERE / "manifest.json")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--pinyindict", default="libime_pinyindict")
+    parser.add_argument("--toolchain-manifest", type=Path)
     parser.add_argument("--source-root", type=Path)
     args = parser.parse_args()
     manifest = json.loads(args.manifest.read_text(encoding="utf-8"))
+    toolchain = None
+    if args.toolchain_manifest:
+        toolchain = json.loads(args.toolchain_manifest.read_text(encoding="utf-8"))
+        if (toolchain["fcitx5_commit"] != manifest["fcitx5_commit"] or
+                toolchain["kenlm_commit"] != manifest["kenlm_commit"] or
+                toolchain["libime_commit"] != manifest["libime_commit"]):
+            raise RuntimeError("pinned Fcitx5/LibIME toolchain revision mismatch")
+        if Path(toolchain["pinyindict"]).resolve() != Path(args.pinyindict).resolve():
+            raise RuntimeError("toolchain manifest does not describe --pinyindict")
+        if sha256(Path(args.pinyindict)) != toolchain["pinyindict_sha256"]:
+            raise RuntimeError("libime_pinyindict hash mismatch")
     args.output.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="moqi-dict-build-", dir=args.source_root) as temp:
         temp_root = Path(temp)
@@ -74,7 +86,9 @@ def main() -> int:
             raise RuntimeError("official dictionary input hash mismatch")
         source_root = temp_root / "sources"
         source_root.mkdir()
-        index = {"schema": manifest["schema"], "build": {"converter": manifest["converter"], "rule_version": manifest["rule_version"], "libime_commit": manifest["libime_commit"]}, "dictionaries": []}
+        index = {"schema": manifest["schema"], "build": {"converter": manifest["converter"], "rule_version": manifest["rule_version"], "fcitx5_commit": manifest["fcitx5_commit"], "kenlm_commit": manifest["kenlm_commit"], "libime_commit": manifest["libime_commit"]}, "dictionaries": []}
+        if toolchain:
+            index["build"]["pinyindict_sha256"] = toolchain["pinyindict_sha256"]
         for key, source in manifest["sources"].items():
             if not source.get("release"):
                 continue

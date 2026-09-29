@@ -32,11 +32,15 @@ cmake --build /tmp/moqi-libime-regression
 ctest --test-dir /tmp/moqi-libime-regression --output-on-failure
 ```
 
-`manifest.json` is the production input manifest. It pins every source commit,
+`manifest.json` is the production input manifest. It pins Fcitx5 and LibIME
+source commits, every dictionary source commit,
 the official `dict-20260907` archive, license-file hashes, and the release set.
-The Phase 5B build driver fetches only the pinned Git revision with a depth-one
-fetch, verifies the revision and licenses, invokes this converter, then calls
-the real `libime_pinyindict` executable. It writes `.dict`, `SHA256SUMS`, and a
+The Phase 5B toolchain builder fetches the pinned Fcitx5 and LibIME revisions
+with depth-one fetches, initializes and verifies LibIME's pinned KenLM
+submodule, builds both from source, and records the
+`libime_pinyindict` hash in `toolchain.json`. The build driver verifies that
+manifest before fetching dictionary sources, invokes this converter, then
+calls that real pinned executable. It writes `.dict`, `SHA256SUMS`, and a
 small `index.json`; generated dictionaries are intentionally not tracked.
 
 Run the fixed production build locally:
@@ -44,6 +48,10 @@ Run the fixed production build locally:
 ```text
 python3 tools/dict-builder/build.py --output /tmp/moqi-dictionary-build --source-root /tmp
 ```
+
+For a pinned-toolchain build, first run
+`tools/dict-builder/build-libime.sh`, then pass its
+`--toolchain-manifest` and `--pinyindict` paths as the workflow does.
 
 The release set is Frost and Wanxiang `jichu`. Ice is pinned for provenance but
 excluded because Phase 5A found unresolved phrase-level pronunciation

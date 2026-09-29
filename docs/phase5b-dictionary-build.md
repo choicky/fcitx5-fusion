@@ -23,14 +23,18 @@ The official input is `dict-20260907.tar.zst`, SHA256
 The converter preserves the Phase 5A value policy and does not map
 third-party frequencies into LibIME values.
 
-`tools/dict-builder/build.py` performs depth-one fixed-commit fetches, checks
-the official input and license hashes, converts with the Phase 5A converter,
-compiles and dumps through real `libime_pinyindict`, and validates the output
-index and checksum file. The GitHub Actions workflow runs the fixed build
-twice and compares the release dictionaries, `index.json`, and
-`SHA256SUMS` byte-for-byte. A maintainer-created `dictionary-v*` tag is the
-only release trigger; `workflow_dispatch` validates the same fixed inputs
-without accepting arbitrary source or build-matrix parameters.
+`tools/dict-builder/build-libime.sh` performs depth-one fixed-commit fetches of
+Fcitx5 `1e00551899f9d0fa5418d899f468b6e421401adf` and LibIME
+`ecd23795ff7ea63a55a1b88fc4767946b999e102`, builds both from source, and
+initializes and verifies KenLM `4cb443e60b7bf2c0ddf3c745378f76cb59e254e5`,
+and records the resulting `libime_pinyindict` hash. `build.py` verifies that
+toolchain manifest before checking the official input and license hashes,
+converting with the Phase 5A converter, compiling/dumping through that pinned
+executable, and validating the output index and checksum file. The GitHub
+Actions workflow runs the fixed build twice and compares the release
+dictionaries, `index.json`, and `SHA256SUMS` byte-for-byte. Pull requests and
+manual runs validate without release permissions; only a maintainer-created
+`dictionary-v*` tag runs the separate write-enabled release job.
 
 ## Local validation
 
@@ -54,5 +58,5 @@ linked with both the pinned LibIME and Fcitx install trees. `git diff --check`
 and the seven converter unit tests passed.
 
 No release artifact is committed to this repository. The workflow creates the
-GitHub Release bundle only when a maintainer pushes a `dictionary-v*` tag; no
-CI run or release tag was created during this implementation pass.
+GitHub Release bundle only when a maintainer pushes a `dictionary-v*` tag. A
+clean remote CI run is still required before Phase 5B can be marked complete.
