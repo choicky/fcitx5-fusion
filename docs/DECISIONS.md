@@ -539,3 +539,24 @@ System ASR 的一次性事先授权（D034）允许其作为当前服务使用�
 `origin/tools/wanxiang-libime-build` 上的 `8a4f1de`、`91135f8`、`1eed3bd`～`0294bd3` 及相关 workflow 仅证明研究/PoC 路径，尚未合入 `main`，不构成当前已有 workflow、业务代码或发布 artifact。任何候选进入 APK 或公开下载前，还必须通过来源 pin、许可证/再分发和双设备体验验证；未满足者只能标记为 research-only。
 
 后续 Android 管理器若实现，必须使用临时文件、hash 校验、原子安装、失败清理和旧版本保留，以免更新失败破坏现有词库。该决定不批准本批次修改业务代码、workflow 或既有 PoC。
+
+## D040 — Phase 5B 只发布许可证和发音语义均已通过的固定候选
+
+**状态：Accepted（2026-09-29，Phase 5B）**
+
+Phase 5B 将构建/发布基础设施限制为仓库内的固定 manifest、Phase 5A
+converter、真实 `libime_pinyindict` 和受控 GitHub Release。生产集只包含
+Rime Frost（GPL-3.0-only，固定提交
+`211de1ca927b6c876e384c6de42e1cc8af868c68`）与 Wanxiang `jichu`
+（CC-BY-4.0，固定提交
+`94f1e8d7b6d1267a9c8752a2e62145705dd1fb92`）。
+
+Rime Ice（固定提交 `3aea6d3694fb3d94ec663641f021f788822897ad`）因 Phase
+5A 的 24 条可核验短语比较中有 9 条自动注音不一致，且没有已验证的权威
+短语规则，排除发布。CustomPinyinDictionary（固定提交
+`0673212e83c9db1fef24fdf950b22c994bf27e9c`）因未发现可核实的再分发许可，
+且来源说明包含多方数据，排除发布。二者保留在 manifest 中作为明确的非发布
+候选，不生成 Release artifact。
+
+workflow 不接受来源 URL、提交、Base 版本或用户矩阵；`workflow_dispatch`
+只运行仓库定义的固定构建，`dictionary-v*` maintainer tag 才创建 Release。

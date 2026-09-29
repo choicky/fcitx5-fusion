@@ -1,6 +1,6 @@
 # 词库管理方案（Phase 5 文档轨）
 
-> 本文是词库研究、构建、审计和发布的方案落档，不表示 `main` 已经实现词库管理器、词库更新器或任何新的 workflow。当前业务代码、workflow 和既有 PoC 均不在本批次修改范围内。
+> 本文是词库研究、构建、审计和发布的方案落档；Android 词库管理器仍未实现。Phase 5B 已加入独立的固定输入构建/release workflow，但不包含管理器、更新 UI 或业务代码。
 
 ## 1. 目标与边界
 
@@ -29,7 +29,10 @@
 | 三词库重叠分析 | 研究分支 workflow（含 fixed 版本） | 统计 exact word+pinyin、词集合、读音差异和相对官方新增项 | 未实现 |
 | Wanxiang W1 转换 | 研究分支 `build-wanxiang-libime.yml` | jichu YAML → LibIME 文本/二进制、拒绝行记录、round-trip 检查 | 未实现 |
 
-研究分支新增的 workflow 文件不属于当前 `main`。本文不把 workflow 运行结果、artifact 或脚本写成仓库主线已有功能；若没有固定 run/artifact 链接，也不把统计数量写成已验证发布数据。
+研究分支新增的 workflow 文件不属于当前 `main`。Phase 5B 的生产 workflow 是
+`.github/workflows/build-dictionaries.yml`，其输入和发布集合由
+`tools/dict-builder/manifest.json` 固定；本文不把没有固定 run/artifact 链接的
+研究结果写成已发布数据。
 
 ## 3. 词库层次与候选构成
 
@@ -101,6 +104,19 @@
 - 两台目标设备上的性能、存储占用和候选排序回归；
 - 发布前再次审查许可证、来源 pin、manifest 与最终 APK/下载 artifact 一致性。
 
-## 7. 当前结论
+## 7. Phase 5B 实现事实
 
-当前只接受“先研究、再冻结来源和规则、再发布候选、最后实现管理器”的顺序。研究分支证明了转换/分析路径可行，但没有证明任何第三方词库已经获准进入 `main`、APK 或公开分发。下一批实现前，必须先解决来源固定、许可证和候选质量证据；在此之前不修改业务代码、workflow 或现有 PoC。
+`tools/dict-builder/build.py` 使用深度为 1 的固定提交 fetch，校验官方
+`dict-20260907` 输入和上游 LICENSE 文件 hash，调用 Phase 5A converter 与
+真实 `libime_pinyindict`，并生成 `.dict`、`SHA256SUMS` 和简化 `index.json`。
+Frost 与 Wanxiang `jichu` 是当前 release set；Ice 和 Custom 的排除理由与
+固定来源均记录在 manifest 和 `docs/phase5b-dictionary-build.md`。workflow
+重复构建并逐字节比较产物，普通手动运行只上传验证 artifact，只有
+maintainer 创建的 `dictionary-v*` tag 才创建 GitHub Release。
+
+## 8. 当前结论
+
+当前仍接受“先研究、再冻结来源和规则、再发布候选、最后实现管理器”的顺序。
+Phase 5B 已完成前两步及固定构建/release 基础设施，并只把 Frost 与
+Wanxiang `jichu` 纳入生产 release set；Ice 和 Custom 仍是非发布候选。下一批
+才是 Android 管理器，不得把本批次扩展为业务代码、下载 UI 或运行时修改。
