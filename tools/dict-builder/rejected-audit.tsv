@@ -1,0 +1,33 @@
+source	source_commit	source_file	source_line	original	code_or_pinyin	reason	disposition	normalization_safe
+rime-frost	211de1ca927b6c876e384c6de42e1cc8af868c68	cn_dicts_cell/place.dict.yaml	311	T3航站楼	T3 hang zhan lou	PINYIN: uppercase/digit in code	reject: outside LibIME full-pinyin grammar	no
+rime-frost	211de1ca927b6c876e384c6de42e1cc8af868c68	cn_dicts_cell/place.dict.yaml	312	T2航站楼	T2 hang zhan lou	PINYIN: uppercase/digit in code	reject: outside LibIME full-pinyin grammar	no
+rime-frost	211de1ca927b6c876e384c6de42e1cc8af868c68	cn_dicts_cell/place.dict.yaml	385	虹桥2号航站楼	hong qiao 2 hao hang zhan lou	PINYIN: digit in code	reject: outside LibIME full-pinyin grammar	no
+rime-frost	211de1ca927b6c876e384c6de42e1cc8af868c68	cn_dicts_cell/place.dict.yaml	427	浦电路(4号线)	pu dian lu (4 hao xian )	PINYIN: punctuation/digit in code	reject: outside LibIME full-pinyin grammar	no
+rime-frost	211de1ca927b6c876e384c6de42e1cc8af868c68	cn_dicts_cell/place.dict.yaml	463	浦电路(6号线)	pu dian lu (6 hao xian )	PINYIN: punctuation/digit in code	reject: outside LibIME full-pinyin grammar	no
+rime-frost	211de1ca927b6c876e384c6de42e1cc8af868c68	cn_dicts_cell/place.dict.yaml	584	虹桥1号航站楼	hong qiao 1 hao hang zhan lou	PINYIN: digit in code	reject: outside LibIME full-pinyin grammar	no
+rime-frost	211de1ca927b6c876e384c6de42e1cc8af868c68	cn_dicts_cell/place.dict.yaml	737	机场北(2号航站楼)	ji chang bei (2 hao hang zhan lou )	PINYIN: punctuation/digit in code	reject: outside LibIME full-pinyin grammar	no
+rime-frost	211de1ca927b6c876e384c6de42e1cc8af868c68	cn_dicts_cell/place.dict.yaml	738	机场南(1号航站楼)	ji chang nan (1 hao hang zhan lou )	PINYIN: punctuation/digit in code	reject: outside LibIME full-pinyin grammar	no
+rime-frost	211de1ca927b6c876e384c6de42e1cc8af868c68	cn_dicts_cell/place.dict.yaml	1701	江北机场T2航站楼	jiang bei ji chang T2 hang zhan lou	PINYIN: uppercase/digit in code	reject: outside LibIME full-pinyin grammar	no
+rime-frost	211de1ca927b6c876e384c6de42e1cc8af868c68	cn_dicts_cell/place.dict.yaml	1760	江北机场T3航站楼	jiang bei ji chang T3 hang zhan lou	PINYIN: uppercase/digit in code	reject: outside LibIME full-pinyin grammar	no
+rime-frost	211de1ca927b6c876e384c6de42e1cc8af868c68	cn_dicts_cell/place.dict.yaml	2109	双流机场1航站楼	shuang liu ji chang 1 hang zhan lou	PINYIN: digit in code	reject: outside LibIME full-pinyin grammar	no
+rime-frost	211de1ca927b6c876e384c6de42e1cc8af868c68	cn_dicts_cell/place.dict.yaml	2110	双流机场2航站楼	shuang liu ji chang 2 hang zhan lou	PINYIN: digit in code	reject: outside LibIME full-pinyin grammar	no
+rime-frost	211de1ca927b6c876e384c6de42e1cc8af868c68	cn_dicts_cell/place.dict.yaml	2118	东北师大(1号线)	dong bei shi da (1 hao xian )	PINYIN: punctuation/digit in code	reject: outside LibIME full-pinyin grammar	no
+rime-frost	211de1ca927b6c876e384c6de42e1cc8af868c68	cn_dicts_cell/place.dict.yaml	2162	东北师大(3号线)	dong bei shi da (3 hao xian )	PINYIN: punctuation/digit in code	reject: outside LibIME full-pinyin grammar	no
+rime-frost	211de1ca927b6c876e384c6de42e1cc8af868c68	cn_dicts_cell/place.dict.yaml	2390	北客站(北广场)	bei ke zhan ( bei guang chang )	PINYIN: punctuation in code	reject: outside LibIME full-pinyin grammar	no
+rime-frost	211de1ca927b6c876e384c6de42e1cc8af868c68	cn_dicts_cell/place.dict.yaml	2653	辛屯(灵山湾)	xin tun ( ling shan wan )	PINYIN: punctuation in code	reject: outside LibIME full-pinyin grammar	no
+rime-frost	211de1ca927b6c876e384c6de42e1cc8af868c68	cn_dicts_cell/place.dict.yaml	2658	盛海路(世博城)	sheng hai lu ( shi bo cheng )	PINYIN: punctuation in code	reject: outside LibIME full-pinyin grammar	no
+rime-wanxiang	94f1e8d7b6d1267a9c8752a2e62145705dd1fb92	dicts/jichu.dict.yaml	280296	短须𱇮	duǎn xū 𱇮	PINYIN: unsupported extension character in code	reject: outside LibIME full-pinyin grammar	no
+rime-wanxiang	94f1e8d7b6d1267a9c8752a2e62145705dd1fb92	dicts/jichu.dict.yaml	284652	峨眉𫚪	é méi 𫚪	PINYIN: unsupported extension character in code	reject: outside LibIME full-pinyin grammar	no
+rime-wanxiang	94f1e8d7b6d1267a9c8752a2e62145705dd1fb92	dicts/jichu.dict.yaml	300713	副铗𧈢	fù jiá 𧈢	PINYIN: unsupported extension character in code	reject: outside LibIME full-pinyin grammar	no
+rime-wanxiang	94f1e8d7b6d1267a9c8752a2e62145705dd1fb92	dicts/jichu.dict.yaml	323073	寡鳞𫚪	guǎ lín 𫚪	PINYIN: unsupported extension character in code	reject: outside LibIME full-pinyin grammar	no
+rime-wanxiang	94f1e8d7b6d1267a9c8752a2e62145705dd1fb92	dicts/jichu.dict.yaml	378270	铗𧈢科	jiá 𧈢 kē	PINYIN: unsupported extension character in code	reject: outside LibIME full-pinyin grammar	no
+rime-wanxiang	94f1e8d7b6d1267a9c8752a2e62145705dd1fb92	dicts/jichu.dict.yaml	413692	𩾌鿶鱼	kāng 鿶 yú	PINYIN: unsupported extension character in code	reject: outside LibIME full-pinyin grammar	no
+rime-wanxiang	94f1e8d7b6d1267a9c8752a2e62145705dd1fb92	dicts/jichu.dict.yaml	620272	伟铗𧈢	wěi jiá 𧈢	PINYIN: unsupported extension character in code	reject: outside LibIME full-pinyin grammar	no
+rime-wanxiang	94f1e8d7b6d1267a9c8752a2e62145705dd1fb92	dicts/jichu.dict.yaml	652623	细尾𱇮	xì wěi 𱇮	PINYIN: unsupported extension character in code	reject: outside LibIME full-pinyin grammar	no
+rime-wanxiang	94f1e8d7b6d1267a9c8752a2e62145705dd1fb92	dicts/jichu.dict.yaml	670936	斜方𫚪	xié fāng 𫚪	PINYIN: unsupported extension character in code	reject: outside LibIME full-pinyin grammar	no
+rime-wanxiang	94f1e8d7b6d1267a9c8752a2e62145705dd1fb92	dicts/jichu.dict.yaml	722663	越南𫚪	yuè nán 𫚪	PINYIN: unsupported extension character in code	reject: outside LibIME full-pinyin grammar	no
+rime-wanxiang	94f1e8d7b6d1267a9c8752a2e62145705dd1fb92	dicts/jichu.dict.yaml	768645	𫚪亚科	𫚪 yà kē	PINYIN: unsupported extension character in code	reject: outside LibIME full-pinyin grammar	no
+rime-wanxiang	94f1e8d7b6d1267a9c8752a2e62145705dd1fb92	dicts/jichu.dict.yaml	903131	副铗𧈢科	fù jiá 𧈢 kē	PINYIN: unsupported extension character in code	reject: outside LibIME full-pinyin grammar	no
+rime-wanxiang	94f1e8d7b6d1267a9c8752a2e62145705dd1fb92	dicts/jichu.dict.yaml	933639	广西副𫚪	guǎng xī fù 𫚪	PINYIN: unsupported extension character in code	reject: outside LibIME full-pinyin grammar	no
+rime-wanxiang	94f1e8d7b6d1267a9c8752a2e62145705dd1fb92	dicts/jichu.dict.yaml	1021174	巨无齿𱇮	jù wú chǐ 𱇮	PINYIN: unsupported extension character in code	reject: outside LibIME full-pinyin grammar	no
+rime-wanxiang	94f1e8d7b6d1267a9c8752a2e62145705dd1fb92	dicts/jichu.dict.yaml	1028403	𩾌鿶白鱼	kāng 鿶 bái yú	PINYIN: unsupported extension character in code	reject: outside LibIME full-pinyin grammar	no

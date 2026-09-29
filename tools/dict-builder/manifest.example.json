@@ -1,0 +1,22 @@
+{
+  "converter": "tools/dict-builder/convert.py",
+  "rule_version": "v1",
+  "libime_commit": "ecd23795ff7ea63a55a1b88fc4767946b999e102",
+  "official_input": {
+    "name": "dict-20260907",
+    "sha256": "fb75a179065e690dfc4559ce1807cbaf4fbe4f0111a5005615be9f435e6b9d76"
+  },
+  "sources": {
+    "rime-ice": {"commit": "3aea6d3694fb3d94ec663641f021f788822897ad", "input_sha256": "REQUIRED"},
+    "rime-frost": {"commit": "211de1ca927b6c876e384c6de42e1cc8af868c68", "input_sha256": "REQUIRED"},
+    "wanxiang-jichu": {"commit": "94f1e8d7b6d1267a9c8752a2e62145705dd1fb92", "input_sha256": "REQUIRED"},
+    "custom-pinyin": {"commit": "REQUIRED_FROM_SOURCE_SNAPSHOT", "input_sha256": "REQUIRED"}
+  },
+  "outputs": {
+    "accepted": "REQUIRED",
+    "rejected": "REQUIRED",
+    "dict_sha256": "REQUIRED",
+    "round_trip": "REQUIRED",
+    "repeat_build_byte_identical": "REQUIRED"
+  }
+}
