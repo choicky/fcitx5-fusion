@@ -427,8 +427,10 @@ artifact）已修复；远端 CI run `36602286082` 通过，PR #1 可进入正�
 `a2920fb71bcb1ae0b38c74315a8388c02c77a2fd`。它复用现有 Pinyin dictionary
 UI 和目录，提供固定 catalog、许可证/来源/限制展示、HTTPS 下载、空间检查、
 SHA-256 校验、临时文件、原子替换、旧文件保留和删除；没有修改 LibIME 或上传
-用户学习数据。Android CI 与真实设备的 M4 验收仍待完成，不把该分支写成已合入
-主线或已发布 APK。
+用户学习数据。首次 Android CI run `36609069520` 在 APK 构建步骤失败；当前凭据
+无法下载其详细 job log（GitHub API 返回 `403 Must have admin rights to
+Repository`），本机也缺少 Android SDK，因此不把该分支写成已通过 CI、已合入
+主线或已发布 APK。真实设备的 M4 验收仍待完成。
 
 ## Phase 6 — Optional LLM Post-processing
 
