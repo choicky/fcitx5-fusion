@@ -13,7 +13,7 @@ jobs:
           curl -fL --retry 3 -o dict.tar.zst https://download.fcitx-im.org/data/dict-20260907.tar.zst
           echo "fb75a179065e690dfc4559ce1807cbaf4fbe4f0111a5005615be9f435e6b9d76  dict.tar.zst" | sha256sum -c -
           tar --use-compress-program=unzstd -xf dict.tar.zst
-          curl -fL --retry 3 -o custom.dict https://github.com/wuhgit/CustomPinyinDictionary/releases/download/assets/CustomPinyinDictionary_Fcitx.dict
+          libime_pinyindict dict_sc.txt official.dict\n          libime_pinyindict -d official.dict official.txt\n          curl -fL --retry 3 -o custom.dict https://github.com/wuhgit/CustomPinyinDictionary/releases/download/assets/CustomPinyinDictionary_Fcitx.dict
           libime_pinyindict -d custom.dict custom.txt
           curl -fL --retry 3 -o wanxiang.yaml https://raw.githubusercontent.com/amzxyz/rime-wanxiang/wanxiang/dicts/jichu.dict.yaml
       - name: Analyze exact word+pinyin sets
@@ -48,7 +48,7 @@ jobs:
               if re.fullmatch(r"[a-z]+(?:'[a-z]+)*",p): out.add((a[0].strip(),p))
               else: bad.append((n,line))
             return out
-          O=load_libime("dict_sc.txt"); C=load_libime("custom.txt"); W=load_wx("wanxiang.yaml")
+          O=load_libime("official.txt"); C=load_libime("custom.txt"); W=load_wx("wanxiang.yaml")
           sets={"official":O,"custom":C,"wanxiang":W}
           def words(S): return {w for w,p in S}
           report={}
