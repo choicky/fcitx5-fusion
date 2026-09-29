@@ -393,7 +393,7 @@ B. 由源码推断、需实机确认的风险：
 
 ## Phase 5-D — 词库管理方案（文档轨）
 
-**状态：PHASE 5B COMPLETE — remediation 本地及远端 CI 已通过；Android 管理器未实现**
+**状态：PHASE 5B COMPLETE；PHASE 5C IMPLEMENTED ON ANDROID BRANCH — product acceptance pending**
 
 词库管理方案已落档于 [`docs/dictionary-manager-plan.md`](dictionary-manager-plan.md)。该文档对应独立的词库工作流，不能与本节 ASR Provider Phase 5 的实现状态混写，也不改变现有 Voice/ASR 路线。
 
@@ -417,12 +417,18 @@ Phase 5B 已将固定构建实现迁入 `tools/dict-builder/build.py`、
 `.github/workflows/build-dictionaries.yml` 通过 `pull_request`、
 `workflow_dispatch` 和 maintainer 的 `dictionary-v*` tag 验证固定输入，不接受任意来源或矩阵；只有 tag job 具有 release 写权限。证据与限制见
 [`docs/phase5b-dictionary-build.md`](phase5b-dictionary-build.md)。词库更新必须
-继续与用户输入数据上传解耦，并复用 LibIME 运行时和用户学习能力。PR #1 的干净远端 CI run `36572690319` 已于 2026-09-29 成功：`validate` 全部通过，`release` 因非 `dictionary-v*` tag 按设计跳过；因此 Phase 5B Exit Criterion 已满足。当前仍未创建 release tag。
+继续与用户输入数据上传解耦，并复用 LibIME 运行时和用户学习能力。PR #1 的干净远端 CI run `36572690319` 已于 2026-09-29 成功：`validate` 全部通过，`release` 因非 `dictionary-v*` tag 按设计跳过；因此 Phase 5B Exit Criterion 已满足。Phase 5B tag `dictionary-v1.0.0` 已创建并推送到 `5b7657261a21ef968dde1e625824bb430589366d`。
 
 PR #1 review remediation：四项 P2（完整 consumed-source hash、强制 verified
 toolchain manifest、Rime imports + current table parsing、独立 build audit
 artifact）已修复；远端 CI run `36602286082` 通过，PR #1 可进入正常合并
-流程。未创建 dictionary-v* tag/release；Android 管理器仍未实现。
+流程。Phase 5C 的 Android 最小实现已提交到 `choicky/fcitx5-android` 分支
+`phase5c-dictionary-manager`，commit
+`a2920fb71bcb1ae0b38c74315a8388c02c77a2fd`。它复用现有 Pinyin dictionary
+UI 和目录，提供固定 catalog、许可证/来源/限制展示、HTTPS 下载、空间检查、
+SHA-256 校验、临时文件、原子替换、旧文件保留和删除；没有修改 LibIME 或上传
+用户学习数据。Android CI 与真实设备的 M4 验收仍待完成，不把该分支写成已合入
+主线或已发布 APK。
 
 ## Phase 6 — Optional LLM Post-processing
 

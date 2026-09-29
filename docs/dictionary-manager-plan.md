@@ -1,6 +1,8 @@
 # 词库管理方案（Phase 5 文档轨）
 
-> 本文是词库研究、构建、审计和发布的方案落档；Android 词库管理器仍未实现。Phase 5B 已加入独立的固定输入构建/release workflow，但不包含管理器、更新 UI 或业务代码。
+> 本文是词库研究、构建、审计、发布和 Android 管理器实现的方案落档。Phase 5B
+> 已完成固定输入构建/release workflow；Phase 5C 的 Android 实现位于
+> `choicky/fcitx5-android` 的 `phase5c-dictionary-manager` 分支。
 
 ## 1. 目标与边界
 
@@ -114,9 +116,18 @@ Frost 与 Wanxiang `jichu` 是当前 release set；Ice 和 Custom 的排除理�
 重复构建并逐字节比较产物，普通手动运行只上传验证 artifact，只有
 maintainer 创建的 `dictionary-v*` tag 才创建 GitHub Release。
 
-## 8. 当前结论
+## 8. Phase 5C 实现状态
 
-当前仍接受“先研究、再冻结来源和规则、再发布候选、最后实现管理器”的顺序。
-Phase 5B 已完成前两步及固定构建/release 基础设施，并只把 Frost 与
-Wanxiang `jichu` 纳入生产 release set；Ice 和 Custom 仍是非发布候选。下一批
-才是 Android 管理器，不得把本批次扩展为业务代码、下载 UI 或运行时修改。
+Phase 5B 已完成研究冻结、固定构建/release 基础设施，并只把 Frost 与
+Wanxiang `jichu` 纳入生产 release set；Ice 和 Custom 仍是非发布候选。
+`dictionary-v1.0.0` 指向 Phase 5B 完成提交并已推送。
+
+Phase 5C 的最小实现提交为 Android 分支
+`a2920fb71bcb1ae0b38c74315a8388c02c77a2fd`，包含：
+
+- 复用现有 Pinyin dictionary UI 和用户目录，不修改 LibIME 或运行时协议；
+- 使用固定的 Phase 5B catalog，显示版本、许可证、来源和限制；
+- HTTPS 下载、可用空间检查、临时文件、SHA-256/大小校验、原子替换、旧文件保留和删除；
+- 失败或取消不会替换当前可用词库；安装器和 catalog 元数据有 JVM 单元测试。
+
+该批次尚未声称完成 M4 产品验收：可恢复断点下载、双设备性能/候选回归和真实设备生命周期验收仍是后续验证项。实现不得上传输入历史，也不改变 LibIME 用户学习层。

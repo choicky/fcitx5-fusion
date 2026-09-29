@@ -68,8 +68,9 @@ job completed successfully, including the verified pinned Fcitx5/LibIME build, t
 fixed-input dictionary builds and byte comparisons, converter/repository
 checks, release-bundle checksum validation, and both release and separate audit
 artifact uploads. The `release` job was skipped as designed because the event
-was a pull request rather than a `dictionary-v*` tag. No release tag has been
-created.
+was a pull request rather than a `dictionary-v*` tag. The maintainer-created
+tag `dictionary-v1.0.0` now points to the Phase 5B completion commit
+`5b7657261a21ef968dde1e625824bb430589366d` and is present on the remote.
 
 ## Review remediation
 

@@ -560,3 +560,14 @@ Rime Ice（固定提交 `3aea6d3694fb3d94ec663641f021f788822897ad`）因 Phase
 
 workflow 不接受来源 URL、提交、Base 版本或用户矩阵；`workflow_dispatch`
 只运行仓库定义的固定构建，`dictionary-v*` maintainer tag 才创建 Release。
+
+## D041 — Phase 5C 复用现有 Pinyin dictionary 边界
+
+**状态：Accepted（2026-09-30，Phase 5C 实现）**
+
+Android 管理器复用现有 `PinyinDictManager` 用户目录、`LibIMEDictionary` 和
+Pinyin dictionary 设置页，不修改 LibIME、Fcitx5 运行时协议或用户学习层。
+Phase 5B 的固定 release catalog 是唯一远程来源；安装前检查可用空间，下载到
+临时文件并校验固定大小和 SHA-256，之后原子替换并保留旧文件直到替换完成。
+版本、许可证、来源、输入 hash 和限制在 catalog 中随实现固定记录。Phase 5C
+首批实现不宣称真实设备 M4 验收完成；断点下载与设备回归保持为后续验证项。
