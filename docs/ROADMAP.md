@@ -391,6 +391,23 @@ B. 由源码推断、需实机确认的风险：
 
 不在 Voice PoC 前过度设计 Provider framework。
 
+## Phase 5-D — 词库管理方案（文档轨）
+
+**状态：DOCUMENTED — 研究分支 PoC 已核对，`main` 未实现**
+
+词库管理方案已落档于 [`docs/dictionary-manager-plan.md`](dictionary-manager-plan.md)。该文档对应独立的词库工作流，不能与本节 ASR Provider Phase 5 的实现状态混写，也不改变现有 Voice/ASR 路线。
+
+已核对的研究分支证据位于 `origin/tools/wanxiang-libime-build`：
+
+- `8a4f1de`：官方 LibIME 字典权重分布分析；
+- `91135f8`：官方与 Custom/Wanxiang 的非零权重冲突审计；
+- `1eed3bd`～`0294bd3`（含中间修订）：Ice、Frost、Wanxiang jichu、Custom 的 LibIME 构建、Rime import/annotation 修复和 manifest/round-trip 逻辑；
+- 同分支的 overlap/fixed workflows：exact `(word,pinyin)`、词集合、同词异读音和相对官方新增项分析。
+
+这些提交只存在于研究分支；相对当前 `main` 的差异是 8 个 workflow 文件，未合入主线。因此当前路线图不把它们记为 `main` 的脚本、构建产物、发布能力或产品实现。
+
+下一步为研究输入冻结：补齐每个候选的完整 commit、原始文件 SHA-256、许可证结论和转换规则版本，然后才评估候选 artifact 与 Android 词库管理器实现。词库更新必须继续与用户输入数据上传解耦，并复用 LibIME 运行时和用户学习能力。
+
 ## Phase 6 — Optional LLM Post-processing
 
 **状态：NOT STARTED**
