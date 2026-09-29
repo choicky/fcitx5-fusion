@@ -1,0 +1,62 @@
+name: Analyze LibIME Dictionary Values
+on:
+  workflow_dispatch:
+  push:
+    branches: [tools/wanxiang-libime-build]
+jobs:
+  analyze:
+    runs-on: ubuntu-24.04
+    steps:
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y python3 zstd libime-bin
+          curl -fL -o d.zst https://download.fcitx-im.org/data/dict-20260907.tar.zst
+          echo "fb75a179065e690dfc4559ce1807cbaf4fbe4f0111a5005615be9f435e6b9d76  d.zst" | sha256sum -c -
+          tar --use-compress-program=unzstd -xf d.zst
+          libime_pinyindict dict_sc.txt sc.dict
+          libime_pinyindict dict_extb.txt extb.dict
+          libime_pinyindict -d sc.dict sc.dump.txt
+          libime_pinyindict -d extb.dict extb.dump.txt
+      - run: |
+          cat > /tmp/a.py <<'PY'
+          import collections,json,statistics,math
+          def load(p):
+            a=[]
+            for x in open(p,encoding="utf8"):
+              try:
+                w,py,v=x.rstrip().rsplit(" ",2); a.append((w,py,float(v)))
+              except: pass
+            return a
+          def stat(a):
+            vs=[x[2] for x in a]
+            c=collections.Counter(vs)
+            s=sorted(vs)
+            q=lambda p:s[min(len(s)-1,int((len(s)-1)*p))]
+            return {"entries":len(a),"zero":sum(v==0 for v in vs),"negative":sum(v<0 for v in vs),"positive":sum(v>0 for v in vs),"min":min(vs),"max":max(vs),"mean":statistics.fmean(vs),"q01":q(.01),"q10":q(.10),"q25":q(.25),"median":q(.5),"q75":q(.75),"q90":q(.9),"q99":q(.99),"distinct_values":len(c),"top_values":c.most_common(20)}
+          S,E=load("sc.dump.txt"),load("extb.dump.txt")
+          r={"sc":stat(S),"extb":stat(E)}
+          sw={(w,p):v for w,p,v in S}; ew={(w,p):v for w,p,v in E}
+          both=set(sw)&set(ew)
+          r["overlap"]={"exact_pairs":len(both),"same_value":sum(sw[k]==ew[k] for k in both),"different_value":sum(sw[k]!=ew[k] for k in both)}
+          print(json.dumps(r,ensure_ascii=False,indent=2))
+          open("value-report.json","w").write(json.dumps(r,ensure_ascii=False,indent=2))
+          for name,a in [("sc",S),("extb",E)]:
+            with open(name+"-samples.tsv","w",encoding="utf8") as f:
+              for x in sorted(a,key=lambda z:z[2])[:100]:f.write("%s\t%s\t%.9g\n"%x)
+              f.write("--- highest ---\n")
+              for x in sorted(a,key=lambda z:z[2],reverse=True)[:100]:f.write("%s\t%s\t%.9g\n"%x)
+          PY
+          python3 /tmp/a.py | tee value-report.txt
+          sha256sum sc.dict extb.dict > sha256.txt
+          ls -lh sc.dict extb.dict sc.dump.txt extb.dump.txt > sizes.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: libime-dictionary-value-analysis
+          path: |
+            value-report.txt
+            value-report.json
+            sc-samples.tsv
+            extb-samples.tsv
+            sha256.txt
+            sizes.txt
+          retention-days: 7
