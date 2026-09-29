@@ -1,0 +1,57 @@
+name: Analyze CustomPinyinDictionary
+on:
+  push:
+    branches: [tools/wanxiang-libime-build]
+  workflow_dispatch:
+jobs:
+  analyze:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install LibIME
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libime-bin python3
+      - name: Download official Fcitx dictionary
+        run: |
+          curl -fL --retry 3 -o CustomPinyinDictionary_Fcitx.dict https://github.com/wuhgit/CustomPinyinDictionary/releases/download/assets/CustomPinyinDictionary_Fcitx.dict
+          ls -lh CustomPinyinDictionary_Fcitx.dict
+          sha256sum CustomPinyinDictionary_Fcitx.dict | tee sha256.txt
+      - name: Dump and analyze
+        run: |
+          libime_pinyindict -d CustomPinyinDictionary_Fcitx.dict custom.txt
+          python3 - <<'PY' | tee stats.txt
+          import collections, statistics
+          rows=[]; bad=0
+          with open("custom.txt",encoding="utf-8") as f:
+            for line in f:
+              try:
+                w,p,v=line.rstrip("\n").rsplit(" ",2)
+                rows.append((w,p,float(v)))
+              except: bad+=1
+          vals=[x[2] for x in rows]
+          lens=collections.Counter(len(x[0]) for x in rows)
+          print("entries",len(rows)); print("bad",bad)
+          print("unique_words",len(set(x[0] for x in rows)))
+          print("unique_word_pinyin",len(set((x[0],x[1]) for x in rows)))
+          print("weight_min",min(vals)); print("weight_max",max(vals))
+          print("weight_zero",sum(v==0 for v in vals))
+          print("weight_nonzero",sum(v!=0 for v in vals))
+          print("weight_negative",sum(v<0 for v in vals))
+          print("weight_positive",sum(v>0 for v in vals))
+          for q in [0,.01,.1,.25,.5,.75,.9,.99,1]:
+            a=sorted(vals); i=round(q*(len(a)-1)); print("q",q,a[i])
+          print("word_lengths",lens.most_common(20))
+          PY
+          head -n 50 custom.txt > custom-sample.txt
+          wc -l custom.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: custom-pinyin-dictionary-analysis
+          path: |
+            CustomPinyinDictionary_Fcitx.dict
+            custom.txt
+            custom-sample.txt
+            stats.txt
+            sha256.txt
+          retention-days: 7
