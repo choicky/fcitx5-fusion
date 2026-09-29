@@ -64,16 +64,19 @@ jobs:
               if not line or line.lstrip().startswith("#"): continue
               rows.append([x.strip() for x in line.split("\t")])
             return rows
+          def isnum(s):
+            try: float(s); return True
+            except: return False
           def rime_file(path,charmap=None):
             rows=[]
             for a in raw_rime(path):
-              if len(a)>=2 and re.fullmatch(r"[A-Za-züÜǖǘǚǜǕǗǙǛ :']+",a[1]):
+              if len(a)>=2 and not isnum(a[1]):
                 rows.append((a[0],a[1])); continue
               if charmap:
                 ps=[charmap.get(ch) for ch in a[0]]
                 if all(ps): rows.append((a[0]," ".join(ps)))
             return rows
-          def imports(root, top):
+          def imports(root, top, charmap=None):
             # Recursively follow import_tables, otherwise consume the file itself.
             seen=set(); rows=[]
             def one(path):
@@ -94,38 +97,22 @@ jobs:
                   q=q.strip("'\"")
                   if not q.endswith(".dict.yaml"): q+=".dict.yaml"
                   one(os.path.join(root,q))
-              else: rows.extend(rime_file(path))
+              else: rows.extend(rime_file(path,charmap))
             one(os.path.join(root,top))
             return rows,seen
           report={}
           # Rime Ice uses text<TAB>weight for many entries and lets Rime
-          # auto-annotate from 8105. Build its primary-pronunciation map first.
+          # auto-annotate them from its character table. Use the highest-weight
+          # pronunciation per character; upstream explicitly annotates ambiguous words.
           cmap={}
           for a in raw_rime("ice/cn_dicts/8105.dict.yaml"):
-            if len(a)>=2 and re.fullmatch(r"[A-Za-züÜǖǘǚǜǕǗǙǛ :']+",a[1]):
-              wt=float(a[2]) if len(a)>=3 and re.fullmatch(r"[0-9.]+",a[2]) else 0
+            if len(a)>=2 and not isnum(a[1]):
+              wt=float(a[2]) if len(a)>=3 and isnum(a[2]) else 0
               py=normpy(a[1])
               if len(a[0])==1 and (a[0] not in cmap or wt>cmap[a[0]][0]): cmap[a[0]]=(wt,py)
           cmap={k:v[1] for k,v in cmap.items()}
-          # Custom recursion for Ice using its character map.
-          seen=set(); rows=[]
-          def ice_one(path):
-            path=os.path.normpath(path)
-            if path in seen or not os.path.exists(path): return
-            seen.add(path); txt=open(path,encoding="utf-8-sig").read(); ims=[]; active=False
-            for line in txt.splitlines():
-              if re.match(r"^import_tables\\s*:",line): active=True; continue
-              if active:
-                m=re.match(r"^\\s*-\\s*([^#\\s]+)",line)
-                if m: ims.append(m.group(1)); continue
-                if line.strip() and not line.lstrip().startswith("#"): active=False
-            if ims:
-              for q in ims:
-                q=q.strip("'\\\""); q=q if q.endswith(".dict.yaml") else q+".dict.yaml"
-                ice_one(os.path.join("ice",q))
-            else: rows.extend(rime_file(path,cmap))
-          ice_one("ice/rime_ice.dict.yaml")
-          report["rime-ice"]=write_entries("rime-ice-libime",rows,sorted(seen))
+          rows,files=imports("ice","rime_ice.dict.yaml",cmap)
+          report["rime-ice"]=write_entries("rime-ice-libime",rows,sorted(files))
           rows,files=imports("frost","rime_frost.dict.yaml")
           report["rime-frost"]=write_entries("rime-frost-libime",rows,sorted(files))
           # Wanxiang: deliberately core jichu only, matching prior W1 experiment.
