@@ -393,7 +393,7 @@ B. 由源码推断、需实机确认的风险：
 
 ## Phase 5-D — 词库管理方案（文档轨）
 
-**状态：PHASE 5B COMPLETE — 干净远端 CI 已通过；Android 管理器未实现**
+**状态：PHASE 5B REMEDIATION COMPLETE LOCALLY — 基线远端 CI 已通过，修复批次 CI 待运行；Android 管理器未实现**
 
 词库管理方案已落档于 [`docs/dictionary-manager-plan.md`](dictionary-manager-plan.md)。该文档对应独立的词库工作流，不能与本节 ASR Provider Phase 5 的实现状态混写，也不改变现有 Voice/ASR 路线。
 
@@ -418,6 +418,10 @@ Phase 5B 已将固定构建实现迁入 `tools/dict-builder/build.py`、
 `workflow_dispatch` 和 maintainer 的 `dictionary-v*` tag 验证固定输入，不接受任意来源或矩阵；只有 tag job 具有 release 写权限。证据与限制见
 [`docs/phase5b-dictionary-build.md`](phase5b-dictionary-build.md)。词库更新必须
 继续与用户输入数据上传解耦，并复用 LibIME 运行时和用户学习能力。PR #1 的干净远端 CI run `36572690319` 已于 2026-09-29 成功：`validate` 全部通过，`release` 因非 `dictionary-v*` tag 按设计跳过；因此 Phase 5B Exit Criterion 已满足。当前仍未创建 release tag。
+
+PR #1 review remediation：四项 P2（完整 consumed-source hash、强制 verified
+toolchain manifest、Rime imports + current table parsing、独立 build audit
+ artifact）已在本地修复并完成本地验证；修复后的远端 CI 尚未运行。
 
 ## Phase 6 — Optional LLM Post-processing
 

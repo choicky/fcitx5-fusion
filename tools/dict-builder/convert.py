@@ -68,8 +68,26 @@ def parse_rime(path: Path, charmap: dict[str, str] | None = None):
         yield number, word, code, "", line
 
 
-def parse_rime_tree(root: Path, top: Path, charmap: dict[str, str] | None = None):
-    """Yield rows from a Rime tree, following only explicit import_tables."""
+def _rime_imports(path: Path) -> list[str]:
+    lines = path.read_text(encoding="utf-8-sig").splitlines()
+    imports = []
+    active = False
+    for line in lines:
+        if re.match(r"^import_tables\s*:", line):
+            active = True
+            continue
+        if active:
+            match = re.match(r"^\s*-\s*([^#\s]+)", line)
+            if match:
+                imports.append(match.group(1).strip("'\""))
+                continue
+            if line.strip() and not line.lstrip().startswith("#"):
+                active = False
+    return imports
+
+
+def rime_tree_files(root: Path, top: Path):
+    """Yield every imported file and each table's own entries exactly once."""
     seen: set[Path] = set()
 
     def visit(path: Path):
@@ -77,28 +95,18 @@ def parse_rime_tree(root: Path, top: Path, charmap: dict[str, str] | None = None
         if path in seen or not path.is_file():
             return
         seen.add(path)
-        lines = path.read_text(encoding="utf-8-sig").splitlines()
-        imports = []
-        active = False
-        for line in lines:
-            if re.match(r"^import_tables\s*:", line):
-                active = True
-                continue
-            if active:
-                match = re.match(r"^\s*-\s*([^#\s]+)", line)
-                if match:
-                    name = match.group(1).strip("'\"")
-                    imports.append(name if name.endswith(".dict.yaml") else name + ".dict.yaml")
-                    continue
-                if line.strip() and not line.lstrip().startswith("#"):
-                    active = False
-        if imports:
-            for name in imports:
-                yield from visit(root / name)
-        else:
-            yield from parse_rime(path, charmap)
+        for name in _rime_imports(path):
+            name = name if name.endswith(".dict.yaml") else name + ".dict.yaml"
+            yield from visit(root / name)
+        yield path
 
     yield from visit(root / top)
+
+
+def parse_rime_tree(root: Path, top: Path, charmap: dict[str, str] | None = None):
+    """Yield imported rows and the current table's rows, each exactly once."""
+    for path in rime_tree_files(root, top):
+        yield from parse_rime(path, charmap)
 
 
 def read_official(path: Path) -> dict[tuple[str, str], float]:

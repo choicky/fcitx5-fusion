@@ -66,6 +66,20 @@ class ConverterTest(unittest.TestCase):
             self.assertEqual(entries, {("子", "zi"): 0.0})
             self.assertEqual(rejects, [])
 
+    def test_rime_imports_and_current_table_entries_are_both_parsed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "top.dict.yaml").write_text(
+                "name: top\nimport_tables:\n- child\n...\n顶\tding\n", encoding="utf-8"
+            )
+            (root / "child.dict.yaml").write_text(
+                "name: child\n...\n子\tzi\n", encoding="utf-8"
+            )
+            rows = list(converter.parse_rime_tree(root, Path("top.dict.yaml")))
+            entries, rejects, _ = converter.convert(rows, {})
+            self.assertEqual(entries, {("子", "zi"): 0.0, ("顶", "ding"): 0.0})
+            self.assertEqual(rejects, [])
+
     def test_charmap_uses_highest_weight_single_character_reading(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "8105.dict.yaml"

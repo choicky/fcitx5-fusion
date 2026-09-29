@@ -68,5 +68,15 @@ job completed successfully, including the pinned Fcitx5/LibIME build, two
 fixed-input dictionary builds and byte comparisons, converter/repository
 checks, release-bundle checksum validation, and artifact upload. The `release`
 job was skipped as designed because the event was a pull request rather than a
-`dictionary-v*` tag. This satisfies the Phase 5B remote-CI exit criterion; no
-release tag has been created.
+`dictionary-v*` tag. This satisfies the Phase 5B baseline remote-CI exit
+criterion; no release tag has been created.
+
+## Review remediation
+
+The remediation batch adds canonical SHA-256 validation for every consumed
+Rime file (sorted `relative_path\0byte_length\0content` records), requires the
+verified pinned-toolchain manifest in the production workflow, parses both
+`import_tables` and the current table's own entries, and uploads `audit.json`
+plus conversion/rejection/round-trip logs as a separate CI artifact. These
+changes are locally validated and address all four P2 review findings. A new
+clean remote CI run for this remediation batch has not run yet.
