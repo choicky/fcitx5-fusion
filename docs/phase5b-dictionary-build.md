@@ -58,5 +58,15 @@ linked with both the pinned LibIME and Fcitx install trees. `git diff --check`
 and the seven converter unit tests passed.
 
 No release artifact is committed to this repository. The workflow creates the
-GitHub Release bundle only when a maintainer pushes a `dictionary-v*` tag. A
-clean remote CI run is still required before Phase 5B can be marked complete.
+GitHub Release bundle only when a maintainer pushes a `dictionary-v*` tag.
+
+## Remote CI closure
+
+PR #1 clean-run validation succeeded on GitHub Actions run `36572690319` on
+2026-09-29 for head `4796d553f837c9edcca17b2f3edf56365a216bb0`. The `validate`
+job completed successfully, including the pinned Fcitx5/LibIME build, two
+fixed-input dictionary builds and byte comparisons, converter/repository
+checks, release-bundle checksum validation, and artifact upload. The `release`
+job was skipped as designed because the event was a pull request rather than a
+`dictionary-v*` tag. This satisfies the Phase 5B remote-CI exit criterion; no
+release tag has been created.
