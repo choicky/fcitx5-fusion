@@ -2,6 +2,10 @@
   "schema": "fcitx5-moqi-dictionary-index-v1",
   "converter": "tools/dict-builder/convert.py",
   "rule_version": "v1",
+  "fcitx5_repository": "https://github.com/fcitx/fcitx5.git",
+  "fcitx5_commit": "1e00551899f9d0fa5418d899f468b6e421401adf",
+  "libime_repository": "https://github.com/fcitx/libime.git",
+  "kenlm_commit": "4cb443e60b7bf2c0ddf3c745378f76cb59e254e5",
   "libime_commit": "ecd23795ff7ea63a55a1b88fc4767946b999e102",
   "official": {
     "url": "https://download.fcitx-im.org/data/dict-20260907.tar.zst",

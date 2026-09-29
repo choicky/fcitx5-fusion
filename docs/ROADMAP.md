@@ -393,7 +393,7 @@ B. 由源码推断、需实机确认的风险：
 
 ## Phase 5-D — 词库管理方案（文档轨）
 
-**状态：PHASE 5B COMPLETE — 固定第三方构建/release pipeline 已实现；Android 管理器未实现**
+**状态：PHASE 5B IMPLEMENTED — 待干净远端 CI；Android 管理器未实现**
 
 词库管理方案已落档于 [`docs/dictionary-manager-plan.md`](dictionary-manager-plan.md)。该文档对应独立的词库工作流，不能与本节 ASR Provider Phase 5 的实现状态混写，也不改变现有 Voice/ASR 路线。
 
@@ -408,15 +408,17 @@ B. 由源码推断、需实机确认的风险：
 
 Phase 5A 技术闭环工作分支已加入 `tools/dict-builder/` 的无依赖转换器、规则单测、五个 pinned source snapshot 的来源核对、32 条 parser 拒绝行审计和 Ice 多音字量化审计。已使用 Android pinned Fcitx5 5.1.22 构建 LibIME，并通过真实 `PinyinIME`/`PinyinContext` decoder 回归、官方权重 join、四个 `libime_pinyindict` 二进制编译/加载/round-trip 和重复构建 `cmp` 验证；完整证据见 [`docs/phase5a-dictionary-evidence.md`](phase5a-dictionary-evidence.md)。编译时 LibIME 另拒绝了源数据中的不支持拼音（Ice 2、Wanxiang 1、Frost 15,824），已记录为源域边界而非静默丢弃。Ice 的字符级自动注音在可核验多音词子集出现 9/24 不一致，因此不进入 Phase 5B release set，待权威短语级规则。
 
-Phase 5B 已将固定构建实现迁入 `tools/dict-builder/build.py` 与
+Phase 5B 已将固定构建实现迁入 `tools/dict-builder/build.py`、
+`tools/dict-builder/build-libime.sh` 与
 `tools/dict-builder/manifest.json`，生产集为 Frost + Wanxiang `jichu`；
 许可证不明确的 Custom 与发音语义未解决的 Ice 均保留为非发布候选。构建会
-执行固定浅层 fetch、官方/许可证 hash 校验、转换、真实 LibIME 编译/加载、
+执行固定浅层 fetch、从固定 Fcitx5/LibIME 源码及 KenLM gitlink 构建工具、官方/许可证 hash 校验、转换、真实 LibIME 编译/加载、
 重复构建比较、`SHA256SUMS` 和简化 `index.json` 校验。受控 workflow
-`.github/workflows/build-dictionaries.yml` 只接受 `workflow_dispatch` 或
-maintainer 的 `dictionary-v*` tag，不接受任意来源或矩阵。证据与限制见
+`.github/workflows/build-dictionaries.yml` 通过 `pull_request`、
+`workflow_dispatch` 和 maintainer 的 `dictionary-v*` tag 验证固定输入，不接受任意来源或矩阵；只有 tag job 具有 release 写权限。证据与限制见
 [`docs/phase5b-dictionary-build.md`](phase5b-dictionary-build.md)。词库更新必须
-继续与用户输入数据上传解耦，并复用 LibIME 运行时和用户学习能力。
+继续与用户输入数据上传解耦，并复用 LibIME 运行时和用户学习能力。完成条件还包括
+pull request 上的干净远端 CI；在该 CI 成功前不创建 release tag，也不标记本阶段完成。
 
 ## Phase 6 — Optional LLM Post-processing
 
