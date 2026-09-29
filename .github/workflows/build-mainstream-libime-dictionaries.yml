@@ -1,0 +1,118 @@
+name: Build Mainstream LibIME Dictionaries
+on:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - run: |
+          sudo apt-get update && sudo apt-get install -y python3 zstd libime-bin git
+          git clone --depth 1 https://github.com/iDvel/rime-ice.git ice
+          git clone --depth 1 https://github.com/gaboolic/rime-frost.git frost
+          git clone --depth 1 -b wanxiang https://github.com/amzxyz/rime-wanxiang.git wanxiang
+          git clone --depth 1 https://github.com/wuhgit/CustomPinyinDictionary.git customrepo
+          mkdir -p out
+          curl -fL -o official.zst https://download.fcitx-im.org/data/dict-20260907.tar.zst
+          echo "fb75a179065e690dfc4559ce1807cbaf4fbe4f0111a5005615be9f435e6b9d76  official.zst" | sha256sum -c -
+          tar --use-compress-program=unzstd -xf official.zst
+          libime_pinyindict dict_sc.txt official-sc.dict
+          libime_pinyindict -d official-sc.dict official-sc.txt
+          curl -fL -o custom-original.dict https://github.com/wuhgit/CustomPinyinDictionary/releases/download/assets/CustomPinyinDictionary_Fcitx.dict
+          libime_pinyindict -d custom-original.dict custom-original.txt
+      - run: |
+          cat > /tmp/build.py <<'PY'
+          import os,re,unicodedata,subprocess,json,hashlib
+          def normpy(s):
+            for c in "ǖǘǚǜü": s=s.replace(c,"v")
+            for c in "ǕǗǙǛÜ": s=s.replace(c,"v")
+            s=unicodedata.normalize("NFD",s)
+            s="".join(c for c in s if unicodedata.category(c)!="Mn")
+            s=s.lower().replace("u:","v")
+            return "'".join(s.split())
+          official={}
+          for x in open("official-sc.txt",encoding="utf8"):
+            try:
+              w,p,v=x.rstrip().rsplit(" ",2); v=float(v)
+              if v<0: official[(w,p)]=v
+            except: pass
+          def write_entries(name, entries, source):
+            d={}
+            rejected=0
+            for w,p in entries:
+              p=normpy(p)
+              if not w or not re.fullmatch(r"[a-z]+(?:'[a-z]+)*",p):
+                rejected+=1; continue
+              k=(w,p)
+              d[k]=official.get(k,0.0)
+            txt="out/"+name+".txt"
+            with open(txt,"w",encoding="utf8") as f:
+              for (w,p),v in sorted(d.items()):
+                f.write(f"{w} {p} {v:.9g}\n")
+            subprocess.run(["libime_pinyindict",txt,"out/"+name+".dict"],check=True)
+            inherited=sum(v<0 for v in d.values())
+            return {"source":source,"entries":len(d),"rejected":rejected,"official_negative_inherited":inherited}
+          def rime_file(path):
+            rows=[]; header=True
+            for line in open(path,encoding="utf-8-sig"):
+              line=line.rstrip("\n")
+              if header:
+                if line.strip()=="...": header=False
+                continue
+              if not line or line.lstrip().startswith("#"): continue
+              a=line.split("\t")
+              if len(a)>=2: rows.append((a[0].strip(),a[1].strip()))
+            return rows
+          def imports(root, top):
+            # Recursively follow import_tables, otherwise consume the file itself.
+            seen=set(); rows=[]
+            def one(path):
+              path=os.path.normpath(path)
+              if path in seen or not os.path.exists(path): return
+              seen.add(path)
+              txt=open(path,encoding="utf-8-sig").read()
+              ims=[]
+              in_imp=False
+              for line in txt.splitlines():
+                if re.match(r"^import_tables\s*:",line): in_imp=True; continue
+                if in_imp:
+                  m=re.match(r"^\s*-\s*([^#\s]+)",line)
+                  if m: ims.append(m.group(1)); continue
+                  if line.strip() and not line.lstrip().startswith("#"): in_imp=False
+              if ims:
+                for q in ims:
+                  q=q.strip("'\"")
+                  if not q.endswith(".dict.yaml"): q+=".dict.yaml"
+                  one(os.path.join(root,q))
+              else: rows.extend(rime_file(path))
+            one(os.path.join(root,top))
+            return rows,seen
+          report={}
+          rows,files=imports("ice","rime_ice.dict.yaml")
+          report["rime-ice"]=write_entries("rime-ice-libime",rows,sorted(files))
+          rows,files=imports("frost","rime_frost.dict.yaml")
+          report["rime-frost"]=write_entries("rime-frost-libime",rows,sorted(files))
+          # Wanxiang: deliberately core jichu only, matching prior W1 experiment.
+          report["wanxiang-jichu"]=write_entries("wanxiang-jichu-libime",rime_file("wanxiang/dicts/jichu.dict.yaml"),["dicts/jichu.dict.yaml"])
+          # Custom is already native LibIME; preserve every entry but inherit official negative penalties on exact pair conflicts.
+          ce=[]
+          for x in open("custom-original.txt",encoding="utf8"):
+            try:w,p,v=x.rstrip().rsplit(" ",2);ce.append((w,p))
+            except:pass
+          report["custom"]=write_entries("custom-pinyin-libime",ce,["CustomPinyinDictionary_Fcitx.dict"])
+          commits={}
+          for n,d in [("rime-ice","ice"),("rime-frost","frost"),("wanxiang","wanxiang"),("custom","customrepo")]:
+            commits[n]=subprocess.check_output(["git","-C",d,"rev-parse","HEAD"],text=True).strip()
+          report["source_commits"]=commits
+          report["official_dict"]="dict-20260907 / fb75a179065e690dfc4559ce1807cbaf4fbe4f0111a5005615be9f435e6b9d76"
+          open("out/MANIFEST.json","w").write(json.dumps(report,ensure_ascii=False,indent=2))
+          open("out/README.txt","w").write("""Fcitx5/LibIME dictionaries built for fcitx5-moqi research.\nRule: third-party entries use value 0; exact (word,pinyin) matches carrying a negative value in official LibIME sc.dict inherit that official negative value.\nWanxiang artifact intentionally uses jichu core only. Rime Ice/Frost follow their top-level dictionary import_tables recursively. Custom starts from its native LibIME release dictionary.\nSee MANIFEST.json for exact source commits and counts.\n""")
+          PY
+          python3 /tmp/build.py
+          sha256sum out/*.dict > out/SHA256SUMS.txt
+          cat out/MANIFEST.json
+          ls -lh out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mainstream-fcitx5-libime-dictionaries
+          path: out/
+          retention-days: 7
