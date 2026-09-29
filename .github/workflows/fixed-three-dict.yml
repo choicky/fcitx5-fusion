@@ -1,0 +1,78 @@
+name: Fixed Three Dictionary Analysis
+on:
+  workflow_dispatch:
+  push:
+    branches: [tools/wanxiang-libime-build]
+jobs:
+  analyze:
+    runs-on: ubuntu-24.04
+    steps:
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y libime-bin python3 zstd
+          curl -fL -o d.zst https://download.fcitx-im.org/data/dict-20260907.tar.zst
+          echo "fb75a179065e690dfc4559ce1807cbaf4fbe4f0111a5005615be9f435e6b9d76  d.zst" | sha256sum -c -
+          tar --use-compress-program=unzstd -xf d.zst
+          libime_pinyindict dict_sc.txt official.dict
+          libime_pinyindict -d official.dict official.txt
+          curl -fL -o custom.dict https://github.com/wuhgit/CustomPinyinDictionary/releases/download/assets/CustomPinyinDictionary_Fcitx.dict
+          libime_pinyindict -d custom.dict custom.txt
+          curl -fL -o wx.yaml https://raw.githubusercontent.com/amzxyz/rime-wanxiang/wanxiang/dicts/jichu.dict.yaml
+      - run: |
+          cat > /tmp/a.py <<'PY'
+          import re,unicodedata,collections,json
+          def L(p):
+            s=set()
+            for x in open(p,encoding="utf8"):
+                try:w,py,v=x.rstrip().rsplit(" ",2);s.add((w,py))
+                except:pass
+            return s
+          def np(s):
+            for c in "ǖǘǚǜü":s=s.replace(c,"v")
+            for c in "ǕǗǙǛÜ":s=s.replace(c,"v")
+            s=unicodedata.normalize("NFD",s)
+            s="".join(c for c in s if unicodedata.category(c)!="Mn")
+            return "'".join(s.lower().replace("u:","v").split())
+          def W():
+            s=set();h=False
+            for x in open("wx.yaml",encoding="utf-8-sig"):
+                x=x.rstrip()
+                if not h:
+                    if x=="...":h=True
+                    continue
+                if not x or x.lstrip().startswith("#"):continue
+                a=x.split("\t")
+                if len(a)>=2:
+                    p=np(a[1].strip())
+                    if re.fullmatch(r"[a-z]+(?:'[a-z]+)*",p):s.add((a[0].strip(),p))
+            return s
+          O,C,X=L("official.txt"),L("custom.txt"),W()
+          word=lambda S:{x[0] for x in S}
+          R={}
+          for n,S in [("official",O),("custom",C),("wanxiang",X)]:R[n]={"pairs":len(S),"words":len(word(S))}
+          for a,A,b,B in [("official",O,"custom",C),("official",O,"wanxiang",X),("custom",C,"wanxiang",X)]:
+            R[a+"__"+b]={"pair_intersection":len(A&B),"word_intersection":len(word(A)&word(B)),a+"_unique_pairs":len(A-B),b+"_unique_pairs":len(B-A)}
+          R["triple"]={"pairs":len(O&C&X),"words":len(word(O)&word(C)&word(X))}
+          R["union"]={"pairs":len(O|C|X),"words":len(word(O)|word(C)|word(X))}
+          for n,S in [("custom",C),("wanxiang",X)]:
+            D=S-O
+            open(n+"-minus-official.txt","w",encoding="utf8").writelines(f"{w} {p} 0\n" for w,p in sorted(D))
+          print(json.dumps(R,ensure_ascii=False,indent=2))
+          open("report.json","w").write(json.dumps(R,ensure_ascii=False,indent=2))
+          PY
+          python3 /tmp/a.py | tee report.txt
+          libime_pinyindict custom-minus-official.txt custom-minus-official.dict
+          libime_pinyindict wanxiang-minus-official.txt wanxiang-minus-official.dict
+          sha256sum *.dict > sha256.txt
+          ls -lh *.dict > sizes.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fixed-three-dict-analysis
+          path: |
+            report.txt
+            report.json
+            sizes.txt
+            sha256.txt
+            custom-minus-official.dict
+            wanxiang-minus-official.dict
+          retention-days: 7
