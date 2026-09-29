@@ -1,0 +1,108 @@
+name: Analyze Pinyin Dictionary Overlap
+on:
+  push:
+    branches: [tools/wanxiang-libime-build]
+  workflow_dispatch:
+jobs:
+  analyze:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          sudo apt-get update && sudo apt-get install -y libime-bin python3 zstd
+          curl -fL --retry 3 -o dict.tar.zst https://download.fcitx-im.org/data/dict-20260907.tar.zst
+          echo "fb75a179065e690dfc4559ce1807cbaf4fbe4f0111a5005615be9f435e6b9d76  dict.tar.zst" | sha256sum -c -
+          tar --use-compress-program=unzstd -xf dict.tar.zst
+          libime_pinyindict dict_sc.txt official.dict
+          libime_pinyindict -d official.dict official.txt
+          curl -fL --retry 3 -o custom.dict https://github.com/wuhgit/CustomPinyinDictionary/releases/download/assets/CustomPinyinDictionary_Fcitx.dict
+          libime_pinyindict -d custom.dict custom.txt
+          curl -fL --retry 3 -o wanxiang.yaml https://raw.githubusercontent.com/amzxyz/rime-wanxiang/wanxiang/dicts/jichu.dict.yaml
+      - name: Analyze exact word+pinyin sets
+        run: |
+          cat > analyze.py <<'PY'
+          import re,unicodedata,collections,json
+          def normpy(s):
+            # preserve ü as v BEFORE tone-mark stripping
+            for c in "ǖǘǚǜü": s=s.replace(c,"v")
+            for c in "ǕǗǙǛÜ": s=s.replace(c,"v")
+            s=unicodedata.normalize("NFD",s)
+            s="".join(c for c in s if unicodedata.category(c)!="Mn")
+            return "'".join(s.lower().replace("u:","v").split()).replace("''","'")
+          def load_libime(path):
+            out=set()
+            for line in open(path,encoding="utf8"):
+              try:
+                w,p,_=line.rstrip("
+").rsplit(" ",2); out.add((w,p))
+              except: pass
+            return out
+          def load_wx(path):
+            out=set(); head=False; bad=[]
+            for n,line in enumerate(open(path,encoding="utf-8-sig"),1):
+              line=line.rstrip("\r
+")
+              if not head:
+                if line.strip()=="...": head=True
+                continue
+              if not line or line.lstrip().startswith("#"): continue
+              a=line.split("\t")
+              if len(a)<2: bad.append((n,line)); continue
+              p=normpy(a[1].strip())
+              if re.fullmatch(r"[a-z]+(?:'[a-z]+)*",p): out.add((a[0].strip(),p))
+              else: bad.append((n,line))
+            return out
+          O=load_libime("official.txt"); C=load_libime("custom.txt"); W=load_wx("wanxiang.yaml")
+          sets={"official":O,"custom":C,"wanxiang":W}
+          def words(S): return {w for w,p in S}
+          report={}
+          for n,S in sets.items(): report[n]={"pairs":len(S),"words":len(words(S))}
+          for a,b in [("official","custom"),("official","wanxiang"),("custom","wanxiang")]:
+            A,B=sets[a],sets[b]
+            report[a+"__"+b]={
+              "pair_intersection":len(A&B),"word_intersection":len(words(A)&words(B)),
+              a+"_unique_pairs":len(A-B),b+"_unique_pairs":len(B-A)}
+          report["triple"]={"pair_intersection":len(O&C&W),"word_intersection":len(words(O)&words(C)&words(W))}
+          report["incremental_vs_official"]={
+            "custom_new_pairs":len(C-O),"wanxiang_new_pairs":len(W-O),
+            "custom_new_words":len(words(C)-words(O)),"wanxiang_new_words":len(words(W)-words(O))}
+          report["union"]={"pairs":len(O|C|W),"words":len(words(O)|words(C)|words(W))}
+          # same word, differing pronunciation sets
+          def pymap(S):
+            d=collections.defaultdict(set)
+            for w,p in S:d[w].add(p)
+            return d
+          maps={k:pymap(v) for k,v in sets.items()}
+          for a,b in [("official","custom"),("official","wanxiang"),("custom","wanxiang")]:
+            common=maps[a].keys()&maps[b].keys()
+            diff=[w for w in common if maps[a][w]!=maps[b][w]]
+            report[a+"__"+b]["same_word_different_pronunciation_set"]=len(diff)
+            with open(a+"__"+b+"_pronunciation_diff.tsv","w",encoding="utf8") as f:
+              for w in sorted(diff): f.write(w+"\t"+"|".join(sorted(maps[a][w]))+"\t"+"|".join(sorted(maps[b][w]))+"
+")
+          # exact dedup candidates vs official
+          for name,S in [("custom",C),("wanxiang",W)]:
+            D=S-O
+            with open(name+"-minus-official.txt","w",encoding="utf8") as f:
+              for w,p in sorted(D): f.write(f"{w} {p} 0
+")
+          print(json.dumps(report,ensure_ascii=False,indent=2))
+          open("report.json","w",encoding="utf8").write(json.dumps(report,ensure_ascii=False,indent=2))
+          PY
+          python3 analyze.py | tee report.txt
+          libime_pinyindict wanxiang-minus-official.txt wanxiang-minus-official.dict
+          libime_pinyindict custom-minus-official.txt custom-minus-official.dict
+          sha256sum *.dict > sha256.txt
+          ls -lh *.dict *-minus-official.txt | tee sizes.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pinyin-three-dict-analysis
+          path: |
+            report.txt
+            report.json
+            sizes.txt
+            sha256.txt
+            *-pronunciation_diff.tsv
+            wanxiang-minus-official.dict
+            custom-minus-official.dict
+          retention-days: 7
