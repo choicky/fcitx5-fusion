@@ -1,6 +1,9 @@
 name: Build Mainstream LibIME Dictionaries
 on:
   workflow_dispatch:
+  push:
+    branches: [tools/wanxiang-libime-build]
+    paths: [.github/workflows/build-mainstream-libime-dictionaries.yml]
 jobs:
   build:
     runs-on: ubuntu-24.04
