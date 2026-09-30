@@ -458,6 +458,21 @@ v1.0.0 index lacks `entry_count`; Android uses the matching audited
 M4 remains blocked pending physical-device retest of visible progress,
 pause/resume, network recovery, and cancel behavior.
 
+Phase 5C unified manager follow-up (in progress): the next Android change keeps
+the existing downloader and integrity state machine, while showing localized
+and canonical names in the main list, representing the built-in LibIME Base
+and CJK Extension B, and controlling ExtB through the existing shared
+`pinyin` config option used by both Pinyin and Shuangpin. Download dialog
+actions are fixed to Cancel-left and Download/Pause/Resume-right. The four
+physical-device behaviors already accepted (pause retention, resume, cancel,
+and a fresh download after cancel) remain regression requirements.
+
+Research status: Frost and Wanxiang remain the only released catalog entries.
+zhwiki is pinned as a research candidate but lacks a completed generated-data
+artifact/attribution audit; CustomPinyin remains personal-research-only with
+public redistribution pending; Ice remains blocked by the authoritative Rime
+pronunciation-materialization gate. None mutates `dictionary-v1.0.0`.
+
 ## Phase 6 — Optional LLM Post-processing
 
 **状态：NOT STARTED**

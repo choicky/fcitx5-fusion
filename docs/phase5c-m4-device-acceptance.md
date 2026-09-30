@@ -108,3 +108,19 @@ version, available storage, and test date.
 
 Formal benchmark numbers and systematic dictionary-quality comparisons remain
 outside this gate and belong to the later product-quality work.
+
+### Latest device evidence
+
+The following behaviors were completed successfully on the current debug APK:
+
+- downloading to pause keeps the progress UI and partial staged file;
+- pause to resume continues the partial download;
+- cancel exits the download state;
+- a new download after cancel starts from the beginning.
+
+These are device evidence, not a replacement for automated integrity tests.
+The next APK must additionally retest the unified row presentation (localized
+and canonical names), fixed action positions, Base/ExtB controls, and any newly
+accepted catalog entries. Existing Frost/Wanxiang install, runtime, MoQi,
+enable/disable/delete, restart, and lifecycle PASS items remain regression
+checks. M4 is not marked complete by this documentation update.

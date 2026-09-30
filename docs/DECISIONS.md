@@ -593,3 +593,22 @@ catalog/release artifact size. Entry count comes from the Phase 5B
 Android at runtime. Since immutable `dictionary-v1.0.0/index.json` has no count
 field, its audit values are carried as an Android compatibility fallback; the
 builder now emits optional `entry_count` in future v2 index/audit metadata.
+
+## D043 — Phase 5C unified dictionary manager and research boundary
+
+**状态：Accepted (2026-09-30, implementation follow-up)**
+
+The Dictionary Manager remains a single top-level Settings page. It displays
+localized and canonical names, artifact/local size, authoritative entry count,
+and state in the main list. Built-in LibIME Base is mandatory; CJK Extension B
+is controlled only by the existing shared chinese-addons `ExtBEnabled` option,
+so Pinyin and Shuangpin continue to share one runtime/config source.
+
+The immutable `dictionary-v1.0.0` release is not changed. Frost and Wanxiang
+remain its released catalog entries. zhwiki, CustomPinyinDictionary, and
+Rime-Ice are research candidates with separate gates: zhwiki needs a pinned
+generated-data/artifact and attribution audit, Custom remains public-release
+pending because redistribution permission is not verified, and Ice cannot be
+published until Rime/Librime authoritative pronunciation materialization is
+reproduced. Personal research eligibility does not waive the public-release
+metadata boundary or the Ice pronunciation correctness requirement.

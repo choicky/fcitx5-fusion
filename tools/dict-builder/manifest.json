@@ -46,7 +46,18 @@
       "asset_url": "https://github.com/wuhgit/CustomPinyinDictionary/releases/download/assets/CustomPinyinDictionary_Fcitx.dict",
       "asset_sha256": "3a8cdcb844d1ae5f5dab9763b8ad2077a88c4b90b274bbdb6af6b22a304972a8",
       "license": null,
+      "public_release_approved": false,
       "exclusion_reason": "No upstream redistribution license was found; the README describes multiple third-party data sources."
+    },
+    "zhwiki": {
+      "release": false,
+      "display_name": "fcitx5-pinyin-zhwiki",
+      "repository": "https://github.com/felixonmars/fcitx5-pinyin-zhwiki.git",
+      "commit": "b0e079a6dadd30e67fd355e8f6e73b294367aac6",
+      "license": "Unlicense (code); Wikimedia dump terms (generated data)",
+      "license_url": "https://dumps.wikimedia.org/legal.html",
+      "public_release_approved": false,
+      "exclusion_reason": "Research pin recorded; a pinned generated dump/artifact hash and the complete data attribution chain must be audited before a project release artifact is enabled."
     },
     "rime-ice": {
       "release": false,
@@ -57,6 +68,7 @@
       "license": "GPL-3.0-only",
       "license_url": "https://raw.githubusercontent.com/iDvel/rime-ice/3aea6d3694fb3d94ec663641f021f788822897ad/LICENSE",
       "license_sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
+      "public_release_approved": false,
       "exclusion_reason": "Phase 5A found 9 pronunciation mismatches in 24 verifiable phrase-level comparisons after character-level annotation."
     }
   }

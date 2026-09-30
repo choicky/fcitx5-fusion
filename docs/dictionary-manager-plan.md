@@ -175,3 +175,31 @@ round-trip 的 authoritative row count。
 记录 Frost `2,010,605`、Wanxiang `1,425,249` 个 compiled entries；Android
 catalog 以兼容性 fallback 携带这两个已审计值。后续 builder 输出升级为可选的
 `entry_count` 字段（index schema v2），新 catalog 可直接消费 release metadata。
+
+### Phase 5C unified manager follow-up (2026-09-30)
+
+The Android manager now presents one shared list from the top-level Settings
+entry. Each catalog row shows the localized name and canonical upstream name,
+artifact/local size, authoritative entry count, and installation state. The
+download dialog keeps Cancel on the left and the primary Download/Pause/Resume
+action on the right across active and paused states.
+
+The list also represents the pinned LibIME Simplified Chinese Base and CJK
+Extension B resources. Base is built-in and mandatory. Extension B is a view of
+the existing chinese-addons `ExtBEnabled` option: it is read from and written
+to the existing `pinyin` input-method config and is shared by Pinyin and
+Shuangpin. No Android-only preference or `.disable` file is introduced.
+
+The catalog remains limited to the audited Frost and Wanxiang release assets.
+The zhwiki research pin is recorded in the builder manifest, but its generated
+dump/artifact and attribution chain are not yet release-ready. CustomPinyin is
+available for technical research only and remains `public_release_approved:
+false` because no upstream redistribution permission was found. Rime-Ice
+remains excluded because its missing-pronunciation materialization has not yet
+been reproduced from authoritative Rime/Librime output; the previous
+character-frequency heuristic is not acceptable.
+
+The research-only status is independent from technical personal-use testing:
+these candidates may be built and tested in a controlled environment, but they
+are not silently added to the immutable `dictionary-v1.0.0` release and are
+not described as publicly cleared downloads.
