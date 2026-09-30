@@ -29,13 +29,13 @@ ROM/device-dependent risk.
 
 - Repository: `choicky/fcitx5-android`
 - Branch: `phase5c-dictionary-manager`
-- Commit: `4a43e4182fc5c18849e8bee2fa220afc4a5d3c69`
+- Commit: `93f6f13a999b62783c8950d2de7243e2dadf5900`
 - Variant: `debug`, arm64-v8a APK
 - Application ID: `org.fcitx.fcitx5.android.debug`
-- CI run: [36704129274](https://github.com/choicky/fcitx5-android/actions/runs/36704129274)
-- Artifact: `moqi-debug-apk`, 78.5 MB, SHA-256
-  `9e30b30cfe983686e9ad851e60236e03605bee3bd91e39c3523b3978d1f11f84`,
-  artifact ID `11091622337`
+- CI run: [36709096430](https://github.com/choicky/fcitx5-android/actions/runs/36709096430)
+- Artifact: `moqi-debug-apk`, artifact ID `11094120568` (the APK SHA-256 is
+  available from the downloaded artifact; the CI workflow independently checks
+  its package and fixed signer certificate).
 
 Download the artifact from the CI run, unzip it, and install the contained APK:
 
@@ -50,8 +50,8 @@ This artifact supersedes the first M4 artifact. M4 must be restarted with this
 build because the catalog metadata and top-level Settings entry were corrected.
 
 The latest follow-up also exposes compact size and authoritative compiled entry
-count metadata in the Dictionary Manager list. The physical-device retest below
-must use this artifact.
+count metadata in the Dictionary Manager list. This is the artifact used for
+the current-scope PASS above.
 
 ## Stable Debug CI signing
 

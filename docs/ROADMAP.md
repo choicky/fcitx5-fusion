@@ -472,12 +472,12 @@ actions are fixed to Cancel-left and Download/Pause/Resume-right. The four
 physical-device behaviors already accepted (pause retention, resume, cancel,
 and a fresh download after cancel) remain regression requirements.
 
-Research status: Frost and Wanxiang remain the only released catalog entries.
-zhwiki and CustomPinyinDictionary are being prepared as personal-research
-catalog entries with explicit public-release status separate from technical
-eligibility. Ice remains blocked by the authoritative Rime pronunciation-
-materialization gate until its no-pronunciation rows can be reproduced from
-Rime's own result. None mutates `dictionary-v1.0.0`.
+Research status: Frost and Wanxiang remain the only entries in immutable
+`dictionary-v1.0.0`. The Android research catalog now also pins upstream
+zhwiki and CustomPinyinDictionary bytes with explicit personal-use metadata;
+their public-release approval remains false. Rime-Ice remains excluded until
+its no-pronunciation rows can be reproduced from Rime's own result. These
+research URLs do not mutate `dictionary-v1.0.0`.
 
 ## Phase 6 — Optional LLM Post-processing
 

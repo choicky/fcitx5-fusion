@@ -190,7 +190,6 @@ the existing chinese-addons `ExtBEnabled` option: it is read from and written
 to the existing `pinyin` input-method config and is shared by Pinyin and
 Shuangpin. No Android-only preference or `.disable` file is introduced.
 
-The catalog remains limited to the audited Frost and Wanxiang release assets.
 The current Frost/Wanxiang plus Base/ExtB manager scope passed one-device M4
 acceptance in run `36709096430`. That result does not cover later research
 catalog additions. The zhwiki research pin is recorded in the builder
@@ -201,6 +200,10 @@ false` because no upstream redistribution permission was found. Rime-Ice
 remains excluded because its missing-pronunciation materialization has not yet
 been reproduced from authoritative Rime/Librime output; the previous
 character-frequency heuristic is not acceptable.
+
+The research catalog currently adds the pinned zhwiki and CustomPinyin
+upstream artifacts for personal testing. Their public-release status remains
+false; Rime-Ice is not added until its pronunciation gate is closed.
 
 The research-only status is independent from technical personal-use testing:
 these candidates may be built and tested in a controlled environment, but they
