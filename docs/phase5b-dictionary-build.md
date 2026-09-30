@@ -8,13 +8,13 @@ release set is:
 | `rime-frost` | `211de1ca927b6c876e384c6de42e1cc8af868c68` | GPL-3.0-only | release |
 | `rime-wanxiang` (`jichu`) | `94f1e8d7b6d1267a9c8752a2e62145705dd1fb92` | CC-BY-4.0 | release |
 
-The manifest also records the exact Phase 5A pins for Rime Ice and
-CustomPinyinDictionary. Ice is excluded because Phase 5A found 9 mismatches in
-24 verifiable phrase-level pronunciation comparisons after character-level
-annotation, with no authoritative replacement rule. Custom is excluded
-because its pinned source/release has no verifiable redistribution license and
-the README identifies multiple third-party data sources. These are explicit
-non-release decisions, not silently skipped builds.
+At the time of the immutable `dictionary-v1.0.0` build, the manifest also
+recorded Rime Ice and CustomPinyinDictionary as non-release candidates. Those
+historical decisions are superseded for Phase 5C by the normalized-artifact
+audit: Ice's pronunciation gate passed through Librime materialization, and
+Custom's current upstream license is CC BY-SA 4.0. The Phase 5C manifest and
+research record are authoritative for the forward `dictionary-v1.1.0` scope;
+the v1.0.0 release remains unchanged.
 
 The official input is `dict-20260907.tar.zst`, SHA256
 `fb75a179065e690dfc4559ce1807cbaf4fbe4f0111a5005615be9f435e6b9d76`; its

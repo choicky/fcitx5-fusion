@@ -105,6 +105,25 @@ class ConverterTest(unittest.TestCase):
         self.assertEqual(rejects, [])
         self.assertEqual(duplicates, 0)
 
+    def test_native_dump_applies_official_negative_inheritance_only(self):
+        rows = [
+            (1, "负值", "fu'zhi", "", "负值 fu'zhi 0"),
+            (2, "零值", "ling'zhi", "", "零值 ling'zhi 0"),
+            (3, "正值", "zheng'zhi", "", "正值 zheng'zhi 0"),
+            (4, "新增", "xin'zeng", "", "新增 xin'zeng 0"),
+        ]
+        official = {
+            ("负值", "fu'zhi"): -1.25,
+            ("零值", "ling'zhi"): 0.0,
+            ("正值", "zheng'zhi"): 2.0,
+        }
+        entries, rejects, duplicates = converter.convert(rows, official)
+        self.assertEqual(entries[("负值", "fu'zhi")], -1.25)
+        self.assertEqual(entries[("零值", "ling'zhi")], 0.0)
+        self.assertEqual(entries[("正值", "zheng'zhi")], 0.0)
+        self.assertEqual(entries[("新增", "xin'zeng")], 0.0)
+        self.assertEqual((rejects, duplicates), ([], 0))
+
 
 if __name__ == "__main__":
     unittest.main()

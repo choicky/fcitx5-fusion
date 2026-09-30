@@ -605,10 +605,29 @@ is controlled only by the existing shared chinese-addons `ExtBEnabled` option,
 so Pinyin and Shuangpin continue to share one runtime/config source.
 
 The immutable `dictionary-v1.0.0` release is not changed. Frost and Wanxiang
-remain its released catalog entries. zhwiki, CustomPinyinDictionary, and
-Rime-Ice are research candidates with separate gates: zhwiki needs a pinned
-generated-data/artifact and attribution audit, Custom remains public-release
-pending because redistribution permission is not verified, and Ice cannot be
-published until Rime/Librime authoritative pronunciation materialization is
-reproduced. Personal research eligibility does not waive the public-release
-metadata boundary or the Ice pronunciation correctness requirement.
+remain its released catalog entries. zhwiki and CustomPinyinDictionary have
+separate normalized artifacts: zhwiki is technically approved but distribution
+pending owner approval, while Custom's current CC BY-SA 4.0 license and
+attribution boundary are recorded for the forward release. Rime-Ice has passed
+authoritative Rime/Librime materialization but remains distribution-pending.
+Personal research eligibility does not waive the metadata boundary.
+
+## D044 — Phase 5C common third-party normalization and release boundary
+
+**状态：Accepted（2026-09-30，Phase 5C normalization audit）**
+
+All adopted third-party Pinyin dictionaries are normalized against the pinned
+official LibIME Base using the exact `(word, full-pinyin)` key. An absent
+official match, official zero, or official positive produces third-party value
+`0`; an exact official negative value is inherited unchanged. Formal artifacts
+must pass the same pinned `libime_pinyindict` dump/load, deterministic rebuild,
+SHA-256, size, entry-count and audit checks.
+
+`technical_approved` and `distribution_approved` are separate metadata. Custom
+PinyinDictionary is technically and distribution approved for the forward
+artifact under its verified CC BY-SA 4.0 license at upstream commit
+`cf17f96af885cb818c2fad87184f383a52482351`, with attribution for the additional
+sources named by its README. zhwiki is technically approved but its normalized
+artifact remains withheld until the owner records redistribution approval.
+Rime-Ice remains technically materialized but distribution-pending. The
+immutable `dictionary-v1.0.0` is untouched.

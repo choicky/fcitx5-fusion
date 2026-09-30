@@ -31,7 +31,8 @@ jobs:
         run: |
           python3 tools/dict-builder/build.py --manifest tools/dict-builder/manifest.json --toolchain-manifest /tmp/moqi-pinned-libime/toolchain.json --pinyindict /tmp/moqi-pinned-libime/bin/libime_pinyindict --output /tmp/dictionary-build-1 --source-root /tmp
           python3 tools/dict-builder/build.py --manifest tools/dict-builder/manifest.json --toolchain-manifest /tmp/moqi-pinned-libime/toolchain.json --pinyindict /tmp/moqi-pinned-libime/bin/libime_pinyindict --output /tmp/dictionary-build-2 --source-root /tmp
-          for name in rime-frost.dict rime-wanxiang.dict rime-frost.LICENSE rime-wanxiang.LICENSE SHA256SUMS index.json; do
+          for name in /tmp/dictionary-build-1/*.dict /tmp/dictionary-build-1/*.LICENSE /tmp/dictionary-build-1/SHA256SUMS /tmp/dictionary-build-1/index.json; do
+            name="$(basename "$name")"
             cmp "/tmp/dictionary-build-1/$name" "/tmp/dictionary-build-2/$name"
           done
       - name: Run converter and repository checks
@@ -41,7 +42,7 @@ jobs:
       - name: Prepare validation artifact
         run: |
           mkdir release
-          cp /tmp/dictionary-build-1/{rime-frost.dict,rime-wanxiang.dict,rime-frost.LICENSE,rime-wanxiang.LICENSE,SHA256SUMS,index.json} release/
+          cp /tmp/dictionary-build-1/* release/
           (cd release && sha256sum -c SHA256SUMS)
           test -s release/rime-frost.dict
           test -s release/rime-wanxiang.dict

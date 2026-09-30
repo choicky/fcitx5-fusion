@@ -117,16 +117,21 @@ RecognitionService、麦克风、权限、手势和生命周期组合，因此�
 `tools/dict-builder/build.py` 使用深度为 1 的固定提交 fetch，校验官方
 `dict-20260907` 输入和上游 LICENSE 文件 hash，调用 Phase 5A converter 与
 真实 `libime_pinyindict`，并生成 `.dict`、`SHA256SUMS` 和简化 `index.json`。
-Frost 与 Wanxiang `jichu` 是当前 release set；Ice 和 Custom 的排除理由与
-固定来源均记录在 manifest 和 `docs/phase5b-dictionary-build.md`。workflow
+Frost 与 Wanxiang `jichu` 是 immutable v1.0.0 release set；Phase 5C 的
+forward normalization additionally makes Custom eligible for v1.1.0, while
+zhwiki and Ice retain separate distribution gates in the manifest and research
+record. The historical v1.0.0 exclusions remain recorded in
+`docs/phase5b-dictionary-build.md`. workflow
 重复构建并逐字节比较产物，普通手动运行只上传验证 artifact，只有
 maintainer 创建的 `dictionary-v*` tag 才创建 GitHub Release。
 
 ## 8. Phase 5C 实现状态
 
-Phase 5B 已完成研究冻结、固定构建/release 基础设施，并只把 Frost 与
-Wanxiang `jichu` 纳入生产 release set；Ice 和 Custom 仍是非发布候选。
-`dictionary-v1.0.0` 指向 Phase 5B 完成提交并已推送。
+Phase 5B 已完成研究冻结、固定构建/release 基础设施；`dictionary-v1.0.0`
+仍只包含 Frost 与 Wanxiang `jichu`。Phase 5C forward build 统一对所有
+formal artifacts 执行 official-negative normalization；Custom 已具备
+`dictionary-v1.1.0` release metadata，zhwiki 和 Ice 仍分别等待 distribution
+approval。`dictionary-v1.0.0` 指向 Phase 5B 完成提交并已推送。
 
 Phase 5C 的实现位于 Android 分支 `phase5c-dictionary-manager`，当前提交为
 `9e820b0d346a49fd58cf5a93e01e6a58c342341a`，包含：
@@ -201,9 +206,14 @@ remains excluded because its missing-pronunciation materialization has not yet
 been reproduced from authoritative Rime/Librime output; the previous
 character-frequency heuristic is not acceptable.
 
-The research catalog currently adds the pinned zhwiki and CustomPinyin
-upstream artifacts for personal testing. Their public-release status remains
-false; Rime-Ice is not added until its pronunciation gate is closed.
+All adopted third-party dictionaries now use one normalization policy against
+the pinned official Base: exact `(word, full-pinyin)` matches inherit only an
+official negative value; official zero/positive and absent matches emit zero.
+CustomPinyinDictionary has a normalized forward-release artifact under
+CC BY-SA 4.0 with required upstream attribution. zhwiki has a normalized and
+tested artifact but remains withheld pending owner redistribution approval.
+Rime-Ice has passed its pronunciation gate but remains outside the catalog
+until its separate generated-data distribution boundary is cleared.
 
 The research-only status is independent from technical personal-use testing:
 these candidates may be built and tested in a controlled environment, but they

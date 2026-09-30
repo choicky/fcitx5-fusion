@@ -477,13 +477,23 @@ physical-device behaviors already accepted (pause retention, resume, cancel,
 and a fresh download after cancel) remain regression requirements.
 
 Research status: Frost and Wanxiang remain the only entries in immutable
-`dictionary-v1.0.0`. The Android research catalog now also pins upstream
-zhwiki and CustomPinyinDictionary bytes with explicit personal-use metadata;
-their public-release approval remains false. Rime-Ice pronunciation
-materialization now passes the Librime PoC and reproducible LibIME build, but
-its catalog insertion is blocked pending safe stable hosting because a public
-release would redistribute uncleared generated data and CI artifacts are not
-stable Android URLs. These research URLs do not mutate `dictionary-v1.0.0`.
+`dictionary-v1.0.0`. The forward Android catalog uses only project-controlled
+normalized bytes whose distribution gate is satisfied; Custom is prepared for
+`dictionary-v1.1.0`, while zhwiki remains withheld pending owner approval.
+Rime-Ice pronunciation materialization passes the Librime PoC and reproducible
+LibIME build, but its distribution gate remains open. No research URL mutates
+`dictionary-v1.0.0`.
+
+Phase 5C normalization follow-up: all formal third-party artifacts use the
+same exact `(word, full-pinyin)` official-negative inheritance policy. Native
+Custom and zhwiki audits found respectively 106 and 33 official-negative
+overlaps whose upstream zero values would bypass the official penalty. Both
+were rebuilt through the pinned LibIME toolchain; Custom's verified upstream
+CC BY-SA 4.0 license is recorded at `cf17f96af885cb818c2fad87184f383a52482351`
+and its normalized artifact is eligible for the forward release. zhwiki's
+normalized artifact is technically complete but remains withheld pending owner
+redistribution approval. The next release is `dictionary-v1.1.0`; it does not
+mutate `dictionary-v1.0.0`.
 
 ## Phase 6 — Optional LLM Post-processing
 

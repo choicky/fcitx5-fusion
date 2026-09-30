@@ -34,6 +34,10 @@ def check_conversion(log: str, expected: dict, name: str) -> None:
         if int(fields.get(key, -1)) != expected[key]:
             raise RuntimeError(f"{name} {key} count changed: {fields.get(key)} != {expected[key]}")
 
+def check_expected(value: int, expected: dict, key: str, name: str) -> None:
+    if key in expected and value != expected[key]:
+        raise RuntimeError(f"{name} {key} count changed: {value} != {expected[key]}")
+
 
 def consumed_source(root: Path, top: str) -> tuple[str, list[dict]]:
     files = sorted(convert.rime_tree_files(root, Path(top)), key=lambda path: str(path.relative_to(root)))
@@ -106,10 +110,18 @@ def main() -> int:
         for key, source in manifest["sources"].items():
             if not source.get("release"):
                 continue
-            checkout = fetch_source(source, source_root)
-            input_sha256, source_files = consumed_source(checkout, source["top"])
-            if input_sha256 != source["input_sha256"]:
-                raise RuntimeError(f"source input hash mismatch for {key}: {input_sha256} != {source['input_sha256']}")
+            if source.get("kind") == "native":
+                native_input = temp_root / f"{key}.upstream.dict"
+                download(source["asset_url"], native_input)
+                input_sha256 = sha256(native_input)
+                if input_sha256 != source["asset_sha256"]:
+                    raise RuntimeError(f"source artifact hash mismatch for {key}")
+                source_files = [{"path": native_input.name, "bytes": native_input.stat().st_size, "sha256": input_sha256}]
+            else:
+                checkout = fetch_source(source, source_root)
+                input_sha256, source_files = consumed_source(checkout, source["top"])
+                if input_sha256 != source["input_sha256"]:
+                    raise RuntimeError(f"source input hash mismatch for {key}: {input_sha256} != {source['input_sha256']}")
             license_hash = verify_license(source, temp_root)
             license_file = args.output / f"{key}.LICENSE"
             shutil.copyfile(temp_root / (source["display_name"].replace(" ", "-") + ".LICENSE"), license_file)
@@ -117,19 +129,26 @@ def main() -> int:
             rejects = args.output / f"{key}.rejected.tsv"
             binary = args.output / f"{key}.dict"
             roundtrip = args.output / f"{key}.roundtrip.txt"
-            conversion_log = run("python3", str(HERE / "convert.py"), "--kind", "rime", "--root", str(checkout), "--input", str(checkout / source["top"]), "--official", str(official), "--text", str(text), "--rejects", str(rejects), output=args.output / f"{key}.convert.log")
-            check_conversion(conversion_log, source["expected"], key)
+            if source.get("kind") == "native":
+                native_dump = temp_root / f"{key}.native.txt"
+                run(args.pinyindict, "-d", str(native_input), str(native_dump))
+                conversion_kind = "native"
+                conversion_input = native_dump
+            else:
+                conversion_kind = "rime"
+                conversion_input = checkout / source["top"]
+            conversion_log = run("python3", str(HERE / "convert.py"), "--kind", conversion_kind, "--root", str(checkout) if conversion_kind == "rime" else str(temp_root), "--input", str(conversion_input), "--official", str(official), "--text", str(text), "--rejects", str(rejects), output=args.output / f"{key}.convert.log")
+            check_conversion(conversion_log, source.get("expected", {}), key)
             run(args.pinyindict, str(text), str(binary), output=args.output / f"{key}.compile.log")
             run(args.pinyindict, "-d", str(binary), str(roundtrip), output=args.output / f"{key}.roundtrip.log")
             if not binary.stat().st_size or not roundtrip.stat().st_size:
                 raise RuntimeError(f"empty LibIME output for {key}")
             roundtrip_rows = sum(1 for _ in roundtrip.open(encoding="utf-8"))
-            if roundtrip_rows != source["expected"]["roundtrip_rows"]:
-                raise RuntimeError(f"{key} round-trip count changed: {roundtrip_rows} != {source['expected']['roundtrip_rows']}")
+            check_expected(roundtrip_rows, source.get("expected", {}), "roundtrip_rows", key)
             binary_sha256 = sha256(binary)
-            index["dictionaries"].append({"id": key, "display_name": source["display_name"], "artifact": binary.name, "version": source["commit"], "source_repository": source["repository"].removesuffix(".git"), "source_revision": source["commit"], "source_input_sha256": input_sha256, "sha256": binary_sha256, "size": binary.stat().st_size, "entry_count": roundtrip_rows, "license": source["license"], "license_file": license_file.name, "license_sha256": license_hash, "compatibility": {"format": "LibIME pinyindict", "official_dictionary": "dict-20260907", "converter_rule": manifest["rule_version"]}})
+            index["dictionaries"].append({"id": key, "display_name": source["display_name"], "artifact": binary.name, "version": source.get("commit", source.get("artifact_revision")), "source_repository": source["repository"].removesuffix(".git"), "source_revision": source.get("commit", source.get("artifact_revision")), "source_input_sha256": input_sha256, "sha256": binary_sha256, "size": binary.stat().st_size, "entry_count": roundtrip_rows, "license": source["license"], "license_file": license_file.name, "license_sha256": license_hash, "technical_approved": source.get("technical_approved", True), "distribution_approved": source.get("distribution_approved", source.get("public_release_approved", True)), "compatibility": {"format": "LibIME pinyindict", "official_dictionary": "dict-20260907", "converter_rule": manifest["rule_version"]}})
             fields = dict(item.split("=") for item in conversion_log.strip().split() if "=" in item)
-            audit_sources.append({"id": key, "source_revision": source["commit"], "source_input_sha256": input_sha256, "source_files": source_files, "accepted": int(fields["accepted"]), "rejected": int(fields["rejected"]), "duplicates": int(fields["duplicates"]), "roundtrip_rows": roundtrip_rows, "entry_count": roundtrip_rows, "conversion_log": f"{key}.convert.log", "rejected_rows": rejects.name, "compile_log": f"{key}.compile.log", "roundtrip_log": f"{key}.roundtrip.log", "artifact": binary.name, "artifact_sha256": binary_sha256})
+            audit_sources.append({"id": key, "source_revision": source.get("commit", source.get("artifact_revision")), "source_input_sha256": input_sha256, "source_files": source_files, "accepted": int(fields["accepted"]), "rejected": int(fields["rejected"]), "duplicates": int(fields["duplicates"]), "roundtrip_rows": roundtrip_rows, "entry_count": roundtrip_rows, "conversion_log": f"{key}.convert.log", "rejected_rows": rejects.name, "compile_log": f"{key}.compile.log", "roundtrip_log": f"{key}.roundtrip.log", "artifact": binary.name, "artifact_sha256": binary_sha256, "technical_approved": source.get("technical_approved", True), "distribution_approved": source.get("distribution_approved", source.get("public_release_approved", True))})
             roundtrip.unlink()
         sums = args.output / "SHA256SUMS"
         checksum_files = [(item["artifact"], sha256(args.output / item["artifact"])) for item in index["dictionaries"]]

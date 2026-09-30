@@ -11,7 +11,9 @@
     "url": "https://download.fcitx-im.org/data/dict-20260907.tar.zst",
     "sha256": "fb75a179065e690dfc4559ce1807cbaf4fbe4f0111a5005615be9f435e6b9d76",
     "file": "dict_sc.txt",
-    "sha256_unpacked": "0127667cd084ca5932a8e6c023bcde09b8220ce826fa3b1e6214f768c14cc922"
+    "sha256_unpacked": "0127667cd084ca5932a8e6c023bcde09b8220ce826fa3b1e6214f768c14cc922",
+    "revision": "dict-20260907",
+    "normalization": "exact (word,full-pinyin): inherit official negative only; official zero/positive and absent matches become 0"
   },
   "sources": {
     "rime-frost": {
@@ -39,18 +41,26 @@
       "license_sha256": "9e5f1b3c610b9c2da5c313bf81d577a7d1acec686bdb0384edefa6df0f90cd94"
     },
     "custom-pinyin": {
-      "release": false,
+      "release": true,
+      "kind": "native",
       "display_name": "CustomPinyinDictionary",
       "repository": "https://github.com/wuhgit/CustomPinyinDictionary.git",
       "commit": "0673212e83c9db1fef24fdf950b22c994bf27e9c",
+      "artifact_revision": "0673212e83c9db1fef24fdf950b22c994bf27e9c",
+      "license_revision": "cf17f96af885cb818c2fad87184f383a52482351",
       "asset_url": "https://github.com/wuhgit/CustomPinyinDictionary/releases/download/assets/CustomPinyinDictionary_Fcitx.dict",
       "asset_size": 29688969,
       "asset_sha256": "63677b0e1bcd9276e8eeef41553ab532bf6061278558d9efa3629b0ebe8836e5",
-      "entry_count": 1498781,
       "artifact_kind": "upstream-native-libime-pinyindict",
-      "license": null,
-      "public_release_approved": false,
-      "exclusion_reason": "No upstream redistribution license was found; the README describes multiple third-party data sources."
+      "expected": {"accepted": 1498781, "rejected": 0, "duplicates": 0, "roundtrip_rows": 1498781},
+      "license": "CC-BY-SA-4.0",
+      "license_url": "https://raw.githubusercontent.com/wuhgit/CustomPinyinDictionary/cf17f96af885cb818c2fad87184f383a52482351/LICENSE",
+      "license_sha256": "28a9529c7d0bb4dc51f4bf5c116a3d16ef247a052f7591466768ddf563fd1cf5",
+      "technical_approved": true,
+      "distribution_approved": true,
+      "public_release_approved": true,
+      "normalized_artifact": {"name": "custom-pinyin.dict", "sha256": "69f0de1dcefb81002108b612329dc5ef20784f194441dac44c3c72999e1ebf85", "size": 28331924, "entry_count": 1498781, "inherited_negative": 106, "rejected": 0},
+      "attribution": "wuhgit/CustomPinyinDictionary; upstream README credits FREEMDICT, Administrative-divisions-of-China, wgii, customs.gov.cn, National Bureau of Statistics, and other listed sources; those source rights remain separately attributed."
     },
     "zhwiki": {
       "release": false,
@@ -66,7 +76,11 @@
       "license": "Unlicense (code); Wikimedia dump terms (generated data)",
       "license_url": "https://dumps.wikimedia.org/legal.html",
       "public_release_approved": false,
-      "exclusion_reason": "Research pin recorded; a pinned generated dump/artifact hash and the complete data attribution chain must be audited before a project release artifact is enabled."
+      "technical_approved": true,
+      "distribution_approved": false,
+      "attribution": "felixonmars/fcitx5-pinyin-zhwiki; generated data derives from Wikimedia dumps and is subject to Wikimedia dump terms.",
+      "normalized_artifact": {"name": "zhwiki.dict", "sha256": "afdbb9118a9759c9d236dde9d2d465521587b9d2156f186382b20825f7762353", "size": 34353549, "entry_count": 1673006, "inherited_negative": 33, "rejected": 0},
+      "exclusion_reason": "Normalized artifact is technically complete; public release remains withheld pending owner redistribution approval for the generated Wikimedia-derived data."
     },
     "rime-ice": {
       "release": false,
