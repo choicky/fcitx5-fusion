@@ -106,7 +106,7 @@
       "materialized_table_sha256": "cb9dbc6f4661b92a0134cc63045dc5807af355d1d398a7855c344a0fa96b9cd8",
       "materialized_table_size": 63080064,
       "artifact_url": null,
-      "artifact_hosting": "blocked: technical artifact complete, but pinned Ice external base-input provenance is not cleared; CI artifacts are authenticated/expiring and cannot serve Android catalog downloads",
+      "artifact_hosting": "private local artifact import only; no public URL or Release asset",
       "artifact_size": 33670856,
       "artifact_sha256": "d1ee425424834ffa1508583fff4b98c9b4193c03128451dcf6e050f4bd00b2fb",
       "entry_count": 1885206,
@@ -121,7 +121,7 @@
         "sha256": "d1ee425424834ffa1508583fff4b98c9b4193c03128451dcf6e050f4bd00b2fb",
         "size": 33670856,
         "entry_count": 1885206,
-        "artifact_hosting": "private CI artifact only; not a public catalog URL"
+        "artifact_hosting": "private local file import only; not a public catalog URL"
       },
       "distribution_approved": false,
       "distribution_blocker": {

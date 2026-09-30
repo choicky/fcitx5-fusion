@@ -73,12 +73,14 @@ The build driver requires the verified toolchain manifest and matching
 `libime_pinyindict`; it does not emit pinned provenance for an unverified
 executable.
 
-The release set is Frost and Wanxiang `jichu`. Ice is pinned for provenance but
-excluded because Phase 5A found unresolved phrase-level pronunciation
-mismatches. CustomPinyinDictionary is pinned as a research candidate but
-excluded because its upstream snapshot does not provide a verifiable
-redistribution license and its README identifies multiple third-party data
-sources. No release artifact is made for either excluded source.
+The public release set currently contains Frost, Wanxiang `jichu`, normalized
+CustomPinyinDictionary, and normalized zhwiki. Ice is technically materialized
+through the pinned Librime table dump and can be imported for private research,
+but it is excluded from public release because Huayu and the indiejoseph Gist
+remain pending provenance/permission items. Custom and zhwiki are no longer
+excluded by the historical Phase 5C research status; their current metadata and
+notices are in the manifest. The private Ice artifact is supplied as a local
+file and is never treated as a public catalog URL.
 
 The production workflow is `.github/workflows/build-dictionaries.yml`. It has
 no user-controlled source or matrix inputs: `workflow_dispatch` runs the fixed

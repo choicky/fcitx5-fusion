@@ -217,7 +217,9 @@ overall Ice GPLv3 treatment covers Tencent; Tencent is not this blocker.
 The project owner allows private/research device testing before those two
 permissions are cleared. The Android row therefore uses the existing local
 import flow with pinned size/SHA-256 verification, not a public or expiring
-download URL; `technical_approved=true`, `research_private_approved=true`,
+download URL. The Ice research artifact is supplied as a local file produced
+from the recorded pinned materialization inputs; the catalog row does not
+pretend that a CI artifact is a stable production URL. `technical_approved=true`, `research_private_approved=true`,
 `distribution_approved=false`, and `public_release_approved=false` remain
 separate states.
 

@@ -464,11 +464,12 @@ research dictionaries.
 The subsequent zhwiki + CustomPinyinDictionary incremental device acceptance
 is also PASS for all six existing incremental checks: download/integrity,
 installation and enable/disable, restart persistence, Pinyin/Shuangpin runtime,
-MoQi regression, and delete/recovery. Rime-Ice remains untested and excluded
-from the catalog pending a concrete data-provenance/licensing basis for the
-Huayu and indiejoseph inputs named by its pinned `cn_dicts/base.dict.yaml`;
-this is not the Tencent table, which is covered by the accepted overall Ice
-GPLv3 treatment.
+MoQi regression, and delete/recovery. Rime-Ice remains untested for device
+acceptance but now has a private/research catalog row. Its pinned authoritative
+artifact is available through local-file import only; public distribution
+remains blocked by the Huayu and indiejoseph input provenance/permission items
+named by its pinned `cn_dicts/base.dict.yaml`. This is not the Tencent table,
+which is covered by the accepted overall Ice GPLv3 treatment.
 pause/resume, network recovery, and cancel behavior.
 
 Phase 5C unified manager follow-up (in progress): the next Android change keeps
@@ -488,8 +489,8 @@ modification disclosure. Rime-Ice pronunciation materialization passes the
 Librime PoC and reproducible LibIME build, but public distribution remains
 blocked specifically by the Huayu and indiejoseph base-input provenance gap;
 the Tencent table is not a blocker. Private/research device testing is allowed
-using an authenticated CI artifact imported through the existing Android local
-dictionary flow with pinned size/SHA-256 verification. This does not approve
+using a privately produced local artifact imported through the existing Android
+local dictionary flow with pinned size/SHA-256 verification. This does not approve
 public redistribution: Huayu and indiejoseph permission/provenance remain
 pending, and no research URL mutates `dictionary-v1.0.0`.
 
