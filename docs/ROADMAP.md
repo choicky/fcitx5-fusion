@@ -424,7 +424,7 @@ toolchain manifest、Rime imports + current table parsing、独立 build audit
 artifact）已修复；远端 CI run `36602286082` 通过，PR #1 可进入正常合并
 流程。Phase 5C 的 Android 实现已提交到 `choicky/fcitx5-android` 分支
 `phase5c-dictionary-manager`，当前 commit
-`54b6100b3b1b245942f2b94205326d772547b7e9`。它复用现有 Pinyin dictionary
+`4a43e4182fc5c18849e8bee2fa220afc4a5d3c69`。它复用现有 Pinyin dictionary
 UI 和目录，提供固定 catalog、许可证/来源/限制展示、HTTPS 下载、空间检查、
 SHA-256 校验、临时文件、原子替换、旧文件保留和删除；没有修改 LibIME 或上传
 用户学习数据，并在暂停时保留 partial artifact、重试时通过 HTTP Range 续传。
@@ -441,6 +441,15 @@ debug APK、JVM unit tests、release Kotlin、instrumented-test compile 和 APK
 Gradle 结果冒充通过。远端上传了 `moqi-debug-apk`（78.5 MB，SHA256
 `9e30b30cfe983686e9ad851e60236e03605bee3bd91e39c3523b3978d1f11f84`）。该分支
 尚未合入主线或发布新的词库 release；M4 必须使用该 artifact 重新开始受影响项目。
+
+Debug CI signing follow-up：`moqi-test-apk.yml` 现在仅在 CI 提供
+`DEBUG_SIGN_*` secrets 时为 Debug variant 配置独立测试 keystore；本地没有
+这些变量时仍使用标准 Android Debug signing。CI 断言 package
+`org.fcitx.fcitx5.android.debug` 与证书 SHA-256
+`41:70:5B:C9:4F:42:26:FF:FA:E9:60:91:B7:BA:36:F2:C0:55:B6:2A:93:DF:4E:B9:58:9C:A9:96:A3:7C:7A:7E`。
+run `36702460743` 与独立 run `36704129274` 均通过；Release 仍独立使用
+`SIGN_*` signing key。旧随机 Debug 签名 APK 需一次性卸载，之后可持续覆盖安装
+固定签名 Debug APK。
 
 Phase 5C metadata UX follow-up: the Android Dictionary Manager now displays
 release/local artifact size and authoritative compiled entry count. The immutable

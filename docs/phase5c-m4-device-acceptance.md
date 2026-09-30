@@ -9,12 +9,13 @@ ROM/device-dependent risk.
 
 - Repository: `choicky/fcitx5-android`
 - Branch: `phase5c-dictionary-manager`
-- Commit: `54b6100b3b1b245942f2b94205326d772547b7e9`
+- Commit: `4a43e4182fc5c18849e8bee2fa220afc4a5d3c69`
 - Variant: `debug`, arm64-v8a APK
 - Application ID: `org.fcitx.fcitx5.android.debug`
-- CI run: [36698604414](https://github.com/choicky/fcitx5-android/actions/runs/36698604414)
+- CI run: [36704129274](https://github.com/choicky/fcitx5-android/actions/runs/36704129274)
 - Artifact: `moqi-debug-apk`, 78.5 MB, SHA-256
-  `9e30b30cfe983686e9ad851e60236e03605bee3bd91e39c3523b3978d1f11f84`
+  `9e30b30cfe983686e9ad851e60236e03605bee3bd91e39c3523b3978d1f11f84`,
+  artifact ID `11091622337`
 
 Download the artifact from the CI run, unzip it, and install the contained APK:
 
@@ -31,6 +32,18 @@ build because the catalog metadata and top-level Settings entry were corrected.
 The latest follow-up also exposes compact size and authoritative compiled entry
 count metadata in the Dictionary Manager list. The physical-device retest below
 must use this artifact.
+
+## Stable Debug CI signing
+
+The Debug APK is signed in CI with the dedicated `DEBUG_SIGN_*` secrets and
+certificate SHA-256 fingerprint
+`41:70:5B:C9:4F:42:26:FF:FA:E9:60:91:B7:BA:36:F2:C0:55:B6:2A:93:DF:4E:B9:58:9C:A9:96:A3:7C:7A:7E`.
+The Release APK continues to use the separate `SIGN_*` secrets and signing
+key; neither path reuses or changes the other key. Independent CI runs
+`36702460743` and `36704129274` both passed the package and certificate
+assertions. APKs made by older CI runs with random Debug signing must be
+uninstalled once; subsequent fixed-signature Debug APKs can be installed over
+one another with `adb install -r`.
 
 ## Acceptance checklist
 
