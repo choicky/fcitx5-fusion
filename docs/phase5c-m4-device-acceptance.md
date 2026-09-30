@@ -20,6 +20,19 @@ research additions zhwiki, CustomPinyinDictionary, and Rime-Ice are not
 covered by this device result and require incremental acceptance after their
 artifacts are technically accepted. Phase 5C is therefore not yet closed.
 
+## zhwiki + Custom incremental result
+
+The owner completed the incremental real-device acceptance for the zhwiki and
+CustomPinyinDictionary research entries using the current fixed-signing APK:
+**PASS, all six existing incremental items**. The accepted scope covers the
+existing checklist's download/SHA/size verification, installation and
+enable/disable, restart persistence, Pinyin and Shuangpin runtime, MoQi
+regression, and delete returning the entry to Available/recovery.
+
+This result applies only to zhwiki and CustomPinyinDictionary. Rime-Ice has not
+been accepted on a device and remains outside the catalog until its
+authoritative pronunciation/materialization gate is complete.
+
 This is the single-device acceptance gate for Phase 5C. One Android device must
 complete every item below. A second device is recommended for smoke testing only;
 it is not required for Phase 5C completion unless testing reveals a concrete

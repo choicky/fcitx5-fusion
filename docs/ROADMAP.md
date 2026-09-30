@@ -461,6 +461,10 @@ pause/resume/cancel, fresh download, installation, enable/disable/delete,
 runtime/lifecycle, Base/ExtB, Pinyin/Shuangpin, and MoQi behavior were all
 accepted for Frost and Wanxiang. This does not cover subsequently added
 research dictionaries.
+The subsequent zhwiki + CustomPinyinDictionary incremental device acceptance
+is also PASS for all six existing incremental checks: download/integrity,
+installation and enable/disable, restart persistence, Pinyin/Shuangpin runtime,
+MoQi regression, and delete/recovery. Rime-Ice remains untested and excluded.
 pause/resume, network recovery, and cancel behavior.
 
 Phase 5C unified manager follow-up (in progress): the next Android change keeps
