@@ -74,3 +74,17 @@ and no Ice APK catalog entry is added. The remaining gate is to reproduce the
 actual Rime deployment/schema annotation path (including its character table,
 weights, and polyphonic selection) and extract its resulting phrase-level
 codes. Phase 5C is not declared complete while this gate is unresolved.
+
+## Android research build checkpoint
+
+Android catalog commit `a5a2189b74260b97a0966df25d4757d871fc56e0` adds zhwiki
+and CustomPinyinDictionary only. CI run `36726528123` passed the existing
+Dictionary Manager JVM tests, APK build, MoQi APK-content checks, package
+check, and fixed Debug certificate check. Artifact `moqi-debug-apk` is ID
+`11103617114`; it is the arm64-v8a debug variant with application ID
+`org.fcitx.fcitx5.android.debug`.
+
+The next human checkpoint is incremental device testing of zhwiki and Custom:
+download, SHA/size verification, install, enable/disable, restart, Pinyin and
+Shuangpin runtime observation, MoQi regression, and delete/recovery. Ice has no
+APK catalog row and therefore has no device acceptance result.
