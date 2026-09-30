@@ -133,6 +133,13 @@ formal artifacts 执行 official-negative normalization；Custom 已具备
 `dictionary-v1.1.1` release metadata，Ice 仍等待 its separate distribution
 approval。`dictionary-v1.0.0` 指向 Phase 5B 完成提交并已推送。
 
+第三方词库下载前使用统一披露对话框：主列表保持中文名、canonical 名称、
+大小、条目数和状态的紧凑布局；首次下载前展示来源项目、版本/提交、许可证、
+归属/数据来源、转换/规范化说明、官方负值继承说明、预计大小和条目数，并提供
+Source project 与 License information 链接。确认按钮才启动下载，Cancel 不启动
+下载；不添加“我同意许可证”复选框。已安装的第三方词库仍可从同一详情入口查看
+这些信息。Built-in Base 与 ExtB 不属于该第三方披露流程。
+
 Phase 5C 的实现位于 Android 分支 `phase5c-dictionary-manager`，当前提交为
 `9e820b0d346a49fd58cf5a93e01e6a58c342341a`，包含：
 
