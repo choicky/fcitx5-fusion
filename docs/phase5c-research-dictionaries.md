@@ -104,10 +104,16 @@ and contains `血脉偾张 xue mai fen zhang` plus `xie mai fen zhang`; this is
 Rime's output, not a hardcoded patch. It also contains `嘴替 zui ti`,
 `发疯文学 fa feng wen xue`, and `小镇做题家 xiao zhen zuo ti jia`.
 
-The artifact is technically complete but remains distribution-pending because
-the compiled data combines multiple upstream tables whose public data
-permissions were not separately cleared. It is not added to the Android
-catalog and no mutable or expiring CI URL is used.
+The artifact is technically complete but remains distribution-pending for a
+specific reason unrelated to Tencent. The project decision treats
+`cn_dicts/tencent.dict.yaml` under the overall Ice GPLv3 treatment. However,
+the pinned `cn_dicts/base.dict.yaml` names the Huayu source and the indiejoseph
+Gist as external inputs, and the pinned Ice tree contains no separate
+license/NOTICE or relicensing evidence for those two inputs. THUOCL is
+separately identifiable as MIT from its upstream LICENSE. The next required
+step is a defensible provenance, license and attribution basis for Huayu and
+the Gist. It is not added to the Android catalog and no mutable or expiring CI
+URL is used.
 
 ## Android research build checkpoint
 

@@ -606,10 +606,12 @@ so Pinyin and Shuangpin continue to share one runtime/config source.
 
 The immutable `dictionary-v1.0.0` release is not changed. Frost and Wanxiang
 remain its released catalog entries. zhwiki and CustomPinyinDictionary have
-separate normalized artifacts: zhwiki is technically approved but distribution
-pending owner approval, while Custom's current CC BY-SA 4.0 license and
-attribution boundary are recorded for the forward release. Rime-Ice has passed
-authoritative Rime/Librime materialization but remains distribution-pending.
+separate normalized artifacts and are recorded for the forward release under
+their respective provenance evidence. Rime-Ice has passed authoritative
+Rime/Librime materialization; its Tencent table is covered by the overall Ice
+GPLv3 treatment, but Huayu and the indiejoseph base inputs still lack a
+recorded license/NOTICE or relicensing basis in the pinned Ice tree, so Ice
+remains distribution-pending for that concrete reason.
 Personal research eligibility does not waive the metadata boundary.
 
 ## D044 — Phase 5C common third-party normalization and release boundary
@@ -630,5 +632,11 @@ artifact under its verified CC BY-SA 4.0 license at upstream commit
 sources named by its README. zhwiki is technically and distribution approved
 under upstream Issue #58 and Wikimedia GFDL/CC BY-SA evidence; its release
 must carry the applicable notices, attribution, source and modification data.
-Rime-Ice remains technically materialized but distribution-pending. The
+Rime-Ice's `tencent` table is covered by the project's accepted overall Ice
+GPLv3 treatment and is not a blocker. Ice remains technically materialized but
+distribution-pending because the pinned `cn_dicts/base.dict.yaml` names Huayu
+and an indiejoseph Gist as external inputs without separate license/NOTICE or
+relicensing evidence in the pinned Ice tree; THUOCL is separately identified
+as MIT. The required next step is to establish a defensible provenance and
+attribution basis for those remaining inputs. The
 immutable `dictionary-v1.0.0` is untouched.

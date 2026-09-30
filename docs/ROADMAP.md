@@ -464,7 +464,11 @@ research dictionaries.
 The subsequent zhwiki + CustomPinyinDictionary incremental device acceptance
 is also PASS for all six existing incremental checks: download/integrity,
 installation and enable/disable, restart persistence, Pinyin/Shuangpin runtime,
-MoQi regression, and delete/recovery. Rime-Ice remains untested and excluded.
+MoQi regression, and delete/recovery. Rime-Ice remains untested and excluded
+from the catalog pending a concrete data-provenance/licensing basis for the
+Huayu and indiejoseph inputs named by its pinned `cn_dicts/base.dict.yaml`;
+this is not the Tencent table, which is covered by the accepted overall Ice
+GPLv3 treatment.
 pause/resume, network recovery, and cancel behavior.
 
 Phase 5C unified manager follow-up (in progress): the next Android change keeps
@@ -481,8 +485,10 @@ Research status: Frost and Wanxiang remain the only entries in immutable
 normalized Custom and zhwiki bytes for `dictionary-v1.1.1`; zhwiki's Issue #58
 and Wikimedia licensing evidence is recorded with the required notices and
 modification disclosure. Rime-Ice pronunciation materialization passes the
-Librime PoC and reproducible LibIME build, but its separate distribution gate
-remains open. No research URL mutates `dictionary-v1.0.0`.
+Librime PoC and reproducible LibIME build, but public distribution remains
+blocked specifically by the Huayu and indiejoseph base-input provenance gap;
+the Tencent table is not a blocker. No research URL mutates
+`dictionary-v1.0.0`.
 
 Phase 5C normalization follow-up: all formal third-party artifacts use the
 same exact `(word, full-pinyin)` official-negative inheritance policy. Native
@@ -491,8 +497,8 @@ overlaps whose upstream zero values would bypass the official penalty. Both
 were rebuilt through the pinned LibIME toolchain; Custom's verified upstream
 CC BY-SA 4.0 license is recorded at `cf17f96af885cb818c2fad87184f383a52482351`
 and its normalized artifact is eligible for the forward release. zhwiki's
-normalized artifact is technically complete but remains withheld pending owner
-redistribution approval. The next release is `dictionary-v1.1.1`; it does not
+normalized artifact is technically complete and included in the forward
+release under Issue #58/Wikimedia attribution and notice requirements. The next release is `dictionary-v1.1.1`; it does not
 mutate `dictionary-v1.0.0`.
 
 ## Phase 6 — Optional LLM Post-processing

@@ -30,8 +30,10 @@ enable/disable, restart persistence, Pinyin and Shuangpin runtime, MoQi
 regression, and delete returning the entry to Available/recovery.
 
 This result applies only to zhwiki and CustomPinyinDictionary. Rime-Ice has not
-been accepted on a device and remains outside the catalog until its
-authoritative pronunciation/materialization gate is complete.
+been accepted on a device and remains outside the catalog pending its concrete
+Huayu/indiejoseph base-input provenance and licensing gate. Its authoritative
+pronunciation/materialization gate is complete; the Tencent table is covered
+by the accepted overall Ice GPLv3 treatment and is not the blocker.
 
 This is the single-device acceptance gate for Phase 5C. One Android device must
 complete every item below. A second device is recommended for smoke testing only;

@@ -129,9 +129,11 @@ maintainer 创建的 `dictionary-v*` tag 才创建 GitHub Release。
 
 Phase 5B 已完成研究冻结、固定构建/release 基础设施；`dictionary-v1.0.0`
 仍只包含 Frost 与 Wanxiang `jichu`。Phase 5C forward build 统一对所有
-formal artifacts 执行 official-negative normalization；Custom 已具备
-`dictionary-v1.1.1` release metadata，Ice 仍等待 its separate distribution
-approval。`dictionary-v1.0.0` 指向 Phase 5B 完成提交并已推送。
+formal artifacts 执行 official-negative normalization；Custom 与 zhwiki 已具备
+`dictionary-v1.1.1` release metadata。Ice 已通过 pronunciation gate；其
+`tencent` 表不再构成 blocker，但 `cn_dicts/base.dict.yaml` 所列 Huayu 与
+indiejoseph Gist 仍缺少固定树中的 license/NOTICE 或 relicensing evidence，
+因此 Ice 仍未进入 catalog。`dictionary-v1.0.0` 指向 Phase 5B 完成提交并已推送。
 
 第三方词库下载前使用统一披露对话框：主列表保持中文名、canonical 名称、
 大小、条目数和状态的紧凑布局；首次下载前展示来源项目、版本/提交、许可证、
@@ -205,22 +207,22 @@ Shuangpin. No Android-only preference or `.disable` file is introduced.
 The current Frost/Wanxiang plus Base/ExtB manager scope passed one-device M4
 acceptance in run `36709096430`. That result does not cover later research
 catalog additions. The zhwiki research pin is recorded in the builder
-manifest, and its pinned upstream artifact/provenance is being audited.
-CustomPinyin is
-available for technical research only and remains `public_release_approved:
-false` because no upstream redistribution permission was found. Rime-Ice
-remains excluded because its missing-pronunciation materialization has not yet
-been reproduced from authoritative Rime/Librime output; the previous
-character-frequency heuristic is not acceptable.
+manifest and its normalized artifact/provenance is eligible for the forward
+release. CustomPinyin is available in the forward release under its verified
+CC BY-SA 4.0 evidence. Rime-Ice has passed authoritative Rime/Librime
+materialization and remains excluded only because the pinned
+`cn_dicts/base.dict.yaml` names Huayu and an indiejoseph Gist without separate
+license/NOTICE or relicensing evidence in the pinned Ice tree. The accepted
+overall Ice GPLv3 treatment covers Tencent; Tencent is not this blocker.
 
 All adopted third-party dictionaries now use one normalization policy against
 the pinned official Base: exact `(word, full-pinyin)` matches inherit only an
 official negative value; official zero/positive and absent matches emit zero.
 CustomPinyinDictionary has a normalized forward-release artifact under
 CC BY-SA 4.0 with required upstream attribution. zhwiki has a normalized and
-tested artifact but remains withheld pending owner redistribution approval.
-Rime-Ice has passed its pronunciation gate but remains outside the catalog
-until its separate generated-data distribution boundary is cleared.
+tested artifact in the forward release. Rime-Ice has passed its pronunciation
+gate but remains outside the catalog until the Huayu and indiejoseph
+provenance/licensing basis is recorded; this is not a Tencent blocker.
 
 The research-only status is independent from technical personal-use testing:
 these candidates may be built and tested in a controlled environment, but they

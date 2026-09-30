@@ -106,13 +106,22 @@
       "materialized_table_sha256": "cb9dbc6f4661b92a0134cc63045dc5807af355d1d398a7855c344a0fa96b9cd8",
       "materialized_table_size": 63080064,
       "artifact_url": null,
-      "artifact_hosting": "blocked: public release requires explicit public_release_approved; CI artifacts are authenticated/expiring and cannot serve Android catalog downloads",
+      "artifact_hosting": "blocked: technical artifact complete, but pinned Ice external base-input provenance is not cleared; CI artifacts are authenticated/expiring and cannot serve Android catalog downloads",
       "artifact_size": 33670856,
       "artifact_sha256": "d1ee425424834ffa1508583fff4b98c9b4193c03128451dcf6e050f4bd00b2fb",
       "entry_count": 1885206,
       "artifact_kind": "libime-pinyindict-from-librime-table-dump",
       "public_release_approved": false,
-      "exclusion_reason": "Research artifact only; generated data public-release approval remains pending despite authoritative materialization passing."
+      "technical_approved": true,
+      "distribution_approved": false,
+      "distribution_blocker": {
+        "scope": "cn_dicts/base.dict.yaml external inputs",
+        "source_revision": "3aea6d3694fb3d94ec663641f021f788822897ad",
+        "files": ["cn_dicts/base.dict.yaml", "LICENSE"],
+        "evidence": "The pinned source names Huayu, THUOCL, an indiejoseph Gist, and Tencent data. The accepted project decision covers Tencent under the overall Ice GPLv3 treatment; the pinned Ice tree has no separate license/NOTICE or relicensing evidence for the Huayu source or the Gist. THUOCL is identified as MIT by its upstream LICENSE.",
+        "missing_step": "Record a defensible license/provenance and attribution basis for the Huayu and indiejoseph inputs before public release."
+      },
+      "exclusion_reason": "Technical materialization and normalization pass; public Ice release remains blocked only by the identified Huayu and indiejoseph base-input provenance gap, not by Tencent."
     }
   }
 }
