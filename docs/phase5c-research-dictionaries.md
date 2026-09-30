@@ -90,8 +90,12 @@ Rime's output, not a hardcoded patch. It also contains `嘴替 zui ti`,
 
 The artifact is research-only (`public_release_approved: false`) because the
 compiled data combines multiple upstream tables whose public data permissions
-were not separately cleared. It is technically eligible for the owner's
-personal research APK and is added to the research catalog.
+were not separately cleared. The technical artifact is complete, but it is
+not added to the Android catalog yet: a public GitHub Release upload was
+rejected because it would publicly redistribute uncleared generated data, while
+CI artifacts are authenticated/expiring and cannot be a stable Android URL.
+The minimum next step is an owner-approved non-public stable artifact host or
+an explicit public-release approval; no approximate or mutable URL is used.
 
 ## Android research build checkpoint
 
@@ -105,4 +109,5 @@ check, and fixed Debug certificate check. Artifact `moqi-debug-apk` is ID
 The next human checkpoint is incremental device testing of zhwiki and Custom:
 download, SHA/size verification, install, enable/disable, restart, Pinyin and
 Shuangpin runtime observation, MoQi regression, and delete/recovery. Ice has no
-APK catalog row and therefore has no device acceptance result.
+APK catalog row and therefore has no device acceptance result; its technical
+artifact is awaiting safe stable hosting.

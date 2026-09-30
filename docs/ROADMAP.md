@@ -479,9 +479,11 @@ and a fresh download after cancel) remain regression requirements.
 Research status: Frost and Wanxiang remain the only entries in immutable
 `dictionary-v1.0.0`. The Android research catalog now also pins upstream
 zhwiki and CustomPinyinDictionary bytes with explicit personal-use metadata;
-their public-release approval remains false. Rime-Ice remains excluded until
-its no-pronunciation rows can be reproduced from Rime's own result. These
-research URLs do not mutate `dictionary-v1.0.0`.
+their public-release approval remains false. Rime-Ice pronunciation
+materialization now passes the Librime PoC and reproducible LibIME build, but
+its catalog insertion is blocked pending safe stable hosting because a public
+release would redistribute uncleared generated data and CI artifacts are not
+stable Android URLs. These research URLs do not mutate `dictionary-v1.0.0`.
 
 ## Phase 6 — Optional LLM Post-processing
 
