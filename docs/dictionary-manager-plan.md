@@ -191,8 +191,11 @@ to the existing `pinyin` input-method config and is shared by Pinyin and
 Shuangpin. No Android-only preference or `.disable` file is introduced.
 
 The catalog remains limited to the audited Frost and Wanxiang release assets.
-The zhwiki research pin is recorded in the builder manifest, but its generated
-dump/artifact and attribution chain are not yet release-ready. CustomPinyin is
+The current Frost/Wanxiang plus Base/ExtB manager scope passed one-device M4
+acceptance in run `36709096430`. That result does not cover later research
+catalog additions. The zhwiki research pin is recorded in the builder
+manifest, and its pinned upstream artifact/provenance is being audited.
+CustomPinyin is
 available for technical research only and remains `public_release_approved:
 false` because no upstream redistribution permission was found. Rime-Ice
 remains excluded because its missing-pronunciation materialization has not yet

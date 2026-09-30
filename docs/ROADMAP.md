@@ -455,7 +455,12 @@ Phase 5C metadata UX follow-up: the Android Dictionary Manager now displays
 release/local artifact size and authoritative compiled entry count. The immutable
 v1.0.0 index lacks `entry_count`; Android uses the matching audited
 `roundtrip_rows` fallback while the builder emits the field in future v2 indexes.
-M4 remains blocked pending physical-device retest of visible progress,
+The current-scope M4 acceptance is now PASS on one physical Android device in
+GitHub Actions run `36709096430`: visible progress, stable actions,
+pause/resume/cancel, fresh download, installation, enable/disable/delete,
+runtime/lifecycle, Base/ExtB, Pinyin/Shuangpin, and MoQi behavior were all
+accepted for Frost and Wanxiang. This does not cover subsequently added
+research dictionaries.
 pause/resume, network recovery, and cancel behavior.
 
 Phase 5C unified manager follow-up (in progress): the next Android change keeps
@@ -468,10 +473,11 @@ physical-device behaviors already accepted (pause retention, resume, cancel,
 and a fresh download after cancel) remain regression requirements.
 
 Research status: Frost and Wanxiang remain the only released catalog entries.
-zhwiki is pinned as a research candidate but lacks a completed generated-data
-artifact/attribution audit; CustomPinyin remains personal-research-only with
-public redistribution pending; Ice remains blocked by the authoritative Rime
-pronunciation-materialization gate. None mutates `dictionary-v1.0.0`.
+zhwiki and CustomPinyinDictionary are being prepared as personal-research
+catalog entries with explicit public-release status separate from technical
+eligibility. Ice remains blocked by the authoritative Rime pronunciation-
+materialization gate until its no-pronunciation rows can be reproduced from
+Rime's own result. None mutates `dictionary-v1.0.0`.
 
 ## Phase 6 — Optional LLM Post-processing
 

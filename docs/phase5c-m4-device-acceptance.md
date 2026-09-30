@@ -1,5 +1,25 @@
 # Phase 5C M4 real-device acceptance
 
+## Current-scope M4 result
+
+GitHub Actions run `36709096430` produced the fixed-signing debug APK that was
+tested on one physical Android device. The current Frost/Wanxiang plus
+built-in Base/ExtB Dictionary Manager scope is **PASS**. The evidence covers:
+
+- the unified top-level manager, Chinese and canonical names, and compact size/count rows;
+- the immutable built-in LibIME Base row and the CJK Extension B row;
+- ExtBEnabled control through the existing shared Pinyin/Shuangpin configuration;
+- Frost and Wanxiang download, verification, installation, enable/disable,
+  delete, restart, and runtime loading;
+- stable action placement, pause/resume, cancel, and a fresh download after
+  cancellation;
+- Pinyin, Shuangpin, MoQi, and lifecycle regression checks.
+
+This PASS applies only to the dictionaries and controls listed above. The
+research additions zhwiki, CustomPinyinDictionary, and Rime-Ice are not
+covered by this device result and require incremental acceptance after their
+artifacts are technically accepted. Phase 5C is therefore not yet closed.
+
 This is the single-device acceptance gate for Phase 5C. One Android device must
 complete every item below. A second device is recommended for smoke testing only;
 it is not required for Phase 5C completion unless testing reveals a concrete
