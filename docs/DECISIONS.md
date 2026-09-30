@@ -530,7 +530,7 @@ System ASR 的一次性事先授权（D034）允许其作为当前服务使用�
 
 ## D039 — 词库管理采用可复现分层发布边界
 
-**状态：Accepted（2026-09-29，Phase 5 词库方案落档）；实现未开始**
+**状态：Accepted（2026-09-29，Phase 5 词库方案落档）；以下“实现未开始”是该决策当时的历史状态**
 
 词库继续由 LibIME 负责运行时解码、候选、排序和用户学习；项目不重新实现拼音解码器或平行学习状态。词库管理分为官方基线、经审计的第三方/合并发布包和独立的用户学习层，词库更新不得上传或依赖用户输入历史。
 
@@ -563,7 +563,7 @@ workflow 不接受来源 URL、提交、Base 版本或用户矩阵；`workflow_d
 
 ## D041 — Phase 5C 复用现有 Pinyin dictionary 边界
 
-**状态：Accepted（2026-09-30，Phase 5C 实现）**
+**状态：Accepted（2026-09-30，Phase 5C 实现）；首轮 M4 未完成属于历史记录**
 
 Android 管理器复用现有 `PinyinDictManager` 用户目录、`LibIMEDictionary` 和
 Pinyin dictionary 设置页，不修改 LibIME、Fcitx5 运行时协议或用户学习层。

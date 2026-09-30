@@ -144,7 +144,7 @@ Source project 与 License information 链接。确认按钮才启动下载，Ca
 这些信息。Built-in Base 与 ExtB 不属于该第三方披露流程。
 
 Phase 5C 的实现位于 Android 分支 `phase5c-dictionary-manager`，当前提交为
-`9e820b0d346a49fd58cf5a93e01e6a58c342341a`，包含：
+`90558eff0c1441e312147f96a74e2ebeb8ade7f2`，包含：
 
 - 复用现有 Pinyin dictionary UI 和用户目录，不修改 LibIME 或运行时协议；
 - 使用固定的 Phase 5B catalog，显示版本、许可证、来源和限制；
@@ -206,17 +206,16 @@ to the existing `pinyin` input-method config and is shared by Pinyin and
 Shuangpin. No Android-only preference or `.disable` file is introduced.
 
 The current Frost/Wanxiang plus Base/ExtB manager scope passed one-device M4
-acceptance in run `36709096430`. That result does not cover later research
-catalog additions. The zhwiki research pin is recorded in the builder
-manifest and its normalized artifact/provenance is eligible for the forward
-release. CustomPinyin is available in the forward release under its verified
-CC BY-SA 4.0 evidence. Rime-Ice has passed authoritative Rime/Librime
-materialization and remains excluded only because the pinned
+acceptance in run `36709096430`. The subsequent zhwiki, CustomPinyin and
+Rime-Ice incremental device acceptance also passed. Rime-Ice has passed
+authoritative Rime/Librime materialization and remains excluded from public
+distribution only because the pinned
 `cn_dicts/base.dict.yaml` names Huayu and an indiejoseph Gist without separate
 license/NOTICE or relicensing evidence in the pinned Ice tree. The accepted
 overall Ice GPLv3 treatment covers Tencent; Tencent is not this blocker.
 The project owner allows private/research device testing before those two
-permissions are cleared. The Android row therefore uses the existing local
+permissions are cleared; that private/research integration and physical-device
+acceptance are now PASS. The Android row therefore uses the existing local
 import flow with pinned size/SHA-256 verification, not a public or expiring
 download URL. The Ice research artifact is supplied as a local file produced
 from the recorded pinned materialization inputs; the catalog row does not
@@ -240,3 +239,16 @@ The research-only status is independent from technical personal-use testing:
 these candidates may be built and tested in a controlled environment, but they
 are not silently added to the immutable `dictionary-v1.0.0` release and are
 not described as publicly cleared downloads.
+
+### Phase 5D — Dictionary Update / Migration Closure
+
+The remaining manager lifecycle scope is deliberately narrow: installed catalog
+version identity, newer fixed-catalog detection, an update action, reuse of the
+existing installer and integrity checks, failure-safe preservation of the old
+verified dictionary, atomic replacement/reload, enabled-state preservation,
+and minimum official-Base revision compatibility. V1 does not retain arbitrary
+historical versions or provide rollback-history UI. Exit requires same-version
+no-op, newer-version update, failure/cancel/interruption/corruption safety,
+successful atomic replacement, restart/migration state preservation, Pinyin /
+Shuangpin / MoQi and local-import regression coverage, JVM/CI success, and one
+physical-device update/recovery acceptance.

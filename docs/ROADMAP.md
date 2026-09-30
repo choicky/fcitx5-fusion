@@ -378,9 +378,9 @@ B. 由源码推断、需实机确认的风险：
 
 ## Phase 5 — ASR Provider Architecture / PoC
 
-**状态：NOT STARTED — 待 Phase 4B（4B.3b、Local A/B checkpoint 与 Managed Cloud + Self-hosted checkpoint）完成**
+**状态：架构与主要产品化实现已存在；当前需按剩余 ASR checkpoint 收口，不应再记为从零开始**
 
-根据 Phase 4 vivo/Redmi 真机结果，最小 Portable ASR PoC 已作为 Phase 4B 先行（见上）。Phase 4B 各 checkpoint 之后，再在 D027 的 `VoiceBackend` 边界上按 D033 分类扩展 Provider，验证代表性的：
+Phase 4B 已建立 `VoiceBackend`、System/Direct/Local 边界、Provider selection、部分 fallback、网络 Provider、Local Model Manager 与多项 Android/真机验证。当前仍需按 D033-D036 收口代表性 Provider 的正式候选、联网/自建服务验证、Local 正式模型候选和详细设备验收；这不是从零开始的 Provider 架构实现。待验证内容包括：
 
 - Managed Cloud（checkpoint 选出的候选）；
 - Self-hosted（含 OpenAI-compatible 等协议适配）；
@@ -393,7 +393,7 @@ B. 由源码推断、需实机确认的风险：
 
 ## Phase 5-D — 词库管理方案（文档轨）
 
-**状态：PHASE 5B COMPLETE；PHASE 5C IMPLEMENTED ON ANDROID BRANCH — product acceptance pending**
+**状态：Phase 5C 私人研究/实机范围 COMPLETE；保留窄范围 Phase 5D：Dictionary Update / Migration Closure**
 
 词库管理方案已落档于 [`docs/dictionary-manager-plan.md`](dictionary-manager-plan.md)。该文档对应独立的词库工作流，不能与本节 ASR Provider Phase 5 的实现状态混写，也不改变现有 Voice/ASR 路线。
 
@@ -406,9 +406,9 @@ B. 由源码推断、需实机确认的风险：
 
 这些提交只存在于研究分支；相对当前 `main` 的差异是 8 个 workflow 文件，未合入主线。因此当前路线图不把它们记为 `main` 的脚本、构建产物、发布能力或产品实现。
 
-Phase 5A 技术闭环工作分支已加入 `tools/dict-builder/` 的无依赖转换器、规则单测、五个 pinned source snapshot 的来源核对、32 条 parser 拒绝行审计和 Ice 多音字量化审计。已使用 Android pinned Fcitx5 5.1.22 构建 LibIME，并通过真实 `PinyinIME`/`PinyinContext` decoder 回归、官方权重 join、四个 `libime_pinyindict` 二进制编译/加载/round-trip 和重复构建 `cmp` 验证；完整证据见 [`docs/phase5a-dictionary-evidence.md`](phase5a-dictionary-evidence.md)。编译时 LibIME 另拒绝了源数据中的不支持拼音（Ice 2、Wanxiang 1、Frost 15,824），已记录为源域边界而非静默丢弃。Ice 的字符级自动注音在可核验多音词子集出现 9/24 不一致，因此不进入 Phase 5B release set，待权威短语级规则。
+以下 Phase 5A 段落保留为历史记录：Phase 5A 技术闭环工作分支已加入 `tools/dict-builder/` 的无依赖转换器、规则单测、五个 pinned source snapshot 的来源核对、32 条 parser 拒绝行审计和 Ice 多音字量化审计。已使用 Android pinned Fcitx5 5.1.22 构建 LibIME，并通过真实 `PinyinIME`/`PinyinContext` decoder 回归、官方权重 join、四个 `libime_pinyindict` 二进制编译/加载/round-trip 和重复构建 `cmp` 验证；完整证据见 [`docs/phase5a-dictionary-evidence.md`](phase5a-dictionary-evidence.md)。Ice 的字符级自动注音曾在可核验多音词子集出现 9/24 不一致，因此当时不进入 Phase 5B release set；该历史 heuristic 结论已由 Phase 5C 的权威 Librime materialization 路径 supersede，不能作为当前 Ice 技术 blocker。
 
-Phase 5B 已将固定构建实现迁入 `tools/dict-builder/build.py`、
+以下 Phase 5B release-set 描述是 v1.0.0 的历史状态；Phase 5B 已将固定构建实现迁入 `tools/dict-builder/build.py`、
 `tools/dict-builder/build-libime.sh` 与
 `tools/dict-builder/manifest.json`，生产集为 Frost + Wanxiang `jichu`；
 许可证不明确的 Custom 与发音语义未解决的 Ice 均保留为非发布候选。构建会
@@ -423,8 +423,9 @@ PR #1 review remediation：四项 P2（完整 consumed-source hash、强制 veri
 toolchain manifest、Rime imports + current table parsing、独立 build audit
 artifact）已修复；远端 CI run `36602286082` 通过，PR #1 可进入正常合并
 流程。Phase 5C 的 Android 实现已提交到 `choicky/fcitx5-android` 分支
-`phase5c-dictionary-manager`，当前 commit
-`4a43e4182fc5c18849e8bee2fa220afc4a5d3c69`。它复用现有 Pinyin dictionary
+`phase5c-dictionary-manager`。早期实现 commit
+`4a43e4182fc5c18849e8bee2fa220afc4a5d3c69` 及其首轮 M4 结果属于历史记录；当前
+私有研究范围状态见下方最新 checkpoint。它复用现有 Pinyin dictionary
 UI 和目录，提供固定 catalog、许可证/来源/限制展示、HTTPS 下载、空间检查、
 SHA-256 校验、临时文件、原子替换、旧文件保留和删除；没有修改 LibIME 或上传
 用户学习数据，并在暂停时保留 partial artifact、重试时通过 HTTP Range 续传。
@@ -508,6 +509,32 @@ and its normalized artifact is eligible for the forward release. zhwiki's
 normalized artifact is technically complete and included in the forward
 release under Issue #58/Wikimedia attribution and notice requirements. The next release is `dictionary-v1.1.1`; it does not
 mutate `dictionary-v1.0.0`.
+
+### Phase 5D — Dictionary Update / Migration Closure
+
+This is a narrow lifecycle batch, not a historical-version manager. It will:
+
+- identify the installed catalog version;
+- offer an update only when a newer fixed APK/catalog version exists;
+- reuse the existing downloader, staging, size/SHA-256 validation and installer;
+- preserve the old verified dictionary on failed, cancelled, interrupted or
+  corrupt updates;
+- atomically replace and reload only after successful validation;
+- preserve enabled/disabled state across APK/catalog migration;
+- define the minimum compatibility rule for the pinned official Base revision;
+- add JVM/CI coverage and one-device update/recovery acceptance.
+
+Non-goals are arbitrary historical-version retention, user-selectable rollback
+history, a mutable online catalog or package service, priority/ranking changes,
+Rime-frequency mapping, LibIME changes, Base/LM online updates, global quota UI,
+diagnostics framework, systematic benchmark framework, mandatory multi-ROM
+coverage, and public Ice release.
+
+Exit criteria are: same-version no-op; newer-version update action; failed,
+cancelled, interrupted and invalid updates leave the old dictionary usable;
+successful validation performs atomic replacement; restart preserves the new
+artifact and state; Pinyin, Shuangpin, MoQi and local/imported dictionaries are
+not regressed; JVM tests, CI and one-device update/recovery acceptance pass.
 
 ## Phase 6 — Optional LLM Post-processing
 

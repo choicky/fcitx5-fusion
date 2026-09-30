@@ -41,8 +41,10 @@ has 542 multi-reading characters; 315,399 auto-annotated rows contain one.
 Twenty-four auto-annotated phrases also have explicit phrase readings in the
 same source data; 9 differ (37.5%), including `李敏镐` (`gao` vs explicit
 `hao`) and `血脉偾张` (`xie` vs explicit `xue`). Therefore character-level
-auto-annotation is not safe for Phase 5D. Ice is excluded from that benchmark
-until an authoritative phrase-level rule exists. The converter also fixed the
+auto-annotation was not safe for the historical Phase 5B/early Phase 5D
+candidate. Phase 5C later superseded this heuristic with actual Librime
+materialization; the old result remains regression evidence, not a current Ice
+technical blocker. The converter also fixed the
 `nan`/numeric parser bug and supports missing-code character annotation.
 
 ## Runtime duplicate/value regression
@@ -90,8 +92,9 @@ Supported inputs are Rime YAML trees with explicit `import_tables` and native
 LibIME text. Pinyin is normalized to lowercase `v`/apostrophe form; exact
 `(word, full-pinyin)` duplicates are retained once; output is UTF-8, sorted,
 and deterministic. Parser-invalid rows are rejected with source line and
-reason. Missing pinyin may use the selected single-character Ice reading,
-but such auto-annotated Ice entries are not Phase 5D eligible.
+reason. Missing pinyin may use the selected single-character Ice reading. That
+rule is historical converter behavior and is not the materializer used by the
+accepted Phase 5C Ice artifact.
 
 For an exact official `(word, pinyin)` match: absent official means `0`,
 official `0` means `0`, official negative is inherited, and official positive
@@ -110,6 +113,7 @@ LD_LIBRARY_PATH=/tmp/moqi-libime-install/lib:/tmp/moqi-fcitx-install/lib ctest -
 
 The pinned Android Fcitx5 and LibIME CMake builds, all four conversions,
 `libime_pinyindict` compile/dump/load checks, repeated `cmp` checks, and
-`git diff --check` were run. Phase 5D Ice eligibility remains intentionally
-blocked by the measured polyphonic mismatch boundary; this is not Phase 5B
-release infrastructure.
+`git diff --check` were run. The measured polyphonic mismatch boundary remains
+historical Phase 5A evidence; Phase 5C closed the Ice technical gate through
+Librime materialization. Public Ice distribution remains a separate Huayu and
+indiejoseph provenance/permission matter.
