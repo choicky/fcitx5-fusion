@@ -575,3 +575,9 @@ Phase 5B 的固定 release catalog 是唯一远程来源；安装前检查可用
 成为必要验证。原因是本批次只涉及应用层下载、续传、校验、原子安装、词库状态和
 既有 reload 路径，不涉及 Voice/ASR 的 RecognitionService、麦克风、权限、手势
 或复杂生命周期状态机。
+
+M4 首轮真机发现的 catalog mismatch 已通过字节级证据定位为 Android catalog
+与已发布 `dictionary-v1.0.0/index.json` 漂移：catalog 不得以本地历史 build
+记录替代 release index 的 artifact hash/size；校正后的 catalog 仍保留 SHA-256
+校验和原子安装。词库管理入口统一由 Main Settings 的“拼音词库”提供，输入法
+配置中的同类 `PinyinDict` external preference 不再重复暴露。

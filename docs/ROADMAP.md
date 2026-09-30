@@ -423,15 +423,22 @@ PR #1 review remediation：四项 P2（完整 consumed-source hash、强制 veri
 toolchain manifest、Rime imports + current table parsing、独立 build audit
 artifact）已修复；远端 CI run `36602286082` 通过，PR #1 可进入正常合并
 流程。Phase 5C 的 Android 实现已提交到 `choicky/fcitx5-android` 分支
-`phase5c-dictionary-manager`，最终 commit
-`1c38422886a25640eec84b21e45775fa04f159f8`。它复用现有 Pinyin dictionary
+`phase5c-dictionary-manager`，当前 commit
+`9e820b0d346a49fd58cf5a93e01e6a58c342341a`。它复用现有 Pinyin dictionary
 UI 和目录，提供固定 catalog、许可证/来源/限制展示、HTTPS 下载、空间检查、
 SHA-256 校验、临时文件、原子替换、旧文件保留和删除；没有修改 LibIME 或上传
 用户学习数据，并在暂停时保留 partial artifact、重试时通过 HTTP Range 续传。
-Android CI run `36616353979` 已成功通过 debug APK、JVM unit
-tests、release Kotlin、instrumented-test compile 和 APK 内容验证；本机缺少
-Android SDK，未重复本地构建。该分支尚未合入主线或发布 APK，真实设备的 M4
-验收仍待完成。
+首轮 M4 真机测试发现两个 blocker：词库管理器没有顶层 Settings 入口，以及
+Frost/Wanxiang catalog hash/size 与已发布 Release bytes 不一致。实际 Release
+`index.json`/`SHA256SUMS` 与下载 bytes 的 Frost 为 `37,322,174` /
+`b4880861161d585b21413fe554aa8f416beb39d68cf4ce3fba728df5fea584ff`，Wanxiang
+为 `24,683,718` /
+`492a452604f1d63ec1edf5682846291db72f3caadc3b6cc8e51af52fab3772da`；修复已将
+catalog 对齐 release index，增加 200 fallback/resume 回归，并添加顶层 `拼音词库`
+入口、移除输入法配置中的重复入口。Android CI run `36689052734` 已成功通过
+debug APK、JVM unit tests、release Kotlin、instrumented-test compile 和 APK
+内容验证；本机缺少 Java/Android SDK，未重复本地 Gradle。该分支尚未合入主线或
+发布新的 APK；M4 必须使用校正后的 artifact 重新开始受影响项目。
 
 ## Phase 6 — Optional LLM Post-processing
 

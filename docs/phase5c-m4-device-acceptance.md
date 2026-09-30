@@ -9,12 +9,11 @@ ROM/device-dependent risk.
 
 - Repository: `choicky/fcitx5-android`
 - Branch: `phase5c-dictionary-manager`
-- Commit: `1c38422886a25640eec84b21e45775fa04f159f8`
+- Commit: `9e820b0d346a49fd58cf5a93e01e6a58c342341a`
 - Variant: `debug`, arm64-v8a APK
 - Application ID: `org.fcitx.fcitx5.android.debug`
-- CI run: [36616353979](https://github.com/choicky/fcitx5-android/actions/runs/36616353979)
-- Artifact: `moqi-debug-apk`, artifact ID `11056460418`, SHA-256
-  `86df319169653b2312e33d5aaba48321213693dc840350f8dcd7a51017db8673`
+- CI run: [36689052734](https://github.com/choicky/fcitx5-android/actions/runs/36689052734)
+- Artifact: `moqi-debug-apk`, artifact ID `11085256833` (not expired)
 
 Download the artifact from the CI run, unzip it, and install the contained APK:
 
@@ -24,6 +23,9 @@ adb install -r <path-to-moqi-debug-apk.apk>
 
 The `.debug` application ID allows installation alongside a normal Fcitx5
 Android package. This is a test artifact, not a production release.
+
+This artifact supersedes the first M4 artifact. M4 must be restarted with this
+build because the catalog metadata and top-level Settings entry were corrected.
 
 ## Acceptance checklist
 

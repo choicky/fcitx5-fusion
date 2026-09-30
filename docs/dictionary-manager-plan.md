@@ -128,8 +128,8 @@ Phase 5B 已完成研究冻结、固定构建/release 基础设施，并只把 F
 Wanxiang `jichu` 纳入生产 release set；Ice 和 Custom 仍是非发布候选。
 `dictionary-v1.0.0` 指向 Phase 5B 完成提交并已推送。
 
-Phase 5C 的实现位于 Android 分支 `phase5c-dictionary-manager`，最终提交为
-`1c38422886a25640eec84b21e45775fa04f159f8`，包含：
+Phase 5C 的实现位于 Android 分支 `phase5c-dictionary-manager`，当前提交为
+`9e820b0d346a49fd58cf5a93e01e6a58c342341a`，包含：
 
 - 复用现有 Pinyin dictionary UI 和用户目录，不修改 LibIME 或运行时协议；
 - 使用固定的 Phase 5B catalog，显示版本、许可证、来源和限制；
@@ -137,10 +137,28 @@ Phase 5C 的实现位于 Android 分支 `phase5c-dictionary-manager`，最终提
 - 暂停时保留 partial artifact，重试通过 HTTP Range 续传；
 - 失败或取消不会替换当前可用词库；安装器和 catalog 元数据有 JVM 单元测试。
 
-GitHub Actions run `36616353979` passed the debug APK build, JVM unit tests,
-release Kotlin compilation, instrumented-test compilation, and APK content
-verification. 本机未安装 Android SDK，因此未重复本地 Android Gradle 构建；CI 是
-本批次的可复核构建证据。该批次尚未声称完成 M4 产品验收：可恢复断点下载、
-第二设备 smoke test、系统性性能/候选回归和真实设备生命周期验收仍是后续验证项；
-完整的一台设备 M4 checklist 见 [`docs/phase5c-m4-device-acceptance.md`](phase5c-m4-device-acceptance.md)。实现不得上传输入历史，
-也不改变 LibIME 用户学习层。
+M4 首轮真机测试发现两个 blocker：词库管理入口只出现在 Pinyin/Shuangpin
+输入法配置内；Frost 与 Wanxiang 均因 SHA-256 mismatch 无法安装。字节级复核
+确认 Android 旧 catalog 使用了本地 Phase 5B 记录的 Frost
+`37,190,112` / `b08ff5f48bbe31a98ff32d6ff819fcfeb24f94cec2bba4bf02f35ba7882a5b32`
+和 Wanxiang `24,597,605` /
+`d2fcf381cdbc7843d8824ecad72990db412e82e2bdc7677a7d37f2e435d6387b`；实际
+`dictionary-v1.0.0` Release 的 `index.json`、`SHA256SUMS` 与下载 bytes 一致，
+分别是 Frost `37,322,174` /
+`b4880861161d585b21413fe554aa8f416beb39d68cf4ce3fba728df5fea584ff`，以及
+Wanxiang `24,683,718` /
+`492a452604f1d63ec1edf5682846291db72f3caadc3b6cc8e51af52fab3772da`。下载 URL
+经 GitHub 302 到 `release-assets.githubusercontent.com`，返回 HTTP 200
+`application/octet-stream`；问题是 catalog 元数据漂移，不是应绕过校验的下载器问题。
+
+修复提交 `9e820b0d346a49fd58cf5a93e01e6a58c342341a` 将 catalog 对齐已发布
+`index.json`，增加 200 full-response 覆盖 partial staging 的回归测试，并把
+`拼音词库`/`Pinyin Dictionaries` 作为 Main Settings 的顶层入口；通用
+`ConfigExternal.PinyinDict` 不再在各输入法配置中生成重复入口。源码核对确认
+Pinyin 与 Shuangpin 使用同一个 LibIME `PinyinIME` dictionary 和 reload 路径。
+新的 CI run `36689052734` 已通过 debug APK、JVM unit tests、release Kotlin、
+instrumented-test compilation 和 APK 内容验证。校正后的 artifact 为
+`moqi-debug-apk`（ID `11085256833`）；本机未安装 Java/Android SDK，故本地
+Gradle 未运行。M4 必须从头重新执行受影响的 catalog/UI、下载安装、续传和运行时
+项目；完整 checklist 见 [`docs/phase5c-m4-device-acceptance.md`](phase5c-m4-device-acceptance.md)。
+实现不得上传输入历史，也不改变 LibIME 用户学习层。
