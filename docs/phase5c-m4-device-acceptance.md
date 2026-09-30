@@ -9,11 +9,12 @@ ROM/device-dependent risk.
 
 - Repository: `choicky/fcitx5-android`
 - Branch: `phase5c-dictionary-manager`
-- Commit: `9e820b0d346a49fd58cf5a93e01e6a58c342341a`
+- Commit: `54b6100b3b1b245942f2b94205326d772547b7e9`
 - Variant: `debug`, arm64-v8a APK
 - Application ID: `org.fcitx.fcitx5.android.debug`
-- CI run: [36689052734](https://github.com/choicky/fcitx5-android/actions/runs/36689052734)
-- Artifact: `moqi-debug-apk`, artifact ID `11085256833` (not expired)
+- CI run: [36698604414](https://github.com/choicky/fcitx5-android/actions/runs/36698604414)
+- Artifact: `moqi-debug-apk`, 78.5 MB, SHA-256
+  `9e30b30cfe983686e9ad851e60236e03605bee3bd91e39c3523b3978d1f11f84`
 
 Download the artifact from the CI run, unzip it, and install the contained APK:
 
@@ -29,7 +30,7 @@ build because the catalog metadata and top-level Settings entry were corrected.
 
 The latest follow-up also exposes compact size and authoritative compiled entry
 count metadata in the Dictionary Manager list. The physical-device retest below
-must use the new artifact after CI publishes it.
+must use this artifact.
 
 ## Acceptance checklist
 

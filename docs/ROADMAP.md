@@ -424,7 +424,7 @@ toolchain manifest、Rime imports + current table parsing、独立 build audit
 artifact）已修复；远端 CI run `36602286082` 通过，PR #1 可进入正常合并
 流程。Phase 5C 的 Android 实现已提交到 `choicky/fcitx5-android` 分支
 `phase5c-dictionary-manager`，当前 commit
-`9e820b0d346a49fd58cf5a93e01e6a58c342341a`。它复用现有 Pinyin dictionary
+`54b6100b3b1b245942f2b94205326d772547b7e9`。它复用现有 Pinyin dictionary
 UI 和目录，提供固定 catalog、许可证/来源/限制展示、HTTPS 下载、空间检查、
 SHA-256 校验、临时文件、原子替换、旧文件保留和删除；没有修改 LibIME 或上传
 用户学习数据，并在暂停时保留 partial artifact、重试时通过 HTTP Range 续传。
@@ -435,10 +435,12 @@ Frost/Wanxiang catalog hash/size 与已发布 Release bytes 不一致。实际 R
 为 `24,683,718` /
 `492a452604f1d63ec1edf5682846291db72f3caadc3b6cc8e51af52fab3772da`；修复已将
 catalog 对齐 release index，增加 200 fallback/resume 回归，并添加顶层 `拼音词库`
-入口、移除输入法配置中的重复入口。Android CI run `36689052734` 已成功通过
+入口、移除输入法配置中的重复入口。Android CI run `36698604414` 已成功通过
 debug APK、JVM unit tests、release Kotlin、instrumented-test compile 和 APK
-内容验证；本机缺少 Java/Android SDK，未重复本地 Gradle。该分支尚未合入主线或
-发布新的 APK；M4 必须使用校正后的 artifact 重新开始受影响项目。
+内容验证；本机 ARM64 环境无法执行 Android SDK 提供的 x86 `aidl`，因此未将本地
+Gradle 结果冒充通过。远端上传了 `moqi-debug-apk`（78.5 MB，SHA256
+`9e30b30cfe983686e9ad851e60236e03605bee3bd91e39c3523b3978d1f11f84`）。该分支
+尚未合入主线或发布新的词库 release；M4 必须使用该 artifact 重新开始受影响项目。
 
 Phase 5C metadata UX follow-up: the Android Dictionary Manager now displays
 release/local artifact size and authoritative compiled entry count. The immutable
