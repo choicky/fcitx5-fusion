@@ -27,6 +27,10 @@ Android package. This is a test artifact, not a production release.
 This artifact supersedes the first M4 artifact. M4 must be restarted with this
 build because the catalog metadata and top-level Settings entry were corrected.
 
+The latest follow-up also exposes compact size and authoritative compiled entry
+count metadata in the Dictionary Manager list. The physical-device retest below
+must use the new artifact after CI publishes it.
+
 ## Acceptance checklist
 
 Record PASS, FAIL, or NOT OBSERVED for each item, plus device model, Android
@@ -47,7 +51,10 @@ version, available storage, and test date.
 ### C. Download and installation
 
 - [ ] Start a Frost or Wanxiang download and observe a reasonable active-download state.
+- [ ] Observe a progress bar/percentage, downloaded bytes/expected bytes, and a
+  useful speed; ETA is shown when total and speed are available.
 - [ ] Pause during download.
+- [ ] Confirm the item remains visible and says Paused with Resume and Cancel actions.
 - [ ] Resume the same dictionary and observe that it completes successfully.
 - [ ] Confirm installation completes and the dictionary appears in the dictionary list.
 - [ ] Confirm existing input remains usable during and after installation.
@@ -70,8 +77,12 @@ version, available storage, and test date.
 ### F. Failure and recovery
 
 - [ ] During a download, use the pause action or safely interrupt network access.
+- [ ] After a network interruption, confirm the partial item remains visible with
+  Resume/Retry instead of disappearing.
 - [ ] Confirm the interruption does not replace or corrupt an existing usable dictionary.
 - [ ] Restore network access and resume/retry successfully.
+- [ ] Cancel a downloading or paused item and confirm the partial file is removed;
+  start a clean download afterward.
 - [ ] Confirm normal input remains usable throughout recovery.
 
 ### G. Regression and observation

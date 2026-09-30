@@ -1,5 +1,5 @@
 {
-  "schema": "fcitx5-moqi-dictionary-index-v1",
+  "schema": "fcitx5-moqi-dictionary-index-v2",
   "converter": "tools/dict-builder/convert.py",
   "rule_version": "v1",
   "fcitx5_repository": "https://github.com/fcitx/fcitx5.git",

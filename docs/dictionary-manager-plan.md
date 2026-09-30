@@ -162,3 +162,16 @@ instrumented-test compilation 和 APK 内容验证。校正后的 artifact 为
 Gradle 未运行。M4 必须从头重新执行受影响的 catalog/UI、下载安装、续传和运行时
 项目；完整 checklist 见 [`docs/phase5c-m4-device-acceptance.md`](phase5c-m4-device-acceptance.md)。
 实现不得上传输入历史，也不改变 LibIME 用户学习层。
+
+### Phase 5C metadata UX follow-up
+
+词库管理器主列表现在显示词库名称、大小和词条数；已安装词库的大小取本地
+已校验文件，下载前和暂存状态显示 release catalog 的预期 artifact 大小。词条
+数不在 Android 运行时扫描 `.dict`，而使用 Phase 5B `libime_pinyindict -d`
+round-trip 的 authoritative row count。
+
+已发布的 `dictionary-v1.0.0/index.json` 是 `fcitx5-moqi-dictionary-index-v1`
+且没有 `entry_count` 字段，不能被原地修改。其对应的 Phase 5B audit artifact
+记录 Frost `2,010,605`、Wanxiang `1,425,249` 个 compiled entries；Android
+catalog 以兼容性 fallback 携带这两个已审计值。后续 builder 输出升级为可选的
+`entry_count` 字段（index schema v2），新 catalog 可直接消费 release metadata。

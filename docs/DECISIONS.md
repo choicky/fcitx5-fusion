@@ -581,3 +581,15 @@ M4 首轮真机发现的 catalog mismatch 已通过字节级证据定位为 Andr
 记录替代 release index 的 artifact hash/size；校正后的 catalog 仍保留 SHA-256
 校验和原子安装。词库管理入口统一由 Main Settings 的“拼音词库”提供，输入法
 配置中的同类 `PinyinDict` external preference 不再重复暴露。
+
+## D042 — Phase 5C dictionary metadata provenance
+
+**状态：Accepted（2026-09-30，Phase 5C follow-up）**
+
+Dictionary Manager displays artifact size and compiled entry count in the main
+list. Installed size is the local verified file size; pre-download size is the
+catalog/release artifact size. Entry count comes from the Phase 5B
+`libime_pinyindict -d` round-trip row count and is never estimated or counted by
+Android at runtime. Since immutable `dictionary-v1.0.0/index.json` has no count
+field, its audit values are carried as an Android compatibility fallback; the
+builder now emits optional `entry_count` in future v2 index/audit metadata.

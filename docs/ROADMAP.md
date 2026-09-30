@@ -440,6 +440,13 @@ debug APK、JVM unit tests、release Kotlin、instrumented-test compile 和 APK
 内容验证；本机缺少 Java/Android SDK，未重复本地 Gradle。该分支尚未合入主线或
 发布新的 APK；M4 必须使用校正后的 artifact 重新开始受影响项目。
 
+Phase 5C metadata UX follow-up: the Android Dictionary Manager now displays
+release/local artifact size and authoritative compiled entry count. The immutable
+v1.0.0 index lacks `entry_count`; Android uses the matching audited
+`roundtrip_rows` fallback while the builder emits the field in future v2 indexes.
+M4 remains blocked pending physical-device retest of visible progress,
+pause/resume, network recovery, and cancel behavior.
+
 ## Phase 6 — Optional LLM Post-processing
 
 **状态：NOT STARTED**

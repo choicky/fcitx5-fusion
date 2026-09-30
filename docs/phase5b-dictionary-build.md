@@ -60,6 +60,16 @@ and the seven converter unit tests passed.
 No release artifact is committed to this repository. The workflow creates the
 GitHub Release bundle only when a maintainer pushes a `dictionary-v*` tag.
 
+## Entry-count metadata
+
+The authoritative compiled entry count is the number of rows emitted by the
+real `libime_pinyindict -d` round-trip, not an Android estimate or a runtime
+scan. The published `dictionary-v1.0.0` index predates this field and therefore
+does not contain `entry_count`; its separate audit artifact records 2,010,605
+Frost rows and 1,425,249 Wanxiang rows. The builder now emits these values as
+optional `entry_count` fields in the v2 index and audit schema for future
+dictionary releases. The immutable v1.0.0 release is not rewritten.
+
 ## Remote CI closure
 
 PR #1 remediation validation succeeded on GitHub Actions run `36599871427` on
