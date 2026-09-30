@@ -42,6 +42,18 @@ def parse_native(path: Path):
         yield number, fields[0], fields[1], "", line
 
 
+def parse_rime_table(path: Path):
+    """Read a Librime table dump with already materialized pronunciation."""
+    for number, line in enumerate(path.read_text(encoding="utf-8-sig").splitlines(), 1):
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        fields = [x.strip() for x in line.split("\t")]
+        if len(fields) < 3 or not numeric(fields[2]):
+            yield number, fields[0] if fields else "", fields[1] if len(fields) > 1 else "", "FIELDS", line
+            continue
+        yield number, fields[0], fields[1], "", line
+
+
 def parse_rime(path: Path, charmap: dict[str, str] | None = None):
     body = False
     for number, line in enumerate(path.read_text(encoding="utf-8-sig").splitlines(), 1):
@@ -161,7 +173,7 @@ def write_text(path: Path, entries):
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--kind", choices=("rime", "native"), required=True)
+    parser.add_argument("--kind", choices=("rime", "native", "rime-table"), required=True)
     parser.add_argument("--root", type=Path, help="Rime source root for import_tables")
     parser.add_argument("--input", type=Path, required=True)
     parser.add_argument("--text", type=Path, required=True)
@@ -175,8 +187,10 @@ def main() -> int:
         root = args.root or args.input.parent
         top = args.input.relative_to(root) if args.input.is_relative_to(root) else Path(args.input.name)
         rows = parse_rime_tree(root, top, charmap)
-    else:
+    elif args.kind == "native":
         rows = parse_native(args.input)
+    else:
+        rows = parse_rime_table(args.input)
     entries, rejects, duplicates = convert(rows, official)
     args.text.parent.mkdir(parents=True, exist_ok=True)
     args.rejects.parent.mkdir(parents=True, exist_ok=True)

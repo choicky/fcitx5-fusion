@@ -50,8 +50,9 @@ personal-research-only (`public_release_approved: false`).
 
 ## Rime-Ice status
 
-Rime-Ice remains excluded from the research catalog. The pinned Ice revision is
-`3aea6d3694fb3d94ec663641f021f788822897ad`.
+Rime-Ice authoritative materialization PoC passed. The pinned Ice revision is
+`3aea6d3694fb3d94ec663641f021f788822897ad`; the Librime source used for the
+PoC is `388911c517155eb09f7922db90771e31eaa71e54`.
 
 The source contract is explicit: `cn_dicts/base.dict.yaml` and
 `cn_dicts/ext.dict.yaml` contain pronunciation columns, while
@@ -60,20 +61,37 @@ Rime schema-character automatic annotation. `ext` contains manually resolved
 polyphonic phrases. This cannot be replaced by selecting one pronunciation per
 character.
 
-Source review of Librime at `388911c517155eb09f7922db90771e31eaa71e54` shows
-`src/rime/dict/entry_collector.cc` queues rows without a code for an Encoder,
-and `src/rime/dict/dict_compiler.cc` compiles the resulting code into tables;
-the compiler itself is not a pinyin materializer. The available
-`rime_dict_manager` is a user-dictionary backup/import tool, not a compiler or
-pronunciation export tool. No pinned, reproducible command was found that
-materializes the Tencent rows into authoritative full pinyin suitable for
-conversion to LibIME.
+Source review of Librime at that revision shows
+`src/rime/dict/entry_collector.cc` queues rows without a code for an Encoder;
+`src/rime/algo/encoder.cc::ScriptEncoder::DfsEncode` recursively looks up
+longest matching words in the syllabary and emits every permitted code path;
+`src/rime/dict/dict_compiler.cc::DictCompiler::BuildTable` stores those codes
+and its `kDump` option emits the table text. The converter only consumes this
+actual dump. The `rime_dict_manager` utility is not used because it is a
+user-dictionary backup/import tool, not the compiler.
 
-Therefore the previous character-primary-reading artifact is not promoted,
-and no Ice APK catalog entry is added. The remaining gate is to reproduce the
-actual Rime deployment/schema annotation path (including its character table,
-weights, and polyphonic selection) and extract its resulting phrase-level
-codes. Phase 5C is not declared complete while this gate is unresolved.
+The actual command was Librime `rime_deployer --compile` followed by the
+deployment build path, with `rime_ice.table.txt` dumped from `kDump`. The dump
+is 63,080,064 bytes with SHA-256
+`cb9dbc6f4661b92a0134cc63045dc5807af355d1d398a7855c344a0fa96b9cd8`.
+It contains 1,886,000 rows; the authoritative converter retained 1,885,235
+unique valid pairs after 323 duplicates. Pinned `libime_pinyindict` rejected
+29 unsupported source-domain spellings, and the compiled/dumped LibIME
+artifact contains 1,885,206 rows.
+
+The generated LibIME artifact is 33,670,856 bytes with SHA-256
+`d1ee425424834ffa1508583fff4b98c9b4193c03128451dcf6e050f4bd00b2fb`.
+Rebuilding it twice from the same table dump produced byte-identical output.
+The previous Phase 5A mismatch corpus is resolved by the general materializer:
+the Rime dump contains `李敏镐 li min hao` and its alternate `li min gao`,
+and contains `血脉偾张 xue mai fen zhang` plus `xie mai fen zhang`; this is
+Rime's output, not a hardcoded patch. It also contains `嘴替 zui ti`,
+`发疯文学 fa feng wen xue`, and `小镇做题家 xiao zhen zuo ti jia`.
+
+The artifact is research-only (`public_release_approved: false`) because the
+compiled data combines multiple upstream tables whose public data permissions
+were not separately cleared. It is technically eligible for the owner's
+personal research APK and is added to the research catalog.
 
 ## Android research build checkpoint
 

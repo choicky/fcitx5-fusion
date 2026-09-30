@@ -21,6 +21,21 @@ libime_pinyindict out/ice.txt out/ice.dict
 libime_pinyindict -d out/ice.dict out/ice.roundtrip.txt
 ```
 
+For Rime/Ice dictionaries with intentionally omitted pronunciation columns,
+first run the pinned Librime `rime_deployer --compile` path with its table dump
+option to produce `rime_ice.table.txt`. Feed that actual Librime table dump to
+the authoritative conversion path:
+
+```text
+python3 tools/dict-builder/convert.py --kind rime-table \
+  --input rime_ice.table.txt --official dict_sc.txt \
+  --text rime-ice.txt --rejects rime-ice.rejected.tsv
+```
+
+`rime-table` preserves the code materialized by Librime; it does not infer
+pronunciation from individual characters. Record the exact Librime revision,
+dump hash, and resulting audit statistics with the artifact.
+
 The runtime duplicate/value regression is a separate CMake test because it
 must link the pinned LibIME Pinyin library and execute `PinyinIME` plus
 `PinyinContext`:

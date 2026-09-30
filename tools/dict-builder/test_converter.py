@@ -95,6 +95,16 @@ class ConverterTest(unittest.TestCase):
             self.assertEqual(entries, {("两个火", "liang'ge'huo"): 0.0})
             self.assertEqual(rejects, [])
 
+    def test_rime_table_dump_preserves_librime_materialized_code(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "table.txt"
+            path.write_text("# header\n嘴替\tzui ti\t7\n", encoding="utf-8")
+            rows = list(converter.parse_rime_table(path))
+            entries, rejects, duplicates = converter.convert(rows, {})
+        self.assertEqual(entries, {("嘴替", "zui'ti"): 0.0})
+        self.assertEqual(rejects, [])
+        self.assertEqual(duplicates, 0)
+
 
 if __name__ == "__main__":
     unittest.main()
