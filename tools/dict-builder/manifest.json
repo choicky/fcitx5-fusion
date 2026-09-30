@@ -113,6 +113,16 @@
       "artifact_kind": "libime-pinyindict-from-librime-table-dump",
       "public_release_approved": false,
       "technical_approved": true,
+      "research_private_approved": true,
+      "huayu_permission": "pending",
+      "indiejoseph_gist_permission": "pending",
+      "research_artifact": {
+        "name": "rime-ice.dict",
+        "sha256": "d1ee425424834ffa1508583fff4b98c9b4193c03128451dcf6e050f4bd00b2fb",
+        "size": 33670856,
+        "entry_count": 1885206,
+        "artifact_hosting": "private CI artifact only; not a public catalog URL"
+      },
       "distribution_approved": false,
       "distribution_blocker": {
         "scope": "cn_dicts/base.dict.yaml external inputs",

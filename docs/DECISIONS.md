@@ -640,3 +640,10 @@ relicensing evidence in the pinned Ice tree; THUOCL is separately identified
 as MIT. The required next step is to establish a defensible provenance and
 attribution basis for those remaining inputs. The
 immutable `dictionary-v1.0.0` is untouched.
+
+The project owner separately accepts private/research testing of the
+technically approved Ice artifact before Huayu and indiejoseph Gist
+permission/provenance is cleared. This does not change `distribution_approved`
+or `public_release_approved`, which remain false. The Android research catalog
+uses the existing local-import flow with size/SHA-256 verification rather than
+an expiring CI artifact URL or a public Release asset.

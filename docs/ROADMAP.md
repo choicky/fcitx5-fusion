@@ -487,8 +487,11 @@ and Wikimedia licensing evidence is recorded with the required notices and
 modification disclosure. Rime-Ice pronunciation materialization passes the
 Librime PoC and reproducible LibIME build, but public distribution remains
 blocked specifically by the Huayu and indiejoseph base-input provenance gap;
-the Tencent table is not a blocker. No research URL mutates
-`dictionary-v1.0.0`.
+the Tencent table is not a blocker. Private/research device testing is allowed
+using an authenticated CI artifact imported through the existing Android local
+dictionary flow with pinned size/SHA-256 verification. This does not approve
+public redistribution: Huayu and indiejoseph permission/provenance remain
+pending, and no research URL mutates `dictionary-v1.0.0`.
 
 Phase 5C normalization follow-up: all formal third-party artifacts use the
 same exact `(word, full-pinyin)` official-negative inheritance policy. Native

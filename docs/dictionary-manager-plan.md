@@ -214,6 +214,12 @@ materialization and remains excluded only because the pinned
 `cn_dicts/base.dict.yaml` names Huayu and an indiejoseph Gist without separate
 license/NOTICE or relicensing evidence in the pinned Ice tree. The accepted
 overall Ice GPLv3 treatment covers Tencent; Tencent is not this blocker.
+The project owner allows private/research device testing before those two
+permissions are cleared. The Android row therefore uses the existing local
+import flow with pinned size/SHA-256 verification, not a public or expiring
+download URL; `technical_approved=true`, `research_private_approved=true`,
+`distribution_approved=false`, and `public_release_approved=false` remain
+separate states.
 
 All adopted third-party dictionaries now use one normalization policy against
 the pinned official Base: exact `(word, full-pinyin)` matches inherit only an
@@ -223,6 +229,8 @@ CC BY-SA 4.0 with required upstream attribution. zhwiki has a normalized and
 tested artifact in the forward release. Rime-Ice has passed its pronunciation
 gate but remains outside the catalog until the Huayu and indiejoseph
 provenance/licensing basis is recorded; this is not a Tencent blocker.
+For private testing it is present as a research-only catalog row whose action
+selects and verifies the locally downloaded CI artifact before import.
 
 The research-only status is independent from technical personal-use testing:
 these candidates may be built and tested in a controlled environment, but they

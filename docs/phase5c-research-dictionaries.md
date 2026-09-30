@@ -104,21 +104,26 @@ and contains `血脉偾张 xue mai fen zhang` plus `xie mai fen zhang`; this is
 Rime's output, not a hardcoded patch. It also contains `嘴替 zui ti`,
 `发疯文学 fa feng wen xue`, and `小镇做题家 xiao zhen zuo ti jia`.
 
-The artifact is technically complete but remains distribution-pending for a
-specific reason unrelated to Tencent. The project decision treats
+The artifact is technically complete and approved for private/research device
+testing. It remains distribution-pending for public release for a specific
+reason unrelated to Tencent. The project decision treats
 `cn_dicts/tencent.dict.yaml` under the overall Ice GPLv3 treatment. However,
 the pinned `cn_dicts/base.dict.yaml` names the Huayu source and the indiejoseph
 Gist as external inputs, and the pinned Ice tree contains no separate
 license/NOTICE or relicensing evidence for those two inputs. THUOCL is
 separately identifiable as MIT from its upstream LICENSE. The next required
 step is a defensible provenance, license and attribution basis for Huayu and
-the Gist. It is not added to the Android catalog and no mutable or expiring CI
-URL is used.
+the Gist. The artifact is available only as an authenticated private CI
+artifact for research import; it is not a public release URL and is not
+approved for redistribution.
 
 ## Android research build checkpoint
 
 Android catalog commit `a5a2189b74260b97a0966df25d4757d871fc56e0` adds zhwiki
-and CustomPinyinDictionary only. CI run `36726528123` passed the existing
+and CustomPinyinDictionary only. The Ice research catalog integration uses the
+existing local-import flow rather than an HTTP catalog URL: the user selects
+the exact `rime-ice.dict` private CI artifact, and Android checks its pinned
+size and SHA-256 before importing it. CI run `36726528123` passed the existing
 Dictionary Manager JVM tests, APK build, MoQi APK-content checks, package
 check, and fixed Debug certificate check. Artifact `moqi-debug-apk` is ID
 `11103617114`; it is the arm64-v8a debug variant with application ID
@@ -128,5 +133,10 @@ The previous human checkpoint completed incremental device testing of zhwiki and
 Custom against the research APK. The normalized bytes require a new incremental
 checkpoint: download, SHA/size verification, install, enable/disable, restart,
 Pinyin and Shuangpin runtime observation, MoQi regression, and delete/recovery.
-Ice has no APK catalog row and therefore has no device acceptance result; its
-technical artifact remains distribution-pending.
+Ice now has a research/private catalog row but no public download URL. Its
+technical artifact remains distribution-pending for public release; private
+device acceptance may proceed after importing the authenticated CI artifact.
+The current private artifact is from control workflow run `36747236513`,
+artifact `fcitx5-moqi-dictionaries-ded1c8927dd18f72302863873e8e0a86e6c3da46`
+(artifact ID `11112653815`). It is authenticated/expiring research material,
+not a public Release asset or production catalog URL.
