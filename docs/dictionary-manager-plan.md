@@ -103,8 +103,14 @@
 
 - 离线启动、首次安装、断点/失败重试、校验失败、低空间、更新中断、删除和回滚；
 - 词库切换不破坏 composition、partial selection、MoQi Auxiliary Filter 或用户学习；
-- 两台目标设备上的性能、存储占用和候选排序回归；
+- **一台 Android 设备必须完成完整的 M4 真机验收**；第二台设备只作为推荐的跨设备 smoke test，不构成 Phase 5C 完成或合入 blocker，除非源码审查发现具体的 ROM/设备依赖风险；
 - 发布前再次审查许可证、来源 pin、manifest 与最终 APK/下载 artifact 一致性。
+
+该门槛与本批次修改边界匹配：Phase 5C 主要验证应用层 HTTPS 下载、HTTP Range
+续传、暂存文件、SHA-256/大小校验、空间检查、原子安装/失败恢复、启用/停用/删除
+以及既有 dictionary reload 路径。这些行为明显少于 Voice/ASR 的
+RecognitionService、麦克风、权限、手势和生命周期组合，因此不预设双设备硬门槛。
+若单设备验收暴露具体 ROM 或厂商差异，再提升为定向的第二设备验证。
 
 ## 7. Phase 5B 实现事实
 
@@ -135,5 +141,6 @@ GitHub Actions run `36616353979` passed the debug APK build, JVM unit tests,
 release Kotlin compilation, instrumented-test compilation, and APK content
 verification. 本机未安装 Android SDK，因此未重复本地 Android Gradle 构建；CI 是
 本批次的可复核构建证据。该批次尚未声称完成 M4 产品验收：可恢复断点下载、
-双设备性能/候选回归和真实设备生命周期验收仍是后续验证项。实现不得上传输入历史，
+第二设备 smoke test、系统性性能/候选回归和真实设备生命周期验收仍是后续验证项；
+完整的一台设备 M4 checklist 见 [`docs/phase5c-m4-device-acceptance.md`](phase5c-m4-device-acceptance.md)。实现不得上传输入历史，
 也不改变 LibIME 用户学习层。

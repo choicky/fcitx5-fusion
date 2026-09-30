@@ -1,0 +1,83 @@
+# Phase 5C M4 real-device acceptance
+
+This is the single-device acceptance gate for Phase 5C. One Android device must
+complete every item below. A second device is recommended for smoke testing only;
+it is not required for Phase 5C completion unless testing reveals a concrete
+ROM/device-dependent risk.
+
+## Test artifact
+
+- Repository: `choicky/fcitx5-android`
+- Branch: `phase5c-dictionary-manager`
+- Commit: `1c38422886a25640eec84b21e45775fa04f159f8`
+- Variant: `debug`, arm64-v8a APK
+- Application ID: `org.fcitx.fcitx5.android.debug`
+- CI run: [36616353979](https://github.com/choicky/fcitx5-android/actions/runs/36616353979)
+- Artifact: `moqi-debug-apk`, artifact ID `11056460418`, SHA-256
+  `86df319169653b2312e33d5aaba48321213693dc840350f8dcd7a51017db8673`
+
+Download the artifact from the CI run, unzip it, and install the contained APK:
+
+```sh
+adb install -r <path-to-moqi-debug-apk.apk>
+```
+
+The `.debug` application ID allows installation alongside a normal Fcitx5
+Android package. This is a test artifact, not a production release.
+
+## Acceptance checklist
+
+Record PASS, FAIL, or NOT OBSERVED for each item, plus device model, Android
+version, available storage, and test date.
+
+### A. Baseline
+
+- [ ] Existing Pinyin input works before installing an extra dictionary.
+- [ ] Existing Shuangpin input works.
+- [ ] Existing MoQi Auxiliary Filter works.
+
+### B. Catalog and UI
+
+- [ ] Open the Pinyin dictionary catalog from the dictionary settings screen.
+- [ ] Frost metadata is visible: version, GPL-3.0-only license, source, and limitations.
+- [ ] Wanxiang `jichu` metadata is visible: version, CC-BY-4.0 license, source, and limitations.
+
+### C. Download and installation
+
+- [ ] Start a Frost or Wanxiang download and observe a reasonable active-download state.
+- [ ] Pause during download.
+- [ ] Resume the same dictionary and observe that it completes successfully.
+- [ ] Confirm installation completes and the dictionary appears in the dictionary list.
+- [ ] Confirm existing input remains usable during and after installation.
+
+### D. Runtime behavior
+
+- [ ] Pinyin works with the installed dictionary enabled.
+- [ ] Shuangpin works with the installed dictionary enabled.
+- [ ] Observe at least one candidate supplied by the extra dictionary.
+- [ ] Candidate selection and composition continue to behave correctly.
+- [ ] MoQi filtering still works after the extra dictionary is installed.
+
+### E. Lifecycle and state
+
+- [ ] Restart Fcitx5 Android/the IME; the dictionary remains installed and usable.
+- [ ] Disable the dictionary; confirm it is no longer active.
+- [ ] Re-enable it; confirm it becomes active again.
+- [ ] Delete it; confirm normal Pinyin and Shuangpin still work.
+
+### F. Failure and recovery
+
+- [ ] During a download, use the pause action or safely interrupt network access.
+- [ ] Confirm the interruption does not replace or corrupt an existing usable dictionary.
+- [ ] Restore network access and resume/retry successfully.
+- [ ] Confirm normal input remains usable throughout recovery.
+
+### G. Regression and observation
+
+- [ ] No obvious startup or dictionary-load regression.
+- [ ] No obvious candidate latency, keyboard/input lag, crash, or ANR.
+- [ ] No abnormal memory behavior observed during download/use.
+- [ ] No obvious candidate-order regression in the tested phrases.
+
+Formal benchmark numbers and systematic dictionary-quality comparisons remain
+outside this gate and belong to the later product-quality work.
