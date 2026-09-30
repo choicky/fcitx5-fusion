@@ -13,7 +13,7 @@ recorded Rime Ice and CustomPinyinDictionary as non-release candidates. Those
 historical decisions are superseded for Phase 5C by the normalized-artifact
 audit: Ice's pronunciation gate passed through Librime materialization, and
 Custom's current upstream license is CC BY-SA 4.0. The Phase 5C manifest and
-research record are authoritative for the forward `dictionary-v1.1.0` scope;
+research record are authoritative for the forward `dictionary-v1.1.1` scope;
 the v1.0.0 release remains unchanged.
 
 The official input is `dict-20260907.tar.zst`, SHA256

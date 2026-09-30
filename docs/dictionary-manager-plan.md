@@ -118,7 +118,7 @@ RecognitionService、麦克风、权限、手势和生命周期组合，因此�
 `dict-20260907` 输入和上游 LICENSE 文件 hash，调用 Phase 5A converter 与
 真实 `libime_pinyindict`，并生成 `.dict`、`SHA256SUMS` 和简化 `index.json`。
 Frost 与 Wanxiang `jichu` 是 immutable v1.0.0 release set；Phase 5C 的
-forward normalization additionally makes Custom eligible for v1.1.0, while
+forward normalization additionally makes Custom and zhwiki eligible for v1.1.1, while
 zhwiki and Ice retain separate distribution gates in the manifest and research
 record. The historical v1.0.0 exclusions remain recorded in
 `docs/phase5b-dictionary-build.md`. workflow
@@ -130,7 +130,7 @@ maintainer 创建的 `dictionary-v*` tag 才创建 GitHub Release。
 Phase 5B 已完成研究冻结、固定构建/release 基础设施；`dictionary-v1.0.0`
 仍只包含 Frost 与 Wanxiang `jichu`。Phase 5C forward build 统一对所有
 formal artifacts 执行 official-negative normalization；Custom 已具备
-`dictionary-v1.1.0` release metadata，zhwiki 和 Ice 仍分别等待 distribution
+`dictionary-v1.1.1` release metadata，Ice 仍等待 its separate distribution
 approval。`dictionary-v1.0.0` 指向 Phase 5B 完成提交并已推送。
 
 Phase 5C 的实现位于 Android 分支 `phase5c-dictionary-manager`，当前提交为

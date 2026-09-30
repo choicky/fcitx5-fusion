@@ -32,8 +32,8 @@ The upstream bytes were dumped and then normalized/recompiled with the pinned
 project toolchain. Native audit: 57,797 exact official overlaps, including 33
 official negative, 57,764 zero, and 0 positive; all 33 native zero values would
 bypass an official negative. The normalized artifact has 1,673,006 rows,
-0 rejected rows, size 34,353,549 bytes, SHA-256
-`afdbb9118a9759c9d236dde9d2d465521587b9d2156f186382b20825f7762353`, and a
+0 rejected rows, size 34,496,975 bytes, SHA-256
+`9b24a65edc15e6e440cf0bf85308f69dc11359c82abcbea1904da71693eca4a5`, and a
 byte-identical second build. The normalized artifact is eligible for the
 forward project release under the Issue #58/Wikimedia evidence, with the
 notices and source/modification information above shipped alongside it.
@@ -54,8 +54,8 @@ notices and source/modification information above shipped alongside it.
   negative, 155,829 zero, and 0 positive; all 106 native zero values would
   bypass an official negative.
 - Normalized artifact: 1,498,781 rows, 0 rejected rows, size
-  `28,331,924` bytes, SHA-256
-  `69f0de1dcefb81002108b612329dc5ef20784f194441dac44c3c72999e1ebf85`, and
+  `28,438,655` bytes, SHA-256
+  `3b0a69679b71a3d3b88e9210906bea340c7633809fa872d2cfb9b53b00fe5555`, and
   a byte-identical second build. It inherits the 106 exact official negative
   values and otherwise emits value 0. The output includes a modification /
   normalization notice and preserves upstream attribution.

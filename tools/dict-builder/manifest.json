@@ -26,7 +26,9 @@
       "expected": {"accepted": 2026517, "rejected": 180, "duplicates": 23889, "roundtrip_rows": 2010605},
       "license": "GPL-3.0-only",
       "license_url": "https://raw.githubusercontent.com/gaboolic/rime-frost/211de1ca927b6c876e384c6de42e1cc8af868c68/LICENSE",
-      "license_sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+      "license_sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
+      "attribution": "Rime-Frost contributors; source revision is pinned above.",
+      "modification_statement": "Converted and normalized for Fcitx5/LibIME compatibility; exact official negative values are retained."
     },
     "rime-wanxiang": {
       "release": true,
@@ -38,7 +40,9 @@
       "expected": {"accepted": 1425250, "rejected": 15, "duplicates": 0, "roundtrip_rows": 1425249},
       "license": "CC-BY-4.0",
       "license_url": "https://raw.githubusercontent.com/amzxyz/rime-wanxiang/94f1e8d7b6d1267a9c8752a2e62145705dd1fb92/LICENSE",
-      "license_sha256": "9e5f1b3c610b9c2da5c313bf81d577a7d1acec686bdb0384edefa6df0f90cd94"
+      "license_sha256": "9e5f1b3c610b9c2da5c313bf81d577a7d1acec686bdb0384edefa6df0f90cd94",
+      "attribution": "Rime-Wanxiang contributors; pinned jichu table only.",
+      "modification_statement": "Converted and normalized for Fcitx5/LibIME compatibility; exact official negative values are retained."
     },
     "custom-pinyin": {
       "release": true,
@@ -59,8 +63,9 @@
       "technical_approved": true,
       "distribution_approved": true,
       "public_release_approved": true,
-      "normalized_artifact": {"name": "custom-pinyin.dict", "sha256": "69f0de1dcefb81002108b612329dc5ef20784f194441dac44c3c72999e1ebf85", "size": 28331924, "entry_count": 1498781, "inherited_negative": 106, "rejected": 0},
-      "attribution": "wuhgit/CustomPinyinDictionary; upstream README credits FREEMDICT, Administrative-divisions-of-China, wgii, customs.gov.cn, National Bureau of Statistics, and other listed sources; those source rights remain separately attributed."
+      "normalized_artifact": {"name": "custom-pinyin.dict", "sha256": "3b0a69679b71a3d3b88e9210906bea340c7633809fa872d2cfb9b53b00fe5555", "size": 28438655, "entry_count": 1498781, "inherited_negative": 106, "rejected": 0},
+      "attribution": "wuhgit/CustomPinyinDictionary; upstream README credits FREEMDICT, Administrative-divisions-of-China, wgii, customs.gov.cn, National Bureau of Statistics, and other listed sources; those source rights remain separately attributed.",
+      "modification_statement": "Converted and normalized for Fcitx5/LibIME compatibility; exact official negative values are retained."
     },
     "zhwiki": {
       "release": true,
@@ -82,7 +87,7 @@
       "public_release_approved": true,
       "issue_evidence": "https://github.com/felixonmars/fcitx5-pinyin-zhwiki/issues/58",
       "attribution": "felixonmars/fcitx5-pinyin-zhwiki; generated data derives from Wikimedia dumps. Preserve Wikimedia attribution, GFDL/CC BY-SA notices, applicable Terms of Use and source/modification information.",
-      "normalized_artifact": {"name": "zhwiki.dict", "sha256": "afdbb9118a9759c9d236dde9d2d465521587b9d2156f186382b20825f7762353", "size": 34353549, "entry_count": 1673006, "inherited_negative": 33, "rejected": 0},
+      "normalized_artifact": {"name": "zhwiki.dict", "sha256": "9b24a65edc15e6e440cf0bf85308f69dc11359c82abcbea1904da71693eca4a5", "size": 34496975, "entry_count": 1673006, "inherited_negative": 33, "rejected": 0},
       "modification_statement": "Derived from fcitx5-pinyin-zhwiki/Wikimedia data and converted/normalized for Fcitx5/LibIME compatibility; exact official negative values are retained."
     },
     "rime-ice": {

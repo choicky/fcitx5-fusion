@@ -478,7 +478,7 @@ and a fresh download after cancel) remain regression requirements.
 
 Research status: Frost and Wanxiang remain the only entries in immutable
 `dictionary-v1.0.0`. The forward Android catalog uses project-controlled
-normalized Custom and zhwiki bytes for `dictionary-v1.1.0`; zhwiki's Issue #58
+normalized Custom and zhwiki bytes for `dictionary-v1.1.1`; zhwiki's Issue #58
 and Wikimedia licensing evidence is recorded with the required notices and
 modification disclosure. Rime-Ice pronunciation materialization passes the
 Librime PoC and reproducible LibIME build, but its separate distribution gate
@@ -492,7 +492,7 @@ were rebuilt through the pinned LibIME toolchain; Custom's verified upstream
 CC BY-SA 4.0 license is recorded at `cf17f96af885cb818c2fad87184f383a52482351`
 and its normalized artifact is eligible for the forward release. zhwiki's
 normalized artifact is technically complete but remains withheld pending owner
-redistribution approval. The next release is `dictionary-v1.1.0`; it does not
+redistribution approval. The next release is `dictionary-v1.1.1`; it does not
 mutate `dictionary-v1.0.0`.
 
 ## Phase 6 — Optional LLM Post-processing

@@ -125,6 +125,19 @@ def main() -> int:
             license_hash = verify_license(source, temp_root)
             license_file = args.output / f"{key}.LICENSE"
             shutil.copyfile(temp_root / (source["display_name"].replace(" ", "-") + ".LICENSE"), license_file)
+            notice_file = args.output / f"{key}.NOTICE"
+            notice_file.write_text(
+                "Dictionary provenance and modification notice\n\n"
+                f"Source project: {source['repository']}\n"
+                f"Source revision: {source.get('commit', source.get('artifact_revision'))}\n"
+                f"License: {source['license']}\n"
+                f"License information: {source['license_url']}\n"
+                f"Attribution: {source.get('attribution', '')}\n"
+                f"Modification: {source.get('modification_statement', '')}\n"
+                f"Official Base: {manifest['official'].get('revision', 'dict-20260907')}\n"
+                f"Normalization: {manifest['official']['normalization']}\n",
+                encoding="utf-8",
+            )
             text = args.output / f"{key}.txt"
             rejects = args.output / f"{key}.rejected.tsv"
             binary = args.output / f"{key}.dict"
@@ -146,13 +159,14 @@ def main() -> int:
             roundtrip_rows = sum(1 for _ in roundtrip.open(encoding="utf-8"))
             check_expected(roundtrip_rows, source.get("expected", {}), "roundtrip_rows", key)
             binary_sha256 = sha256(binary)
-            index["dictionaries"].append({"id": key, "display_name": source["display_name"], "artifact": binary.name, "version": source.get("commit", source.get("artifact_revision")), "source_repository": source["repository"].removesuffix(".git"), "source_revision": source.get("commit", source.get("artifact_revision")), "source_input_sha256": input_sha256, "sha256": binary_sha256, "size": binary.stat().st_size, "entry_count": roundtrip_rows, "license": source["license"], "license_url": source["license_url"], "license_file": license_file.name, "license_sha256": license_hash, "attribution": source.get("attribution", ""), "modification_statement": source.get("modification_statement", ""), "technical_approved": source.get("technical_approved", True), "distribution_approved": source.get("distribution_approved", source.get("public_release_approved", True)), "compatibility": {"format": "LibIME pinyindict", "official_dictionary": manifest["official"].get("revision", "dict-20260907"), "converter_rule": manifest["rule_version"]}})
+            index["dictionaries"].append({"id": key, "display_name": source["display_name"], "artifact": binary.name, "version": source.get("commit", source.get("artifact_revision")), "source_repository": source["repository"].removesuffix(".git"), "source_revision": source.get("commit", source.get("artifact_revision")), "source_input_sha256": input_sha256, "sha256": binary_sha256, "size": binary.stat().st_size, "entry_count": roundtrip_rows, "license": source["license"], "license_url": source["license_url"], "license_file": license_file.name, "notice_file": notice_file.name, "license_sha256": license_hash, "attribution": source.get("attribution", ""), "modification_statement": source.get("modification_statement", ""), "technical_approved": source.get("technical_approved", True), "distribution_approved": source.get("distribution_approved", source.get("public_release_approved", True)), "compatibility": {"format": "LibIME pinyindict", "official_dictionary": manifest["official"].get("revision", "dict-20260907"), "converter_rule": manifest["rule_version"]}})
             fields = dict(item.split("=") for item in conversion_log.strip().split() if "=" in item)
             audit_sources.append({"id": key, "source_revision": source.get("commit", source.get("artifact_revision")), "source_input_sha256": input_sha256, "source_files": source_files, "accepted": int(fields["accepted"]), "rejected": int(fields["rejected"]), "duplicates": int(fields["duplicates"]), "roundtrip_rows": roundtrip_rows, "entry_count": roundtrip_rows, "conversion_log": f"{key}.convert.log", "rejected_rows": rejects.name, "compile_log": f"{key}.compile.log", "roundtrip_log": f"{key}.roundtrip.log", "artifact": binary.name, "artifact_sha256": binary_sha256, "technical_approved": source.get("technical_approved", True), "distribution_approved": source.get("distribution_approved", source.get("public_release_approved", True))})
             roundtrip.unlink()
         sums = args.output / "SHA256SUMS"
         checksum_files = [(item["artifact"], sha256(args.output / item["artifact"])) for item in index["dictionaries"]]
         checksum_files += [(item["license_file"], sha256(args.output / item["license_file"])) for item in index["dictionaries"]]
+        checksum_files += [(item["notice_file"], sha256(args.output / item["notice_file"])) for item in index["dictionaries"]]
         sums.write_text("".join(f"{digest}  {name}\n" for name, digest in sorted(checksum_files)), encoding="utf-8")
         index_path = args.output / "index.json"
         index_path.write_text(json.dumps(index, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

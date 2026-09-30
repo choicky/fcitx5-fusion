@@ -71,6 +71,12 @@ real `libime_pinyindict -d`; dumped-input SHA256:
 | Wanxiang jichu | 1,425,250 | 15 | 0 | 95 | 1,425,249 | 24,597,605 | `d2fcf381cdbc7843d8824ecad72990db412e82e2bdc7677a7d37f2e435d6387b` |
 | CustomPinyinDictionary | 1,498,781 | 0 | 0 | 106 | 1,498,781 | 28,331,924 | `69f0de1dcefb81002108b612329dc5ef20784f194441dac44c3c72999e1ebf85` |
 
+The row above is historical local-toolchain evidence. The authoritative CI
+release artifact for the forward normalized build uses the verified pinned CI
+toolchain and is recorded in `docs/phase5c-research-dictionaries.md` and the
+v1.1.1 index (`28,438,655` bytes,
+`3b0a69679b71a3d3b88e9210906bea340c7633809fa872d2cfb9b53b00fe5555`).
+
 All four binaries compiled, dumped/loaded, and recompiled byte-identically
 (4/4 `cmp` checks). The round-trip loss is LibIME's real pinyin parser
 rejecting source-domain spellings, not a binary nondeterminism: 2 Ice rows,
