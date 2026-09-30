@@ -18,9 +18,15 @@ change immutable `dictionary-v1.0.0`.
 - Size: `32,677,637` bytes
 - SHA-256: `9bb6fd03f0350cc13340ec34ff59f695bdf7eb0f14db6acf13c1ebc91f89823b`
 - Compiled dump rows: `1,673,006`
-- Code license: Unlicense. Generated data follows Wikimedia dump terms; this
-  is recorded separately and is not treated as a blanket public redistribution
-  approval.
+- Code license: Unlicense. This does not govern the generated dictionary data.
+- Issue #58 evidence: `https://github.com/felixonmars/fcitx5-pinyin-zhwiki/issues/58`.
+  The maintainer states that the project is a simple transformation of
+  Wikipedia data and that resulting data should use the same GFDL and CC
+  BY-SA 4.0 terms.
+- Data licensing reference: `https://dumps.wikimedia.org/legal.html`.
+  Wikimedia identifies GFDL and CC BY-SA 4.0 for original text, subject to
+  controlling Terms of Use and content-specific exceptions. Release notices
+  must preserve attribution, license, source and modification information.
 
 The upstream bytes were dumped and then normalized/recompiled with the pinned
 project toolchain. Native audit: 57,797 exact official overlaps, including 33
@@ -28,8 +34,9 @@ official negative, 57,764 zero, and 0 positive; all 33 native zero values would
 bypass an official negative. The normalized artifact has 1,673,006 rows,
 0 rejected rows, size 34,353,549 bytes, SHA-256
 `afdbb9118a9759c9d236dde9d2d465521587b9d2156f186382b20825f7762353`, and a
-byte-identical second build. The normalized artifact is withheld until the
-owner records redistribution approval.
+byte-identical second build. The normalized artifact is eligible for the
+forward project release under the Issue #58/Wikimedia evidence, with the
+notices and source/modification information above shipped alongside it.
 
 ## CustomPinyinDictionary
 
@@ -112,13 +119,8 @@ check, and fixed Debug certificate check. Artifact `moqi-debug-apk` is ID
 `org.fcitx.fcitx5.android.debug`.
 
 The previous human checkpoint completed incremental device testing of zhwiki and
-Custom against the research APK. The normalized Custom bytes require a new
-incremental checkpoint: download, SHA/size verification, install, enable/disable,
-restart, Pinyin and Shuangpin runtime observation, MoQi regression, and
-delete/recovery. zhwiki is withheld from the forward catalog pending owner
-redistribution approval. Ice has no APK catalog row and therefore has no device
-acceptance result.
-download, SHA/size verification, install, enable/disable, restart, Pinyin and
-Shuangpin runtime observation, MoQi regression, and delete/recovery. Ice has no
-APK catalog row and therefore has no device acceptance result; its technical
-artifact is awaiting safe stable hosting.
+Custom against the research APK. The normalized bytes require a new incremental
+checkpoint: download, SHA/size verification, install, enable/disable, restart,
+Pinyin and Shuangpin runtime observation, MoQi regression, and delete/recovery.
+Ice has no APK catalog row and therefore has no device acceptance result; its
+technical artifact remains distribution-pending.

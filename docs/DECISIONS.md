@@ -627,7 +627,8 @@ SHA-256, size, entry-count and audit checks.
 PinyinDictionary is technically and distribution approved for the forward
 artifact under its verified CC BY-SA 4.0 license at upstream commit
 `cf17f96af885cb818c2fad87184f383a52482351`, with attribution for the additional
-sources named by its README. zhwiki is technically approved but its normalized
-artifact remains withheld until the owner records redistribution approval.
+sources named by its README. zhwiki is technically and distribution approved
+under upstream Issue #58 and Wikimedia GFDL/CC BY-SA evidence; its release
+must carry the applicable notices, attribution, source and modification data.
 Rime-Ice remains technically materialized but distribution-pending. The
 immutable `dictionary-v1.0.0` is untouched.

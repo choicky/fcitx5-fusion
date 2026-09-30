@@ -477,12 +477,12 @@ physical-device behaviors already accepted (pause retention, resume, cancel,
 and a fresh download after cancel) remain regression requirements.
 
 Research status: Frost and Wanxiang remain the only entries in immutable
-`dictionary-v1.0.0`. The forward Android catalog uses only project-controlled
-normalized bytes whose distribution gate is satisfied; Custom is prepared for
-`dictionary-v1.1.0`, while zhwiki remains withheld pending owner approval.
-Rime-Ice pronunciation materialization passes the Librime PoC and reproducible
-LibIME build, but its distribution gate remains open. No research URL mutates
-`dictionary-v1.0.0`.
+`dictionary-v1.0.0`. The forward Android catalog uses project-controlled
+normalized Custom and zhwiki bytes for `dictionary-v1.1.0`; zhwiki's Issue #58
+and Wikimedia licensing evidence is recorded with the required notices and
+modification disclosure. Rime-Ice pronunciation materialization passes the
+Librime PoC and reproducible LibIME build, but its separate distribution gate
+remains open. No research URL mutates `dictionary-v1.0.0`.
 
 Phase 5C normalization follow-up: all formal third-party artifacts use the
 same exact `(word, full-pinyin)` official-negative inheritance policy. Native

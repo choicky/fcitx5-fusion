@@ -42,7 +42,7 @@ jobs:
       - name: Prepare validation artifact
         run: |
           mkdir release
-          cp /tmp/dictionary-build-1/* release/
+          cp /tmp/dictionary-build-1/*.dict /tmp/dictionary-build-1/*.LICENSE /tmp/dictionary-build-1/SHA256SUMS /tmp/dictionary-build-1/index.json release/
           (cd release && sha256sum -c SHA256SUMS)
           test -s release/rime-frost.dict
           test -s release/rime-wanxiang.dict
