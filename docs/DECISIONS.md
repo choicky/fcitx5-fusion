@@ -633,7 +633,8 @@ sources named by its README. zhwiki is technically and distribution approved
 under upstream Issue #58 and Wikimedia GFDL/CC BY-SA evidence; its release
 must carry the applicable notices, attribution, source and modification data.
 Rime-Ice's `tencent` table is covered by the project's accepted overall Ice
-GPLv3 treatment and is not a blocker. Ice remains technically materialized but
+GPLv3 treatment and is not a blocker. Ice is technically approved and its
+private/research physical-device acceptance is PASS, but it remains
 distribution-pending because the pinned `cn_dicts/base.dict.yaml` names Huayu
 and an indiejoseph Gist as external inputs without separate license/NOTICE or
 relicensing evidence in the pinned Ice tree; THUOCL is separately identified

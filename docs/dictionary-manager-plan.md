@@ -130,10 +130,11 @@ maintainer 创建的 `dictionary-v*` tag 才创建 GitHub Release。
 Phase 5B 已完成研究冻结、固定构建/release 基础设施；`dictionary-v1.0.0`
 仍只包含 Frost 与 Wanxiang `jichu`。Phase 5C forward build 统一对所有
 formal artifacts 执行 official-negative normalization；Custom 与 zhwiki 已具备
-`dictionary-v1.1.1` release metadata。Ice 已通过 pronunciation gate；其
+`dictionary-v1.1.1` release metadata。Ice 已通过 pronunciation/materialization
+gate，并已进入 research-only catalog；本轮物理设备验收也已 PASS。其
 `tencent` 表不再构成 blocker，但 `cn_dicts/base.dict.yaml` 所列 Huayu 与
 indiejoseph Gist 仍缺少固定树中的 license/NOTICE 或 relicensing evidence，
-因此 Ice 仍未进入 catalog。`dictionary-v1.0.0` 指向 Phase 5B 完成提交并已推送。
+因此 Ice 仍不得进入 public release。`dictionary-v1.0.0` 指向 Phase 5B 完成提交并已推送。
 
 第三方词库下载前使用统一披露对话框：主列表保持中文名、canonical 名称、
 大小、条目数和状态的紧凑布局；首次下载前展示来源项目、版本/提交、许可证、
@@ -229,10 +230,11 @@ official negative value; official zero/positive and absent matches emit zero.
 CustomPinyinDictionary has a normalized forward-release artifact under
 CC BY-SA 4.0 with required upstream attribution. zhwiki has a normalized and
 tested artifact in the forward release. Rime-Ice has passed its pronunciation
-gate but remains outside the catalog until the Huayu and indiejoseph
-provenance/licensing basis is recorded; this is not a Tencent blocker.
-For private testing it is present as a research-only catalog row whose action
-selects and verifies the locally downloaded CI artifact before import.
+and materialization gates, is present as a research-only catalog row, and has
+passed physical-device acceptance; public release remains blocked only by the
+Huayu and indiejoseph provenance/licensing basis. This is not a Tencent
+blocker. Its action selects and verifies the locally supplied artifact before
+import.
 
 The research-only status is independent from technical personal-use testing:
 these candidates may be built and tested in a controlled environment, but they

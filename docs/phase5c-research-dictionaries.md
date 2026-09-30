@@ -129,15 +129,13 @@ check, and fixed Debug certificate check. Artifact `moqi-debug-apk` is ID
 `org.fcitx.fcitx5.android.debug`.
 
 The previous human checkpoint completed incremental device testing of zhwiki and
-Custom against the research APK. The normalized bytes require a new incremental
-checkpoint: download, SHA/size verification, install, enable/disable, restart,
-Pinyin and Shuangpin runtime observation, MoQi regression, and delete/recovery.
-Ice now has a research/private catalog row but no public download URL. Its
-technical artifact remains distribution-pending for public release; private
-device acceptance may proceed after producing the pinned artifact from the
-recorded local materialization inputs. Control CI run `36750882728` validated
-the standard release set and provenance, but intentionally did not package Ice
-because Ice is not public-release approved. The exact private artifact used
-for device testing must therefore be supplied as a local file and verified
-against the manifest before import; it is not a public Release asset or
-production catalog URL.
+Custom against the research APK. Rime-Ice has now also passed its incremental
+physical-device acceptance: valid local import, filename/size/SHA-256
+validation, Pinyin and Shuangpin runtime, disable/re-enable, restart
+persistence, MoQi regression, delete/re-import, and corrupted/wrong dictionary
+rejection. This is private/research acceptance only. Ice remains technically
+approved and public-release pending only for Huayu and indiejoseph Gist
+permission/provenance; `public_release_approved=false` and
+`distribution_approved=false` remain unchanged. Control CI run `36750882728`
+validated the standard release set and provenance, but intentionally did not
+package Ice because it is not public-release approved.

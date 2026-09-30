@@ -16,9 +16,9 @@ built-in Base/ExtB Dictionary Manager scope is **PASS**. The evidence covers:
 - Pinyin, Shuangpin, MoQi, and lifecycle regression checks.
 
 This PASS applies only to the dictionaries and controls listed above. The
-research additions zhwiki, CustomPinyinDictionary, and Rime-Ice are not
-covered by this device result and require incremental acceptance after their
-artifacts are technically accepted. Phase 5C is therefore not yet closed.
+research additions are recorded separately below; all three now have their
+own incremental physical-device acceptance. The complete private/research
+Phase 5C device checkpoint is therefore closed.
 
 ## zhwiki + Custom incremental result
 
@@ -29,11 +29,14 @@ existing checklist's download/SHA/size verification, installation and
 enable/disable, restart persistence, Pinyin and Shuangpin runtime, MoQi
 regression, and delete returning the entry to Available/recovery.
 
-This result applies only to zhwiki and CustomPinyinDictionary. Rime-Ice has not
-been accepted on a device and remains outside the catalog pending its concrete
-Huayu/indiejoseph base-input provenance and licensing gate. Its authoritative
-pronunciation/materialization gate is complete; the Tencent table is covered
-by the accepted overall Ice GPLv3 treatment and is not the blocker.
+This result applies only to zhwiki and CustomPinyinDictionary. Rime-Ice has
+also completed its incremental physical-device acceptance: valid local import,
+filename/size/SHA-256 validation, Pinyin and Shuangpin runtime, disable/
+re-enable, restart persistence, MoQi regression, delete/re-import, and
+corrupted/wrong dictionary rejection all passed. Rime-Ice technical
+materialization and private/research integration are PASS. Public distribution
+remains PENDING/BLOCKED only on Huayu and indiejoseph Gist
+permission/provenance; Tencent is not a blocker.
 
 This is the single-device acceptance gate for Phase 5C. One Android device must
 complete every item below. A second device is recommended for smoke testing only;
@@ -44,11 +47,11 @@ ROM/device-dependent risk.
 
 - Repository: `choicky/fcitx5-android`
 - Branch: `phase5c-dictionary-manager`
-- Commit: `93f6f13a999b62783c8950d2de7243e2dadf5900`
+- Commit: `90558eff0c1441e312147f96a74e2ebeb8ade7f2`
 - Variant: `debug`, arm64-v8a APK
 - Application ID: `org.fcitx.fcitx5.android.debug`
-- CI run: [36709096430](https://github.com/choicky/fcitx5-android/actions/runs/36709096430)
-- Artifact: `moqi-debug-apk`, artifact ID `11094120568` (the APK SHA-256 is
+- CI run: [36750837565](https://github.com/choicky/fcitx5-android/actions/runs/36750837565)
+- Artifact: `moqi-debug-apk`, artifact ID `11114349479` (the APK SHA-256 is
   available from the downloaded artifact; the CI workflow independently checks
   its package and fixed signer certificate).
 
@@ -154,8 +157,8 @@ The following behaviors were completed successfully on the current debug APK:
 - a new download after cancel starts from the beginning.
 
 These are device evidence, not a replacement for automated integrity tests.
-The next APK must additionally retest the unified row presentation (localized
-and canonical names), fixed action positions, Base/ExtB controls, and any newly
-accepted catalog entries. Existing Frost/Wanxiang install, runtime, MoQi,
+The unified row presentation, fixed action positions, Base/ExtB controls, and
+all three research catalog entries have now been covered by the reported
+incremental device evidence. Existing Frost/Wanxiang install, runtime, MoQi,
 enable/disable/delete, restart, and lifecycle PASS items remain regression
-checks. M4 is not marked complete by this documentation update.
+checks. No other Phase 5C M4 device item is incomplete.

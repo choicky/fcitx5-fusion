@@ -464,15 +464,18 @@ research dictionaries.
 The subsequent zhwiki + CustomPinyinDictionary incremental device acceptance
 is also PASS for all six existing incremental checks: download/integrity,
 installation and enable/disable, restart persistence, Pinyin/Shuangpin runtime,
-MoQi regression, and delete/recovery. Rime-Ice remains untested for device
-acceptance but now has a private/research catalog row. Its pinned authoritative
-artifact is available through local-file import only; public distribution
-remains blocked by the Huayu and indiejoseph input provenance/permission items
-named by its pinned `cn_dicts/base.dict.yaml`. This is not the Tencent table,
-which is covered by the accepted overall Ice GPLv3 treatment.
+MoQi regression, and delete/recovery. Rime-Ice has now also passed its
+incremental physical-device acceptance: valid import and integrity validation,
+Pinyin/Shuangpin runtime, lifecycle, MoQi regression, delete/re-import, and
+corrupted/wrong dictionary rejection. Phase 5C private/research device scope
+is COMPLETE. Ice public distribution remains blocked only by the Huayu and
+indiejoseph input provenance/permission items named by its pinned
+`cn_dicts/base.dict.yaml`. This is not the Tencent table, which is covered by
+the accepted overall Ice GPLv3 treatment.
 pause/resume, network recovery, and cancel behavior.
 
-Phase 5C unified manager follow-up (in progress): the next Android change keeps
+Phase 5C unified manager implementation (COMPLETE for the current private/
+research scope): the Android change keeps
 the existing downloader and integrity state machine, while showing localized
 and canonical names in the main list, representing the built-in LibIME Base
 and CJK Extension B, and controlling ExtB through the existing shared
@@ -486,7 +489,8 @@ Research status: Frost and Wanxiang remain the only entries in immutable
 normalized Custom and zhwiki bytes for `dictionary-v1.1.1`; zhwiki's Issue #58
 and Wikimedia licensing evidence is recorded with the required notices and
 modification disclosure. Rime-Ice pronunciation materialization passes the
-Librime PoC and reproducible LibIME build, but public distribution remains
+Librime PoC and reproducible LibIME build, and its private/research catalog and
+physical-device acceptance are PASS. Public distribution remains
 blocked specifically by the Huayu and indiejoseph base-input provenance gap;
 the Tencent table is not a blocker. Private/research device testing is allowed
 using a privately produced local artifact imported through the existing Android
