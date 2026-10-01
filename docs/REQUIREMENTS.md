@@ -220,9 +220,11 @@ Emoji, QuickPhrase, Clipboard, TextEditing
 
 最终 Toolbar Editor 使用 direct manipulation，而不是当前 checkbox + ↑/↓ 页面：上方显示当前 enabled configurable actions 的实际顺序，每项有 `−`；下方显示未启用 actions，每项有 `+`。点击 `−` 移除到 available area；点击 `+` 添加到当前 configurable actions 最右端；Toolbar 内拖动负责 reorder，拖到 available area 负责 remove，从 available area 拖入 Toolbar 按明确 drop position 添加。Tools 与 Hide Keyboard 固定在两端，不进入 configurable collection。Restore Default 恢复 `Emoji, QuickPhrase, Voice, Clipboard, TextEditing`。
 
+Toolbar Editor 的 physical-device acceptance 要求当前与 available actions 都实际显示其 action icons，Toolbar/context 尽量保持可见，编辑区域约占键盘 character-key area 而非近乎整个 IME 高度；内容超出即时可见区域时仍须可操作。仅在 source 中构造 rows 不足以视为通过。
+
 #### Toolbar presentation invariants
 
-Toolbar configured actions 数量因屏幕宽度无法完整展示时，runtime presentation suppression 的优先级为：先临时隐藏 `QuickPhrase`，仍不足时再临时隐藏 `Emoji`。不得从 `toolbarActions` 删除它们，不得改变 configured membership/order、Toolbar Editor 配置或 Voice/Clipboard/TextEditing 的顺序；空间恢复后应自动按持久配置恢复。Tools 与 Hide Keyboard 始终为 fixed actions。更进一步的超窄屏降级策略为 TBD，须另行决定。
+Toolbar configured actions 数量因屏幕宽度无法完整展示时，runtime presentation suppression 的顺序为：正常 configured presentation；仍不足时依次临时隐藏 `QuickPhrase`、`Emoji`、`TextEditing`、`Clipboard`；因此 `Voice` 是最后保留的 configurable action。若移除上述四项后仍不足，则不渲染 configurable actions，只保留 fixed `Tools` 与 `Hide Keyboard`。这些都是 runtime presentation suppression：不得从 `toolbarActions` 删除 action，不得改变 enabled/disabled state、configured membership/order、Toolbar Editor 配置或 Voice/Clipboard/TextEditing 的持久顺序；空间恢复后必须按用户配置的 `toolbarActions` 自动恢复。该降级策略不改变 Toolbar Editor state。
 
 Collapse/Expand 只是 transient presentation state，不得修改 `toolbarActions`、enabled membership、ordering、默认值或 preference。展开后必须恢复收拢前完全相同的 action 集合与顺序。Tools menu 的动作文案与图标为：expanded → `收拢工具栏` / `Collapse toolbar` + chevron-left；collapsed → `展开工具栏` / `Expand toolbar` + chevron-right。
 
@@ -234,6 +236,12 @@ Collapse/Expand 只是 transient presentation state，不得修改 `toolbarActio
 - `Settings -> Voice Input -> Long-press Space`
 
 本项目的 `SpaceLongPressBehavior.VoiceInput` 扩展继续保留；不得为 Voice Settings 创建新的 Boolean、preference key 或第二套 state。Toolbar Mic 与 Space long-press Voice 是进入同一 shared Voice Input flow 的两个独立 trigger；关闭/启用一个不得自动改变另一个。
+
+Voice Settings 的 Space projection 在 ListPreference dialog 完成选择时不得销毁并重建 active preference tree；应保持 `spaceKeyLongPressBehavior` 为唯一 canonical state，并以稳定 preference instance 或安全的局部同步更新 UI，同时保留既有 runtime gesture semantics。
+
+Virtual Keyboard 中的 Voice projection 位于 upstream-compatible 的相对位置：紧接 `keepLettersUppercase` 之后。其 backing state 仍是 `ToolbarAction.Voice ∈ toolbarActions`，不得恢复 `show_voice_input_button` 为 live persistence source。
+
+`preferredVoiceInput` 的 persisted key/compatibility structure 保留，但其 user-visible Virtual Keyboard row 隐藏。该旧 upstream 概念表示选择/切换到暴露 voice subtype 的 Android enabled IME，不是本项目的 ASR Provider selector；不得将它接入 `VoiceInputFlow`、`VoiceInputSession`、`SystemAsrBackend`、`RecognitionService` selection、`VoiceSelectionStore`、provider resolution/fallback、Toolbar Mic 或 Space Voice。项目 configured/current ASR provider 仍是唯一 active project provider selection。
 
 #### Clean install and migration
 

@@ -766,4 +766,16 @@ Settings 中的 Voice OFF → ON 使用默认 configurable action 顺序恢复 V
 
 Toolbar Editor 的 accepted target 是 direct manipulation：当前 Toolbar 区域按实际顺序显示并支持 `−` remove，available 区域支持 `+` append；Toolbar → Toolbar reorder、Toolbar → available remove、available → Toolbar 按 drop position add。Tools/Hide Keyboard 固定，不进入 action collection；Restore Default 使用 `ToolbarAction.Default`。
 
-Toolbar configured state 与 transient presentation state 分离。Collapse/Expand 不得改写 action membership/order/preferences；宽度不足时先临时隐藏 QuickPhrase、再临时隐藏 Emoji，空间恢复后按持久配置恢复。更进一步的超窄屏策略仍未决定。
+Toolbar configured state 与 transient presentation state 分离。Collapse/Expand 不得改写 action membership/order/preferences。当前接受的窄屏 runtime presentation suppression 顺序为：QuickPhrase → Emoji → TextEditing → Clipboard；若四项均已临时隐藏后仍不足，则不渲染 configurable actions，只保留 fixed Tools 与 Hide Keyboard。空间恢复后按用户配置的 `toolbarActions` 自动恢复；该过程不得写回 membership/order、enabled state、Toolbar Editor state 或 preferences。
+
+## D047 — Toolbar physical-device repair boundary and retained upstream compatibility
+
+**状态：Accepted（2026-10-01；physical-device repair scope）**
+
+Toolbar Editor 的 direct-manipulation semantics 不变，但 physical-device acceptance 要求当前与 available actions 都实际显示其 action icons，Toolbar/context 尽量保持可见，编辑区域约占键盘 character-key area 而非近乎整个 IME 高度；内容超出可见区域时仍须可操作。Tools 与 Hide Keyboard 继续固定，`toolbarActions` persistence 与 action business semantics 不变。
+
+Virtual Keyboard 的 Show voice input button 是 `ToolbarAction.Voice ∈ toolbarActions` 的 projection，并放在 `keepLettersUppercase` 后的 upstream-compatible 相对位置；legacy `show_voice_input_button` 仍只用于 migration。`spaceKeyLongPressBehavior` 是 Voice Settings 与 Virtual Keyboard 两个 projection 的唯一 canonical state；Voice Settings 的 ListPreference 完成选择时不得通过 `fireChange()` 触发 active preference tree 的重建，且既有 Space gesture semantics 不变。
+
+批准隐藏 Virtual Keyboard 中 user-visible 的 `preferredVoiceInput` row，同时保留 persisted `preferred_voice_input` key 和最小 upstream-compatible internal structure，不删除或迁移旧值。旧 upstream 概念表示选择/切换到暴露 voice subtype 的 Android enabled IME，不是本项目 ASR Provider selector；它不得接入 `VoiceInputFlow`、`VoiceInputSession`、`SystemAsrBackend`、`RecognitionService` selection、`VoiceSelectionStore`、provider resolution/fallback、Toolbar Mic 或 Space Voice。项目 configured/current ASR provider 仍由 `VoiceSelectionStore` 独占。支持外部 Android voice IME 是另一个未来 product/architecture decision。
+
+本决定同时接受上述完整的窄屏降级顺序；post-Emoji 行为不再是 TBD。
