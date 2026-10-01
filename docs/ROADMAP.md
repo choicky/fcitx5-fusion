@@ -630,6 +630,20 @@ Android 架构稳定后再评估 Windows、Linux、macOS、iOS，并保持 Trigg
 
 ## 当前下一步
 
+**Dictionary / Voice UI V2 自动验证 checkpoint（D049，2026-10-02）**：Android
+`phase5c-dictionary-manager` 已完成受限的 presentation/navigation 批次：Dictionary
+分组对象列表 → 条件详情（所有可见 catalog 对象均列出，保留 Edit 多选和下载对话框）；
+Voice 五节结构、Keyboard 同源触发设置、既有 Provider selector / 推荐 action，以及
+能力限定的模型/云端详情。提交为 `84b7f571`、`e4ae7966`、`583a525a`；最后一项
+修复详情期间 Snackbar 锚点挂载，不改变词库操作。完整 staged CI runs
+`36906187024`、`36909321848`、`36910950013` 均 PASS（最后一次初跑因 Gradle
+下载连接重置而失败，同 SHA 的一次基础设施重跑 PASS）。包含 JVM 测试、arm64
+debug APK、release Kotlin 与 instrumentation 编译；**instrumentation 未执行，
+新 UI 真机验收仍 TBV**。设备检查清单见 Android `docs/settings-ui-v2-acceptance.md`。
+不改变词库业务、Provider 选择/推荐/fallback、Local lifecycle、VoiceInputFlow、
+音频或隐私语义；不推进更新/修复/回滚、持久下载状态或许可收口。
+以下既有阶段/设备结果保留为各自批次历史，不代表新 UI 已通过真机验收。
+
 **4B.2 已 COMPLETE / DUAL-DEVICE PASS；4B.3b Local ASR A/B comparative device PoC 已 COMPLETE，A、B 均未选为正式/默认 Local ASR（D036）。**
 
 执行顺序：

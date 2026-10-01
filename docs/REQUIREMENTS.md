@@ -157,6 +157,17 @@ Auxiliary Filter:
 - 词库/LM 负责词语、词频和排序；MoQi table 负责辅助筛选。
 - 优先利用 LibIME 已有用户学习能力。
 
+### 6.1 Dictionary Manager UI V2（D049）
+
+采用 object list → conditional management detail → existing operations 的 Level 2
+展示边界。基础/内置/第三方/导入为展示分组；全部当前可见 catalog objects 无论
+安装或启用状态均在第三方组，任意 imported/custom files 单独成组。Normal row tap
+打开可管理对象详情，switch 只改变既有状态，Toolbar Edit 保留 multi-select/delete
+及现有 swipe delete。详情显式删除需确认。Base/ExtB/packaged 不制造无实际能力的
+详情；Catalog/Source version 不得标为 installed/current/latest version。首批保留 +
+和既有披露/live download dialog，不新增 update/repair/rollback/persistent download
+或 provenance state，不改变 Dictionary、Pinyin/Shuangpin 或 download/reload 语义。
+
 ## 7. Voice Trigger
 
 Voice Trigger 与 ASR Provider 必须解耦。
@@ -254,6 +265,10 @@ Collapse/Expand 只是 transient presentation state，不得修改 `toolbarActio
 本项目的 `SpaceLongPressBehavior.VoiceInput` 扩展继续保留；不得为 Voice Settings 创建新的 Boolean、preference key 或第二套 state。Toolbar Mic 与 Space long-press Voice 是进入同一 shared Voice Input flow 的两个独立 trigger；关闭/启用一个不得自动改变另一个。
 
 Voice Settings 的 Space projection 在 ListPreference dialog 完成选择时不得销毁并重建 active preference tree；应保持 `spaceKeyLongPressBehavior` 为唯一 canonical state，并以稳定 preference instance 或安全的局部同步更新 UI，同时保留既有 runtime gesture semantics。
+
+**下段为 D048 的历史源码 checkpoint，已由后续源码修复 supersede：** 本次 V2
+盘点基线 Android `84b7f571` 已有 `key = spaceLongPressBehavior.key`，因此下段
+null-key finding 不再描述当前源码；此批保留 canonical key，dialog 真机验收仍 TBV。
 
 当前 Voice Settings projection 仍有一个待修复的 source-confirmed defect：`VoiceSettingsFragment` 动态构造的 Long-press Space `ListPreference` 未赋 Preference key，而项目 `MyPreferenceFragment.onDisplayPreferenceDialog()` → `MyListPreferenceDialogFragment.newInstance(preference.key)` → AndroidX `targetFragment.findPreference(key)` 要求 non-null key；当前 `preference.key == null` 时，AndroidX `PreferenceGroup.findPreference(null)` 会在打开 dialog 时抛出 `IllegalArgumentException("Key cannot be null")`，早于 entry selection、change listener 与 `fireChange()`。Virtual Keyboard 的 managed projection 使用 canonical key `space_long_press_behavior`，因此同一 dialog path 可正常解析。该 finding 记录为实现 checkpoint，本批次不修复它、不改变 Space gesture semantics 或 Voice architecture。
 
@@ -389,6 +404,14 @@ PoC 使用某个 Provider 不得使 Voice Trigger、Audio Capture 或 IME 层绑
 Provider 选择见 D028（逻辑分类已由 D033 更新）：Phase 4B.3a 选定 Doubao Seed-ASR 2.0 作为首个真实 Direct Cloud ASR PoC 的 Provider/路径，并已在 vivo X100 Pro 与 Redmi K90 Pro Max 完成 Direct Cloud E2E 真机验证；这**不**表示 Doubao 是正式/默认 ASR Provider。正式默认 Provider 仍未决定。Local ASR 的窄范围 runtime/model checkpoint 已完成：当前以 sherpa-onnx 作为首个 runtime 候选，并保留两个代表性模型进入同条件真机 A/B PoC：A) streaming Zipformer zh INT8（OnlineRecognizer，真流式、约 168 MB），仅作 research/device-evaluation，模型权重许可未澄清前不得进入正式 release/distribution；B) FunASR Nano INT8（OfflineRecognizer，约 1 GB），作为高质量/多语言本地候选。A/B 均未被选定为正式或默认 Local ASR。`android.permission.INTERNET` 在 capture-only 的 Phase 4B.1 中有意未声明；Phase 4B.3a 的真实云端 ASR 集成需要时可以增加，其数据流须满足第 11 节；这不意味着 Local ASR 需要联网。云端 Provider 采用 BYOK；API Key/credential 必须是 **Provider-specific runtime configuration**：各 Provider 独立配置、独立安全存储、独立使用，切换 Provider 不删除其他 Provider 已保存凭据，也不得跨 Provider 复用凭据；Local Provider 不需要云端凭据；ASR 与 LLM 的 Provider/credential 完全分离。维护者凭据不得进入 APK、仓库、CI 或 release，CI 与公开 APK 无需维护者凭据即可构建。Provider 的普通配置（model/endpoint 等）与 secret storage 应逻辑分离；secret 默认遮蔽，不得进入日志、普通配置导出或诊断信息。具体 Android 安全存储 API 在实现前按最新 Android/fcitx5-android 源码核实。详见 D028/D029。
 
 ### 9.1 正式 Android Provider 设置与 Local Model Manager
+
+**V2 presentation supersession（D049）：** 下段“四类展示”及其非最终 UI tree 是
+D034 历史展示方向。当前页面固定五组：语音输入方式、语音识别服务、本地语音识别、
+云端语音识别、其他语音识别服务。四类 domain/provider semantics 仍有效，末组视觉上
+包含 System 与 Self-hosted，不建立统一 provider 类型。触发两项 mirror Keyboard
+Settings 同 source/state/control/options/save，且保持独立；当前服务行打开既有 selector，
+一键推荐是原 action/原 visibility 条件。详情只整理已存在的 metadata/config/actions；
+缺失 capability 省略，不新增 Test connection、授权规则或生命周期。
 
 正式 Android UI 应提供一等的 ASR Provider 选择入口，而不是依赖 Developer debug 开关。面向用户的名称优先使用“语音识别服务”；设置页按四类展示：系统自带 / System、设备端 / Local、第三方云端 / Managed Cloud、自建云端 / Self-hosted。每个已接入的具体服务可以独立配置和启用，允许同时启用多个；“当前使用”只选择一个已启用的具体服务，不提供长期 Auto 选项。顶层设置方向（D034，非最终 UI 规格）：
 

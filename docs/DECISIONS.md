@@ -608,6 +608,10 @@ builder now emits optional `entry_count` in future v2 index/audit metadata.
 
 **状态：Accepted (2026-09-30, implementation follow-up)**
 
+Presentation follow-up: D049 supersedes the former flat-list/metadata-dialog
+presentation only. The shared dictionary/config/runtime source, provenance and
+research/public-distribution rules below remain valid.
+
 The Dictionary Manager remains a single top-level Settings page. It displays
 localized and canonical names, artifact/local size, authoritative entry count,
 and state in the main list. Built-in LibIME Base is mandatory; CJK Extension B
@@ -806,4 +810,38 @@ Source audit verified current action slots start at 40dp × 40dp；ButtonsBar �
 
 ### Source-confirmed Voice Settings defect checkpoint
 
+Historical checkpoint: the Task B inventory at Android `84b7f571` found the
+canonical ListPreference key already present. The null-key source defect below
+is no longer current; this UI batch retains that fix and leaves device acceptance
+TBV. Its canonical-state and stable-dialog requirements remain valid.
+
 `VoiceSettingsFragment` 的动态 Voice Settings Long-press Space `ListPreference` 未设置 Preference key；共享 custom dialog path 以 `preference.key` 查找 target，AndroidX 对 null key 抛出 `IllegalArgumentException("Key cannot be null")`，发生在 dialog open、早于 selection/listener/`fireChange()`。Virtual Keyboard managed projection 使用 canonical `space_long_press_behavior` key。该 finding 只记录为待实现 defect，不改变唯一 canonical `spaceKeyLongPressBehavior`、两处 UI projection、Space gesture semantics 或 Voice architecture；具体 repair 保持独立 Change Contract。
+
+## D049 — Dictionary Manager and Voice Settings UI V2 presentation boundary
+
+**状态：Accepted（2026-10-02；所有者批准的 overnight implementation contract）**
+
+Dictionary V2 使用 dictionary-specific object list → conditional management
+detail → existing operations 的 constrained Level 2 边界。基础词库、内置词库、
+第三方词库、导入的词库是展示分组；第三方默认展示全部当前可见 catalog 对象，
+包括已安装/已启用/未启用/未安装。Imported/custom 与 catalog objects 分开，
+不补造 provenance。Normal row remainder 打开可管理对象的详情，switch 只切换
+原状态；Toolbar Edit 保留 multi-select/delete，swipe delete 保留。详情显式
+delete 要确认；Base/ExtB/packaged 不强制制造详情。Catalog/Source version 不得
+标为 installed/current/latest version。首批保留 +、原披露及 transient live download
+dialog，不引入 update/repair/rollback/persisted download state 或 Phase 5D。
+
+Voice V2 固定五个展示分组：语音输入方式、语音识别服务、本地语音识别、云端
+语音识别、其他语音识别服务。首组 mirror Keyboard Settings 的同一 canonical
+`toolbarActions` Voice membership 和 `spaceKeyLongPressBehavior`，同 control/options/
+save mechanism，不增加第二 preference 或同步逻辑；两个 triggers 独立。
+当前服务 row 打开既有 Provider selector，一键推荐仍是既有 action、由原条件
+控制可见，不是 Auto provider/state 或 fallback。Local/Cloud/System/Self-hosted
+仅整理实际 metadata/config/actions；System 与 Self-hosted 的末组归类不改变
+provider 类型。Installed/enabled/current/runtime-ready 不得合并。
+
+复用 visual pattern 不等于复用 domain/code component，不建立跨 Dictionary/Voice
+管理框架。既有 dictionary、selection、recommendation、D035 fallback、model
+lifecycle、VoiceInputFlow、audio/session、permission/privacy 语义均不在本批修改
+范围。此决定只批准 presentation/navigation；真实设备验收仍 TBV，不能由源码、
+JVM tests 或 APK compilation 替代。
