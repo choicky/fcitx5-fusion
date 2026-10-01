@@ -2,7 +2,7 @@
 
 > 路线图按当前已验证架构安排；源码研究或 PoC 结果可以触发有记录的调整。
 
-## Current checkpoint — Toolbar regression recovery / scope audit
+## Current checkpoint — Toolbar Editor V2 / narrow-width supersession / Voice Settings defect
 
 **状态：IN PROGRESS**
 
@@ -22,9 +22,9 @@
 
 - 最新测试构建在真正 clean installation 后，Toolbar 初始未显示 Microphone；
 - 在 Redmi 上，Toolbar Voice 已配置/启用但尚未选择可用/current ASR 时，Mic 仍然缺失；
-- 选择 current ASR 后，Mic 在 TextEditing/Edit 之后出现，即位于 configurable middle-action list 的末尾；
+- 【历史实现观察，已由 D048 的 runtime projection policy supersede】选择 current ASR 后，Mic 在 TextEditing/Edit 之后出现，即位于 configurable middle-action list 的末尾；
 - `fcitx5-android` commit `33ec5f0a` 已确认直接 ordering cause：`ToolbarAction.withVoice(actions, true)` 使用 `(actions + Voice).distinct()`；当 Voice 缺失时，会把 Voice append 到有序 `toolbarActions` list 的末尾；
-- 对应 unit test 当前明确期望 `hidden + ToolbarAction.Voice`，因此 CI 将该 append-at-end 行为视为预期行为；
+- 【历史实现观察，已由当前 Voice re-enable requirement supersede】对应 unit test 当前明确期望 `hidden + ToolbarAction.Voice`，因此 CI 将该 append-at-end 行为视为预期行为；
 - Restore Default 赋值为 `ToolbarAction.Default`，其顺序为 `Emoji, QuickPhrase, Voice, Clipboard, TextEditing`，所以 Restore Default 会将 Mic 放回 QuickPhrase 与 Clipboard 之间；
 - 因此 direct ordering root cause 已确认，不再标记为 **TO BE VERIFIED**；
 - Toolbar ordering semantics are accepted: Toolbar Editor `+` appends the action to the right end of the current configurable actions; Toolbar Editor available → Toolbar drag inserts at the explicit drop position; Settings “Show voice input button” OFF → ON restores Voice according to `ToolbarAction.Default` relative ordering while preserving the relative order of the other enabled actions as much as possible;
@@ -33,13 +33,18 @@
 本轮 reconciliation 新增的待实施/验证 checkpoint：
 
 - Voice Settings 从 OFF → ON 时按默认相对顺序恢复 Voice，不能继续采用简单 append-at-end；Toolbar Editor `+` 的 append 与 drag-in drop-position 语义保持独立；
-- 窄屏 runtime presentation suppression：正常 configured presentation 后依次临时隐藏 QuickPhrase、Emoji、TextEditing、Clipboard；若仍不足则不渲染 configurable actions、只保留 fixed Tools 与 Hide Keyboard。不得写回 `toolbarActions` 或改变 configured membership/order、enabled state、Toolbar Editor state；空间恢复后按用户配置自动恢复。
+- **Toolbar Editor V2 accepted Model D：** Editor working state 是完整 user intent，不设 separate capacity gate；Current 可包含 0 个或全部 7 个 unique configurable actions。Cancel 丢弃 working state，OK 才持久化 Current membership/order；Restore Default 只改 working state 直到 OK；Available 只表示不在 Current 的 configurable actions，order session-local、不持久化，Current/Available 无 persistent empty slots。
+- **Toolbar Editor V2 direct-manipulation checkpoint：** Current/Available 均 horizontal compact/reflow、默认 icon-only、分别使用 secondary circular `−`/`+` badge；Current/Available mutually exclusive；Current reorder、跨区 exact-position drop、click `−` append Available、click `+` append Current、Available → Available session-local reorder、单一 Restore Default 均按 REQUIREMENTS/D048 实现。物理验收仍要求 action icons 可见、Toolbar/context 尽量保留、约占 keyboard character-key area、超出可见区域仍可操作。
+- **窄屏规则 supersession：** 旧的 `QuickPhrase → Emoji → TextEditing → Clipboard → Voice` action-type suppression 不再是当前规范；实现必须改为按 configured order 从右端 suppress，显示 longest fitting prefix；全部 suffix 被 suppress 后可为空 configurable prefix，只保留 fixed Tools 与 Hide。不得写回 `toolbarActions`、改变 membership/order、enabled state、Editor state 或 preferences；宽度恢复后按 configured order 自动恢复。
+- Flexbox sizing 是 V2 non-goal：保留现有 40dp slots、Flexbox sizing/spacing/touch-target 与 fixed-slot-style fit basis；不在 V2 内改变 flexShrink/minWidth/action width、模拟完整 Flexbox 或引入 capacity preference。若真机证明 sizing defect，另立 bounded task。
 - Preserve/restore and test the upstream-compatible entries `Settings → Virtual Keyboard → Show voice input button` and `Settings → Virtual Keyboard → Long-press Space behavior`, while keeping the project `Voice Settings` projections synchronized to the same canonical states; 47ba520b 的 fork IA 不覆盖该 upstream compatibility requirement；
 - 验证三处 Toolbar Voice UI projection、两处 Space long-press projection 的同步与 migration 兼容；
 - 验证 collapse/expand 不改变 membership/order/preferences；
 - 实施并验证 direct-manipulation Toolbar Editor（`−` remove、`+` append、drag reorder/remove/drop-position add、Restore Default）。
 - 真机 acceptance 还要求 Toolbar Editor 显示 enabled/available action icons，编辑区域约占 keyboard character-key area、保留 Toolbar/context 可见，并在内容超出时保持可操作；仅构造 source rows 不算通过。
 - `preferredVoiceInput` 的 upstream 语义是切换到暴露 voice subtype 的 Android enabled IME，不是项目 ASR Provider selector；本修复隐藏其 Virtual Keyboard row，保留 `preferred_voice_input` persisted key/compatibility structure，不删除或迁移旧值，不接入项目 Voice architecture。
+
+- **Voice Settings Long-press Space blocker：** source-confirmed defect remains unfixed. `VoiceSettingsFragment` dynamically creates the ListPreference without a key; the shared custom dialog path passes null to AndroidX `findPreference(key)`, which rejects it with `IllegalArgumentException("Key cannot be null")` during dialog open. The working Virtual Keyboard projection uses managed key `space_long_press_behavior`. Minimum future repair is to assign the canonical key while retaining the nonpersistent projection write path; do not create a second state or alter Space/Voice runtime semantics. Device logcat confirmation is still pending, and this remains a separate implementation Change Contract from Toolbar Editor V2.
 
 本 checkpoint 记录已确认的 ordering cause，但不把 Toolbar 工作标记为 complete。
 

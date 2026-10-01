@@ -766,7 +766,7 @@ Settings 中的 Voice OFF → ON 使用默认 configurable action 顺序恢复 V
 
 Toolbar Editor 的 accepted target 是 direct manipulation：当前 Toolbar 区域按实际顺序显示并支持 `−` remove，available 区域支持 `+` append；Toolbar → Toolbar reorder、Toolbar → available remove、available → Toolbar 按 drop position add。Tools/Hide Keyboard 固定，不进入 action collection；Restore Default 使用 `ToolbarAction.Default`。
 
-Toolbar configured state 与 transient presentation state 分离。Collapse/Expand 不得改写 action membership/order/preferences。当前接受的窄屏 runtime presentation suppression 顺序为：QuickPhrase → Emoji → TextEditing → Clipboard；若四项均已临时隐藏后仍不足，则不渲染 configurable actions，只保留 fixed Tools 与 Hide Keyboard。空间恢复后按用户配置的 `toolbarActions` 自动恢复；该过程不得写回 membership/order、enabled state、Toolbar Editor state 或 preferences。
+Toolbar configured state 与 transient presentation state 分离。Collapse/Expand 不得改写 action membership/order/preferences。旧的按 action type 窄屏 suppression 顺序已由 D048 supersede；当前规则及其 runtime-only invariant 见 D048。
 
 ## D047 — Toolbar physical-device repair boundary and retained upstream compatibility
 
@@ -778,4 +778,32 @@ Virtual Keyboard 的 Show voice input button 是 `ToolbarAction.Voice ∈ toolba
 
 批准隐藏 Virtual Keyboard 中 user-visible 的 `preferredVoiceInput` row，同时保留 persisted `preferred_voice_input` key 和最小 upstream-compatible internal structure，不删除或迁移旧值。旧 upstream 概念表示选择/切换到暴露 voice subtype 的 Android enabled IME，不是本项目 ASR Provider selector；它不得接入 `VoiceInputFlow`、`VoiceInputSession`、`SystemAsrBackend`、`RecognitionService` selection、`VoiceSelectionStore`、provider resolution/fallback、Toolbar Mic 或 Space Voice。项目 configured/current ASR provider 仍由 `VoiceSelectionStore` 独占。支持外部 Android voice IME 是另一个未来 product/architecture decision。
 
-本决定同时接受上述完整的窄屏降级顺序；post-Emoji 行为不再是 TBD。
+本决定同时接受的完整窄屏降级顺序已由后续 D048 具体化；post-Emoji 行为不再是 TBD。
+
+## D048 — Toolbar Editor V2 complete intent and right-end runtime projection
+
+**状态：Accepted（2026-10-01；supersedes the earlier tentative Editor-capacity gate and the old action-type-specific narrow-width policy）**
+
+### Complete configuration is user intent
+
+`toolbarActions` 是 Toolbar configurable actions 的唯一 persistent source，且只保存 Current membership 与 configured order。不得持久化 Available order、disabled-action order、empty slots、per-orientation configuration 或 Editor-capacity preference。Tools 与 Hide Keyboard 固定在 configurable collection 之外；当前 supported configurable pool 为 `Emoji`、`QuickPhrase`、`Voice`、`Clipboard`、`TextEditing`、`Undo`、`Redo`。0 actions 与全部 7 actions 都是合法 Current state；source investigation 已验证显式保存的空 `toolbarActions` 可表示且不会静默恢复 Default。
+
+Toolbar Editor V2 是 transaction：open 从 persisted state 建立 working state；所有操作、跨区移动、session-local Available reorder 与 Restore Default 只修改 working state；Cancel 丢弃全部 working state；OK 才写入 Current membership/order；Editor 不 live-update real Toolbar。Current 与 Available mutually exclusive，Available 只表示未在 Current 的 configurable actions，重新打开时按 stable action universe 减去 Current 重新生成，不建立第二 persistence source。
+
+Current/Available 均为 horizontal compact/reflow ordered-list presentation。Current 与 Available 默认 icon-only、无普通文字标签，分别使用右上角 secondary `−`/`+` badge；Current reorder、跨区 exact-position drop、Available session-local reorder、click `−` append 到 Available 末尾、click `+` append 到 Current 末尾的 semantics 维持已接受定义。只有一个 Editor-level Restore Default：working Current 为 `Emoji, QuickPhrase, Voice, Clipboard, TextEditing`，working Available 为 `Undo, Redo`；Restore Default → Cancel 不持久化，Restore Default → OK 才持久化。
+
+### No separate Editor capacity gate
+
+Source audit 没有发现 Toolbar count maximum、stable normal-width baseline 或 upstream Editor capacity rule；实际 configurable width 只在 `ButtonsBarUi.root.width` layout 后可靠可用，而 Editor dialog width 不是 Toolbar middle-region width，且 instantaneous-width admission 会产生 orientation/window-dependent capacity，并可能拒绝产品自己的 Default。因此接受 Model D：Editor configuration is complete user intent; runtime presentation is a width-dependent projection of that intent。不得以当前 runtime width 禁用 `+` 或拒绝 OK，不得发明固定 N、normal-device width、orientation capacity 或 shared capacity preference。
+
+### Right-end runtime projection
+
+旧的 action-type-specific policy `QuickPhrase → Emoji → TextEditing → Clipboard → Voice` **明确 superseded**。给定完整 configured list `[A, B, C, D, ...]`，runtime 使用 actual measured configurable region 显示 longest fitting prefix；不足时从 configured order 右端 suppress rightmost actions，直到 prefix fit；没有 configurable action fit 时可为空，只保留 Tools 与 Hide。该 suffix suppression 永不改写 `toolbarActions`、membership、order、enabled state、Editor state 或 preferences，宽度恢复时按 configured order 自动恢复。
+
+### Flexbox sizing is outside V2 redesign
+
+Source audit verified current action slots start at 40dp × 40dp；ButtonsBar 使用 Flexbox，当前 fixed-slot-style fit predicate effectively sums positive slot widths/margins，但 Flexbox LayoutParams default `flexShrink = 1f` 且没有 explicit minimum width，所以该 predicate 不是完整 final-layout simulation。V2 保留现有 sizing/layout、touch targets、spacing 与 fit basis，只改变 temporary suppression 的 action selection；不得借 V2 改 flexShrink、minimum width、action width、spacing 或重实现 Flexbox。若真机证明存在 sizing defect，另立 bounded task。
+
+### Source-confirmed Voice Settings defect checkpoint
+
+`VoiceSettingsFragment` 的动态 Voice Settings Long-press Space `ListPreference` 未设置 Preference key；共享 custom dialog path 以 `preference.key` 查找 target，AndroidX 对 null key 抛出 `IllegalArgumentException("Key cannot be null")`，发生在 dialog open、早于 selection/listener/`fireChange()`。Virtual Keyboard managed projection 使用 canonical `space_long_press_behavior` key。该 finding 只记录为待实现 defect，不改变唯一 canonical `spaceKeyLongPressBehavior`、两处 UI projection、Space gesture semantics 或 Voice architecture；具体 repair 保持独立 Change Contract。

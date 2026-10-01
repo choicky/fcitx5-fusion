@@ -218,13 +218,29 @@ Emoji, QuickPhrase, Clipboard, TextEditing
 
 #### Toolbar editor
 
-最终 Toolbar Editor 使用 direct manipulation，而不是当前 checkbox + ↑/↓ 页面：上方显示当前 enabled configurable actions 的实际顺序，每项有 `−`；下方显示未启用 actions，每项有 `+`。点击 `−` 移除到 available area；点击 `+` 添加到当前 configurable actions 最右端；Toolbar 内拖动负责 reorder，拖到 available area 负责 remove，从 available area 拖入 Toolbar 按明确 drop position 添加。Tools 与 Hide Keyboard 固定在两端，不进入 configurable collection。Restore Default 恢复 `Emoji, QuickPhrase, Voice, Clipboard, TextEditing`。
+Toolbar Editor V2 是 transactional editor。`toolbarActions` 只持久化 enabled/current configurable action 的 membership 与 configured order；不得建立 persisted Available order、disabled-action order、empty slots、per-orientation configuration 或单独 Editor-capacity preference。Tools 与 Hide Keyboard 是 fixed outer controls，不属于 configurable collection。当前 configurable universe 为 `Emoji`、`QuickPhrase`、`Voice`、`Clipboard`、`TextEditing`、`Undo`、`Redo`；0 个 configurable actions 合法，显式保存的空 `toolbarActions` 不得静默恢复 Default。
+
+打开 Editor 时从 persisted `toolbarActions` 建立 working state。所有编辑操作只修改 working state；Cancel 丢弃完整 working state，保持 persisted `toolbarActions` 与真实 Toolbar 不变；OK 才持久化 working Current membership/order。Editor 不得在编辑过程中 live-update runtime Toolbar。Restore Default 也只修改 working state，直到 OK 才生效。
+
+Current Toolbar 区域代表完整 configured Current list，而不是 runtime 当前可见 prefix：水平、WYSIWYG-like、默认 icon-only、无普通文字标签；每个 action 在右上角有不遮挡图标的小圆形 `−` badge。Current → Current 拖动按 exact drop position reorder；点击 `−` 将 action 从 Current 移除并 append 到 Available 末尾；Current → Available 拖动按 Available 中的 exact drop position 移除。
+
+Available Tools 严格表示“不在 Current 中的 configurable actions”。Current 与 Available mutually exclusive；Tools/Hide 两者都不出现在这两个区域。Available action 默认 icon-only、无普通文字标签，并带不主导图标的小圆形 `+` badge。点击 `+` 将 action append 到 Current 末尾；Available → Current 拖动按 Current exact drop position 插入；Available → Available 拖动只改变本次 Editor session 的顺序；Current → Available 拖动按 exact drop position 插入。Available order 不持久化，重新打开时按 stable supported-action order 减去 Current 重新生成。
+
+Current 与 Available 都必须 continuous compact/reflow，不存在 persistent empty slots；加入、移除、跨区移动或 reorder 后，剩余 actions 应关闭空隙并保持相应 ordered-list semantics。复杂 reflow animation 不是 V2 acceptance requirement。
+
+Editor 只有一个 Restore Default，建议在 Current/editor-level heading row 关联；不得建立 Current 与 Available 两个 restore 操作。Restore Default 将 working state 设置为 Current `Emoji, QuickPhrase, Voice, Clipboard, TextEditing`、Available `Undo, Redo`，然后两区 compact/reflow；Restore Default → Cancel 保留编辑前 persisted configuration，Restore Default → OK 才持久化 Default Current。
 
 Toolbar Editor 的 physical-device acceptance 要求当前与 available actions 都实际显示其 action icons，Toolbar/context 尽量保持可见，编辑区域约占键盘 character-key area 而非近乎整个 IME 高度；内容超出即时可见区域时仍须可操作。仅在 source 中构造 rows 不足以视为通过。
 
+Editor 没有 separate capacity gate。Current 可以包含 current seven-action pool 中任意 unique supported configurable actions，包括 0 个或全部 7 个；不得因为完整 Current list 不适合当前 runtime Toolbar width 而禁用 `+` 或拒绝 OK。不得发明 `MAX_ACTIONS = 5`、normal-device width、portrait/landscape capacity 或 shared capacity preference。实际 runtime configurable width 只用于 presentation，不定义 Editor user intent。
+
 #### Toolbar presentation invariants
 
-Toolbar configured actions 数量因屏幕宽度无法完整展示时，runtime presentation suppression 的顺序为：正常 configured presentation；仍不足时依次临时隐藏 `QuickPhrase`、`Emoji`、`TextEditing`、`Clipboard`；因此 `Voice` 是最后保留的 configurable action。若移除上述四项后仍不足，则不渲染 configurable actions，只保留 fixed `Tools` 与 `Hide Keyboard`。这些都是 runtime presentation suppression：不得从 `toolbarActions` 删除 action，不得改变 enabled/disabled state、configured membership/order、Toolbar Editor 配置或 Voice/Clipboard/TextEditing 的持久顺序；空间恢复后必须按用户配置的 `toolbarActions` 自动恢复。该降级策略不改变 Toolbar Editor state。
+旧的按 action type suppression（`QuickPhrase → Emoji → TextEditing → Clipboard → Voice`）已 superseded。当前 runtime presentation 规则是：使用实际 measured configurable Toolbar region，显示 configured order 的 longest fitting prefix；若完整 list 不 fit，则从 configured order 的右端持续 suppress rightmost configurable actions，直到剩余 prefix fit；若没有 configurable action 能 fit，可显示空 configurable prefix，只保留 fixed Tools 与 Hide Keyboard。Configured order 因此自然表达窄宽度下的 display priority，越靠左越晚被 suppress。
+
+上述 suppression 仅为 presentation：不得修改 `toolbarActions`、enabled/disabled membership、configured order、Editor Current/Available membership 或 preference；不得持久化 suppression；宽度恢复时必须按用户 configured `toolbarActions` 自动恢复 suppressed suffix。该规则适用于 Default/custom configuration，以及现有 layout callbacks 实际提供 width change 的 orientation、ordinary resize、split/floating context；未验证的 Android window mode 不得写成已通过真机验收。
+
+Toolbar V2 不 redesign 现有 Toolbar sizing/layout。保留现有 40dp action slot、Flexbox、spacing、touch-target 与 fixed-slot-style fit basis；不得为使 fit model “精确”而 opportunistically 改 flexShrink、minimum width、action width、full Flexbox simulation 或 spacing。physical-device acceptance 观察 near-threshold shrink、icon/touch-area abnormality 与实际 placement；若发现真实 sizing defect，应另立 bounded task，不在 V2 中静默解决。
 
 Collapse/Expand 只是 transient presentation state，不得修改 `toolbarActions`、enabled membership、ordering、默认值或 preference。展开后必须恢复收拢前完全相同的 action 集合与顺序。Tools menu 的动作文案与图标为：expanded → `收拢工具栏` / `Collapse toolbar` + chevron-left；collapsed → `展开工具栏` / `Expand toolbar` + chevron-right。
 
@@ -238,6 +254,8 @@ Collapse/Expand 只是 transient presentation state，不得修改 `toolbarActio
 本项目的 `SpaceLongPressBehavior.VoiceInput` 扩展继续保留；不得为 Voice Settings 创建新的 Boolean、preference key 或第二套 state。Toolbar Mic 与 Space long-press Voice 是进入同一 shared Voice Input flow 的两个独立 trigger；关闭/启用一个不得自动改变另一个。
 
 Voice Settings 的 Space projection 在 ListPreference dialog 完成选择时不得销毁并重建 active preference tree；应保持 `spaceKeyLongPressBehavior` 为唯一 canonical state，并以稳定 preference instance 或安全的局部同步更新 UI，同时保留既有 runtime gesture semantics。
+
+当前 Voice Settings projection 仍有一个待修复的 source-confirmed defect：`VoiceSettingsFragment` 动态构造的 Long-press Space `ListPreference` 未赋 Preference key，而项目 `MyPreferenceFragment.onDisplayPreferenceDialog()` → `MyListPreferenceDialogFragment.newInstance(preference.key)` → AndroidX `targetFragment.findPreference(key)` 要求 non-null key；当前 `preference.key == null` 时，AndroidX `PreferenceGroup.findPreference(null)` 会在打开 dialog 时抛出 `IllegalArgumentException("Key cannot be null")`，早于 entry selection、change listener 与 `fireChange()`。Virtual Keyboard 的 managed projection 使用 canonical key `space_long_press_behavior`，因此同一 dialog path 可正常解析。该 finding 记录为实现 checkpoint，本批次不修复它、不改变 Space gesture semantics 或 Voice architecture。
 
 Virtual Keyboard 中的 Voice projection 位于 upstream-compatible 的相对位置：紧接 `keepLettersUppercase` 之后。其 backing state 仍是 `ToolbarAction.Voice ∈ toolbarActions`，不得恢复 `show_voice_input_button` 为 live persistence source。
 
