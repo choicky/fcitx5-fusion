@@ -591,7 +591,7 @@ Android 架构稳定后再评估 Windows、Linux、macOS、iOS，并保持 Trigg
 3. **Managed Cloud + Self-hosted checkpoint**（D033；文档研究已先行完成，PoC 待定，见 `docs/network-asr-checkpoint.md`）；与之独立的 Local 线：**识别/验证 Local ASR 正式发布候选**（D036）；
 4. ~~Provider Settings Foundation 设备验收~~：已关闭（vivo 全部通过；Redmi 可测部分通过，System ASR 路径因设备限制不可测）；当时（2026-09-28 关闭本项时）修订后的多服务设置/首次推荐、D035 运行时 fallback 与新 Provider 尚未实现——**此后已在 Phase 4C 中实现，现状见第 5 项**；`fb3b0c26` 的 release 构建已本地编译通过，release APK 安装与设备运行未测试。
 
-5. **ASR 服务产品化（Phase 4C，所有者 2026-09-28 指示）**：四类服务可由普通用户配置；计划见 `docs/asr-productization-plan.md`，进度与证据见 `docs/asr-productization-worklog.md`，验收脚本见 `docs/asr-productization-acceptance.md`。当前状态分三层（Android `phase4-voice-poc` @ `7ed0fa78`）：
+5. **ASR 服务产品化（Phase 4C，所有者 2026-09-28 指示；以下为历史快照，当前 Local 模型状态由 D045 supersede）**：四类服务可由普通用户配置；计划见 `docs/asr-productization-plan.md`，进度与证据见 `docs/asr-productization-worklog.md`，验收脚本见 `docs/asr-productization-acceptance.md`。当前状态分三层（Android `phase4-voice-poc` @ `7ed0fa78`）：
    - **代码已实现并推送**：多服务设置、一次性首次推荐、旧设置迁移、当前/实际使用显示；就绪信号与 D035 fallback（外部服务只回落到正式 Local；System 从不作为回落目标；当前 A/B/C 都不是正式模型，所以实际不回落）；Keystore 凭据库；豆包/Qwen/腾讯 BYOK；sherpa-onnx、FunASR 2-pass、Fun-ASR-Nano、OpenAI-compatible 自建实例；Model Manager 为 A/B/C 提供下载（D037 2026-09-28 修订：本项目为未发布的个人测试项目；A 仅测试构建可下载，**公开发布许可仍未解决**；B 的许可依据与 34–39 s 长语音问题在 UI 中可见；C 为实验性候选）；评审修复（FunASR 首包顺序、采集错误不回落、错误脱敏、下载取消竞态、导出前同步清除旧错误偏好）；Windows 文件替换与 zip 条目名（`7af0cc16`）；Model Manager 操作对话框（`3116a7b8`）；下载期间设置页闪烁修复与每个本地模型单独启用（`7ed0fa78`，D038）。
    - **CI 通过**：最新 run `36380142431`（`7ed0fa78`）——单元测试、arm64 debug APK、release 变体 Kotlin 编译、仪器测试编译均成功；未打包/签名/安装 release APK。本机：sherpa-onnx 与 FunASR 2-pass、OpenAI-compatible 与上游服务器互通；Qwen/腾讯/Nano 仅协议仿真；A/B/C 真实上游下载与 SHA-256 在本机 JVM 验证。
    - **设备摘要结果（所有者报告，2026-09-28，`7ed0fa78`，vivo X100 Pro 与 Redmi K90 Pro Max 相同）**：升级后豆包 API Key 保留、A/B/C 下载期间无闪烁（`6007c8ca` 的闪烁 FAIL 已由此修复，两台通过）、A/B/C 独立启用/选择、切换当前服务均 PASS；本地识别可用——A 中文好、英文差，B、C 中英文均可，延迟主观可接受。此前 vivo 上服务选择与豆包 BYOK 识别 PASS（`7af0cc16`）。这是摘要级证据，不等于详细验收用例 PASS；**未选定正式/默认 Local 模型**。
@@ -606,3 +606,11 @@ Android 架构稳定后再评估 Windows、Linux、macOS、iOS，并保持 Trigg
 5. **4B.3b 已关闭**：A/B 在同一 sherpa-onnx runtime 与共同 Local 架构下完成双机测试（`204fc324` + `a8a0e1b3`）；A 仍仅限研究（许可）；B 当前 artifact 因约 1 GB 体积、约 2 GB PSS 与 `max_total_len` = 512 长语音空 final 不适合作为默认；两者均未选定（D036）。下一步寻找/验证正式发布候选；不为研究候选实现 Model Manager/Downloader。
 6. 正式 Provider selector、Provider-specific BYOK/API Key UI 与 Local Model Manager/Downloader 已进入 Requirements/D029/Phase 7，但**不提前塞进 4B.3b PoC**；正式版模型按需下载，不要求用户 adb。
 7. 4B.3c realtime preedit UX 仍为后续有条件 PoC；LLM 后处理继续独立，本阶段不接入。upstream PR #899 / Android `SpeechRecognizer` 继续作为 System ASR backend 跟踪。
+
+**当前 Local ASR 产品状态修订（D045，2026-10-01）**：旧的 A/B/C 研究目录状态是历史记录。
+当前 Android 支持的 Local 模型为 FunASR Nano 与 Streaming Zipformer bilingual；Chinese-only
+Zipformer A 已从实现/catalog/UI/test 支持集中删除，不做旧用户迁移。用户主动 One-click
+recommendation 按 FunASR Nano → bilingual Zipformer → 已授权 System ASR，入口由
+`current == null` 决定，不由 `recommendationDone` 永久抑制。推荐资格、D035 fallback、模型
+成熟度和公开分发许可相互独立；B/C 的精确来源、许可证据和研究限制见 D045 与
+`docs/THIRD_PARTY_LICENSES.md`，设备验收仍需由项目所有者执行。

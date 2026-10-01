@@ -63,3 +63,4 @@ OpenAI-compatible 整段转写是可选独立适配器，不在本计划必需�
 ## 3. 环境限制（如实）
 
 本机：aarch64、2 核、11 GB RAM、Python 3.13、可联网；无 sudo/Docker/Android SDK/设备/云凭据。已在 scratchpad 安装便携 JDK 17 与 kotlinc 2.4.10，用于编译并运行不依赖 Android 的 Kotlin 逻辑与协议测试。Android 编译与单元测试依赖 CI（约 8–9 分钟）。设备与云端真实识别需所有者执行，给出步骤而非 PASS。
+> Current-state note (D045, 2026-10-01): the supported Local catalog is FunASR Nano followed by Streaming Zipformer Chinese-English bilingual. The former Chinese-only Zipformer A is historical and removed without compatibility migration. Recommendation eligibility is separate from D035 fallback maturity and public distribution approval; exact source/license evidence is recorded in `docs/THIRD_PARTY_LICENSES.md`.

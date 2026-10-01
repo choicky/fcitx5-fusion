@@ -516,6 +516,8 @@ System ASR 的一次性事先授权（D034）允许其作为当前服务使用�
 
 **状态：Accepted（2026-09-28，所有者要求的设计变更）；已实现（Android `7ed0fa78`）；设备未验收**
 
+以下 A/B/C 模型集和“设备未验收”文字是当时的历史快照；当前支持集、推荐顺序和验收边界由 D045 更新。
+
 修订 D034 中“Local 是一个服务（一个启用开关 + 一个配置模型）”的做法：
 
 - A、B、C 各自是一个服务（`local:<model>`），像云端服务一样单独启用；可以同时启用多个已安装模型。
@@ -648,3 +650,39 @@ permission/provenance is cleared. This does not change `distribution_approved`
 or `public_release_approved`, which remain false. The Android research catalog
 uses the existing local-import flow with size/SHA-256 verification rather than
 an expiring CI artifact URL or a public Release asset.
+
+## D045 — Retained Local ASR models and user-initiated recommendation
+
+**状态：Accepted（2026-10-01，所有者产品澄清；Android implementation pending device acceptance）**
+
+当前支持的 Local ASR 模型只有 FunASR Nano（B）和 Streaming Zipformer Chinese-English
+bilingual（C）。旧的 Chinese-only Zipformer（A，`ZipformerZh`）此前只被从用户目录隐藏，
+仍存在于 enum、旧偏好解析、catalog、字符串和测试中。本决定明确不保留 A 的兼容迁移：
+删除 A 的模型身份、catalog、下载/校验分支、UI 文案和测试；B/C 继续复用共同的
+sherpa-onnx/Local ASR runtime。
+
+用户主动点击 One-click recommendation 时，顺序为：已安装、已启用且 runtime-ready 的
+FunASR Nano → 同条件的 bilingual Zipformer → 可用且已授权的 Android System ASR。
+Managed Cloud 与 Self-hosted 永不被该入口静默选择。`current == null` 时入口始终可见，
+不再由 `recommendationDone` 永久隐藏；`current != null` 时入口隐藏。已保存但不可用的
+当前服务仍保留，不因推荐重新运行而静默替换。`recommendationDone` 继续作为历史/迁移记录，
+但不再承担入口可见性职责。
+
+推荐资格、D035 runtime fallback、model production maturity 和 public distribution approval
+是独立概念。B/C 可在明确安装、启用且 runtime-ready 后被用户主动推荐，但仍不是 D035
+fallback 目标；本批次不扩大 D035 的隐私边界。
+
+精确 artifact/license checkpoint：B 使用 HF `csukuangfj/sherpa-onnx-funasr-nano-int8-2025-12-30`
+revision `6f16bd378457e13f36ccf3910df9017f96c346fb`；README 指向
+`zengshuishui/FunASR-nano-onnx` 和 `Wasser1462/FunASR-nano-onnx`。固定 ModelScope
+metadata 声明 Apache-2.0，但导出者 GitHub repository 没有 LICENSE；当前保留研究下载，
+不伪称已完成公开分发许可。C 使用 HF
+`csukuangfj/sherpa-onnx-streaming-zipformer-bilingual-zh-en-2023-02-20` revision
+`98590b7ed6443e77b714204da2757d75e1a642f4`；镜像 README 与
+`pfluo/k2fsa-zipformer-chinese-english-mixed` README/metadata 声明 Apache-2.0，并指向
+k2-fsa/icefall training code；训练数据来源未公开，因此保留研究状态。
+
+Android catalog metadata 必须同时记录 source/revision、download URL、license evidence、
+attribution、限制和 distribution status；首次下载与已安装详情使用同一元数据，下载前
+展示披露但不添加虚假的“同意许可”checkbox。B/C 的安装继续使用现有 SHA-256、staging
+和 atomic-install 路径。

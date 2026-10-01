@@ -290,9 +290,16 @@ Provider 选择见 D028（逻辑分类已由 D033 更新）：Phase 4B.3a 选定
 
 Local ASR 的 **Provider / runtime / model** 必须区分：例如 Local Provider 可使用 sherpa-onnx runtime，而 Zipformer、FunASR Nano 等是具体 model；runtime 可用不等于任一模型已获准打包或再分发，模型许可须逐一核对。
 
+当前产品支持的 Local model set 为 FunASR Nano 与 Streaming Zipformer Chinese-English bilingual；
+Chinese-only Zipformer 是已删除的历史研究候选，不保留兼容迁移。用户主动的 One-click
+recommendation 按“已安装、已启用、runtime-ready 的 FunASR Nano → bilingual Zipformer →
+已授权且可用的 System ASR”选择；Managed Cloud/Self-hosted 不被静默选择。`current == null`
+时入口可再次运行，`recommendationDone` 不是入口可见性开关。推荐资格、D035 fallback、
+runtime/model maturity 与 public distribution approval 必须分别表达。
+
 正式版应提供 Local Model Manager/Downloader，至少覆盖 model catalog、大小/版本/License 展示、下载/重试（是否支持暂停/断点续传按实现验证）、完整性校验、原子安装、更新与删除。大型 Local 模型原则上不因启用 Voice 而强制内置 APK；模型安装完成后，Local ASR 的日常识别应能完全离线工作。Downloader/Model Manager 不属于 4B.3b 最小 PoC，须在实际 runtime/model 的文件结构、加载方式和许可确认后设计。
 
-4B.3b A/B PoC 的模型均不打包进 APK，也不实现下载器；使用固定模型文件/hash，通过 `adb` 放入测试设备可访问的应用目录。正式产品不要求用户使用 adb，而是在后续 Model Manager/Downloader 中按需获取已通过许可审查的模型。A 的模型权重许可未明确前，不得进入正式模型目录、release artifact 或由项目提供下载。第三方 runtime、模型与训练数据许可必须分层记录；Local ASR 引入前建立并维护 `docs/THIRD_PARTY_LICENSES.md`。
+4B.3b A/B PoC 的模型均不打包进 APK，也不实现下载器；使用固定模型文件/hash，通过 `adb` 放入测试设备可访问的应用目录。（历史记录；当前 Phase 5 D045 已由 Model Manager 支持 FunASR Nano 与 bilingual Zipformer，Chinese-only A 已从实现和 catalog 删除，不做兼容迁移。）正式产品不要求用户使用 adb，而是在后续 Model Manager/Downloader 中按需获取已通过许可审查的模型。A 的模型权重许可未明确前，不得进入正式模型目录、release artifact 或由项目提供下载。第三方 runtime、模型与训练数据许可必须分层记录；Local ASR 引入前建立并维护 `docs/THIRD_PARTY_LICENSES.md`。
 
 ### 9.2 首次推荐具体服务（D034）
 

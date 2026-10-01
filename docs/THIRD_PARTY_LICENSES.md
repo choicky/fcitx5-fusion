@@ -32,8 +32,47 @@
 
 - A/B 模型均不打包进 APK。
 - 使用固定模型文件/hash，通过 `adb` 放入测试设备可访问的应用目录。
-- 当前不实现 Model Manager/Downloader。（历史记录；此后 D037 与其 2026-09-28 修订引入 Model Manager，见上表。）
-- A 的许可 blocker 不阻止当前内部研究测试，但阻止正式分发/项目提供下载。
+
+## Current Local ASR catalog checkpoint (D045, 2026-10-01)
+
+The current Android supported Local model set is FunASR Nano and Streaming
+Zipformer Chinese-English bilingual. The former Chinese-only Zipformer A is a
+historical research candidate and has been removed from the supported enum,
+catalog, UI, and tests; no compatibility migration is provided.
+
+FunASR Nano uses the exact Android artifact
+`csukuangfj/sherpa-onnx-funasr-nano-int8-2025-12-30` at HF revision
+`6f16bd378457e13f36ccf3910df9017f96c346fb`. Its README points to the
+`zengshuishui/FunASR-nano-onnx` ModelScope source and the
+`Wasser1462/FunASR-nano-onnx` exporter. The fixed ModelScope metadata declares
+Apache-2.0; the exporter repository has no LICENSE file. It remains available
+for research/private testing with pinned per-file SHA-256, but this evidence is
+not recorded as completed public in-product redistribution approval. Known
+tested limitation: the current export produced empty final results for roughly
+34–39 second utterances.
+
+The bilingual Zipformer uses the exact Android artifact
+`csukuangfj/sherpa-onnx-streaming-zipformer-bilingual-zh-en-2023-02-20` at HF
+revision `98590b7ed6443e77b714204da2757d75e1a642f4`. Its README and the
+`pfluo/k2fsa-zipformer-chinese-english-mixed` source metadata declare
+Apache-2.0 and identify k2-fsa/icefall training code; training-data provenance
+is not published in the model materials. It remains a research candidate with
+pinned per-file SHA-256 and no claim of broader training-data redistribution
+clearance.
+
+The Android model catalog now carries source/revision, source and license URLs,
+attribution, limitations, and distribution status for both retained models.
+Recommendation eligibility is separate from `production`/D035 fallback
+maturity and public distribution approval. The first-download disclosure and
+installed details read these catalog fields rather than duplicating
+model-specific license prose.
+
+The following older bullets are historical policy context, superseded for the
+current catalog by D045; the release gate below still applies to any public
+product release.
+
+- 当时不实现 Model Manager/Downloader；此后 D037 与其 2026-09-28 修订引入 Model Manager。
+- A 的许可 blocker 当时不阻止内部研究测试，但阻止正式分发；A 现已从支持集删除。
 - B 的许可证据更清晰不等于已经完成正式 release audit。
 - 正式版只允许 Model Manager 展示/下载已经通过相应商用、再分发与 attribution 审查的模型。
 
