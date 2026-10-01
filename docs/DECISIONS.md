@@ -653,7 +653,7 @@ an expiring CI artifact URL or a public Release asset.
 
 ## D045 — Retained Local ASR models and user-initiated recommendation
 
-**状态：Accepted（2026-10-01，所有者产品澄清；Android implementation pending device acceptance）**
+**状态：Accepted（2026-10-01；Android implementation and owner-reported physical-device acceptance PASS）**
 
 当前支持的 Local ASR 模型只有 FunASR Nano（B）和 Streaming Zipformer Chinese-English
 bilingual（C）。旧的 Chinese-only Zipformer（A，`ZipformerZh`）此前只被从用户目录隐藏，
@@ -686,3 +686,11 @@ Android catalog metadata 必须同时记录 source/revision、download URL、lic
 attribution、限制和 distribution status；首次下载与已安装详情使用同一元数据，下载前
 展示披露但不添加虚假的“同意许可”checkbox。B/C 的安装继续使用现有 SHA-256、staging
 和 atomic-install 路径。
+
+项目所有者随后完成当前批次的物理设备验收并报告 PASS（Android
+`c916d3e144d5e057936723f3e221930409dc2229`，CI run `36802256868`，artifact
+`11136369038`）。验收确认 B 优先于 C、无可用 Local 时保留既有 System ASR
+披露流程、`current` 清空后推荐入口重新出现、不可用的显式当前服务不被静默替换，
+以及麦克风/长按空格/Stop/Cancel/重启持久化回归。该设备证据不改变 B/C 的公开分发
+许可状态；FunASR Nano 与 bilingual Zipformer 仍为研究/个人测试，
+`distribution_approved=false`。

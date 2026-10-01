@@ -6,6 +6,13 @@
 
 状态词：**IMPLEMENTED**（代码已推送）、**CI-VERIFIED**（CI 构建 + 单元测试通过）、**LOCAL-JVM-VERIFIED**（本机 JDK/kotlinc 编译并运行了纯 JVM 测试）、**INTEROP-VERIFIED**（与真实上游服务器互通）、**DEVICE-VERIFIED**（真机观察）、**BLOCKED**、**UNTESTED**。
 
+**当前状态覆盖说明（D045，2026-10-01 后续验收）**：下方表格是 Phase 4C 计划形成时的
+历史快照，不能覆盖当前实现状态。当前 Local 支持集仅为 FunASR Nano 与 bilingual
+Zipformer，Chinese-only Zipformer A 已删除；用户主动推荐按 FunASR Nano → bilingual
+Zipformer → System ASR。项目所有者已完成当前 Android 批次的物理设备验收并报告 PASS，
+证据为 Android `c916d3e144d5e057936723f3e221930409dc2229`、CI run `36802256868`、
+artifact `11136369038`。B/C 的 public in-product distribution 仍为 pending，D035 未改变。
+
 ## 0. 目标与边界
 
 四类服务都经现有 `VoiceInputFlow` 与两个触发入口（麦克风按钮、长按空格）使用；ASR 与将来的 LLM 后处理独立。

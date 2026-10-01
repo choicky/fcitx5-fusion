@@ -613,4 +613,8 @@ Zipformer A 已从实现/catalog/UI/test 支持集中删除，不做旧用户迁
 recommendation 按 FunASR Nano → bilingual Zipformer → 已授权 System ASR，入口由
 `current == null` 决定，不由 `recommendationDone` 永久抑制。推荐资格、D035 fallback、模型
 成熟度和公开分发许可相互独立；B/C 的精确来源、许可证据和研究限制见 D045 与
-`docs/THIRD_PARTY_LICENSES.md`，设备验收仍需由项目所有者执行。
+`docs/THIRD_PARTY_LICENSES.md`。项目所有者已完成并通过当前批次真机验收：双模型选择
+优先级、System 无 Local 时的既有披露行为、current 清空后可重复推荐、不可用当前服务不
+被静默替换，以及麦克风/长按空格/Stop/Cancel/重启持久化回归均 PASS。证据为 Android
+`c916d3e144d5e057936723f3e221930409dc2229`、CI run `36802256868`、APK artifact
+`11136369038`；B/C 公开分发许可状态不变，仍为 pending。

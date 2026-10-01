@@ -67,6 +67,18 @@ maturity and public distribution approval. The first-download disclosure and
 installed details read these catalog fields rather than duplicating
 model-specific license prose.
 
+The project owner has completed physical-device acceptance for the retained
+Local ASR/recommendation batch. The PASS covers removal of Chinese-only
+Zipformer A, FunASR-before-bilingual recommendation ordering, System fallback/
+disclosure when no Local model is usable, repeat recommendation after clearing
+`current`, preservation of an unavailable explicit selection, and microphone/
+Space/Stop/Cancel/restart regressions. Evidence: Android
+`c916d3e144d5e057936723f3e221930409dc2229`, CI run `36802256868`, artifact
+`11136369038`. This does not change either model's public distribution status:
+FunASR Nano and bilingual Zipformer remain `distribution_approved=false` and
+public in-product distribution pending their documented license/provenance
+review.
+
 The following older bullets are historical policy context, superseded for the
 current catalog by D045; the release gate below still applies to any public
 product release.
