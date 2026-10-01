@@ -16,6 +16,16 @@
 - 若已接受的设计与最新源码、公开 API 或实际测试结果冲突，立即停止相关实现。记录并报告冲突位置、源码版本或提交、相关调用链、测试结果及影响范围，等待设计被明确修订后再继续。
 - 不得把推测、仅有代码但未验证的行为、跳过的测试或失败的 CI 写成已完成或已验证。
 
+## 轻量治理与行为增量核对
+
+- **Durable consensus 必须先落档再实现。** 当讨论形成会改变或确立产品行为、架构边界、默认值、兼容性或 migration、数据/隐私流、重要 UI 语义或验收标准的 durable consensus 时，必须先更新适用的正式文档，再实现该共识。讨论中的 tentative idea、未解决 alternative、research hypothesis 以及 `TO BE VERIFIED` / `TO BE DECIDED` 项不得提前提升为 Accepted Decision 或当前 Requirement。
+- **审查 behavioral delta，而不只审查 requested functionality。** 每个实现批次都要明确回答：除明确请求改变的行为外，其他既有行为改变了什么？若没有，记录 `Additional behavioral changes: None`；若有，列出具体变化。一旦发现未经授权、破坏受保护既有行为或需要新产品/架构决定的额外变化，必须 STOP 并报告；若在实现中或实现后发现，不得在明确解决前将其作为接受的变更 commit/push/merge，即使 build、tests 或 CI 通过也不构成授权。
+- **范围扩展和受保护行为是 hard stop。** UI/configuration 工作不得静默扩展到无关的业务逻辑、provider resolution、authorization、fallback、lifecycle、trigger semantics、migration semantics、privacy/data flow 或其他受保护行为。若扩展看似必要，先报告：必要性、受影响行为/范围、将改变的现有行为，以及最小 proposed boundary expansion；等待明确确认后才能实现。
+- **流程保持轻量且按风险分级。** 效率是明确的项目目标；不得为每个小改动引入强制的 heavyweight approval/checklist。错别字、措辞修正、明显的 compile/import 修复、非行为性测试修复、已有 Accepted requirements 完整覆盖的小实现和事实性文档修正，只要不建立新 durable consensus、不产生额外 behavioral change 且不扩大范围或触碰受保护行为，可沿用普通轻量流程。
+- **Change Contract 默认很薄。** 普通实现批次在有帮助时只需记录：`Goal`、`Allowed scope`、`Must preserve`、`Expected behavioral delta`。只有架构/跨模块变更、migration、隐私/数据流、兼容性、重要 UI restructuring、release/signing 或有意改变既有行为等高风险工作，才按需要扩展 contract；不得把它变成所有改动的强制大模板。
+- **文档更新按职责选择，不机械同步四份文档。** `REQUIREMENTS.md` 记录当前规范产品行为和约束；`DECISIONS.md` 记录重要 Accepted 架构/设计决定及理由和必要的 supersession；`ROADMAP.md` 记录阶段、进度、checkpoint、回归、研究项及 `TO BE VERIFIED` / `TO BE DECIDED`；`AGENTS.md` 只记录长期工程/治理规则。只修改该 durable consensus 实际需要的文档。
+- **新共识不得静默改写历史。** 若 Accepted consensus supersede 既有 Requirement/Decision，必须指出受影响的旧规则，并说明是全部还是部分 supersede，同时保留仍有效的部分；不得因为旧 ROADMAP 历史仍存在而复活历史或 superseded 行为。
+
 ## 修改边界
 
 - 优先复用 Fcitx5 及相关上游项目已有的接口、状态机、配置、UI 和测试基础设施。
