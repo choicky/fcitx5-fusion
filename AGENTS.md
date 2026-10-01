@@ -5,6 +5,13 @@
 ## 事实来源与设计核对
 
 - 开始设计或实现前，先阅读相关需求、技术决策、路线图、研究记录，以及所涉及上游仓库的最新源码、公开接口和现有测试。
+- 判断当前预期行为时，按以下权威顺序读取：
+  1. `REQUIREMENTS.md` 中当前有效的需求；
+  2. `DECISIONS.md` 中最新的、状态为 Accepted 且未被 superseded 的决定；
+  3. `ROADMAP.md` 当前 Phase/checkpoint 的要求；
+  4. 历史、已 superseded、partially superseded、deprecated 或已完成阶段的记录。
+- 不得把标记为 `SUPERSEDED`、`PARTIALLY SUPERSEDED`、`HISTORICAL` 或 `DEPRECATED` 的要求/决定实现为当前行为。历史 ROADMAP checkpoint 不得覆盖当前 `REQUIREMENTS.md`；后续 accepted decision 明确 supersede 旧决定的一部分时，以后续决定控制该部分。
+- 若两个看似 ACTIVE 的需求或决定冲突，必须 STOP，不得自行推断选择。仅部分 supersede 旧决定时，旧决定原位置必须明确写出仍然有效的部分和不再具有规范性的部分。
 - 设计假设必须以当前源码和可复现证据验证；不要仅凭文档、历史结论、记忆或接口名称推断行为。
 - 若已接受的设计与最新源码、公开 API 或实际测试结果冲突，立即停止相关实现。记录并报告冲突位置、源码版本或提交、相关调用链、测试结果及影响范围，等待设计被明确修订后再继续。
 - 不得把推测、仅有代码但未验证的行为、跳过的测试或失败的 CI 写成已完成或已验证。

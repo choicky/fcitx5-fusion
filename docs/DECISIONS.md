@@ -329,11 +329,17 @@ Local ASR 的 Provider、runtime、model 分层管理。正式版需要 Local Mo
 
 ## D030 — Voice Trigger 可见性跟随 configured backend，而非 System ASR
 
-**状态：Accepted / Implemented in Phase 4B.2 follow-up（2026-09-27）**
+**状态：PARTIALLY SUPERSEDED by D046（历史接受并在 Phase 4B.2 实现，2026-09-27）**
+
+**仍然有效：** configured backend 与 System ASR 的 `SpeechRecognizer.isRecognitionAvailable()` 关系，以及 provider readiness/authorization 对实际 Voice start/dispatch 的影响；Direct Cloud/Local 不得仅因 OEM/system RecognitionService 不可用而在实际可启动性判断中失败。共享 Voice session/panel 行为仍按 D026/D027/D031 有效。
+
+**已 superseded：** configured backend/provider resolution 决定 Toolbar Mic 的持久 configured visibility，或没有 configured backend 就让用户已配置的 Toolbar Voice action 消失的部分。
+
+> **禁止将下述已 superseded 的 configured-backend Toolbar visibility 规则作为当前行为实现。请以 D046 为准。**
 
 麦克风/Voice Trigger 的可用性必须依据当前 configured backend 判断；只有 configured backend 为 System ASR 时，`SpeechRecognizer.isRecognitionAvailable()` 才参与可用性判断。Direct Cloud/Local backend 不得因 OEM/system RecognitionService 不可用而隐藏 Voice Trigger。
 
-该规则在 `fcitx5-android` commit `8accd92f` 中通过统一 `configuredBackend` 的 visibility/start 判断实现。它是 D026/D027 “System ASR 不得成为正式 Voice 唯一路径”的 UI/dispatch 落地，不意味着当前 debug backend selector 已是正式 Provider settings；正式配置见 D029。
+该规则在 `fcitx5-android` commit `8accd92f` 中通过统一 `configuredBackend` 的 visibility/start 判断实现。这里保留为历史 UI/dispatch 记录，不意味着当前 Toolbar configured visibility 仍由 provider readiness 决定；正式当前语义见 D046。
 
 ## D031 — Active Voice 使用共享 Voice Session Panel 与可选真实音量可视化
 
@@ -413,11 +419,13 @@ Self-hosted checkpoint 须依据当时上游源码/文档核实：实际 streami
 
 **状态：Accepted（2026-09-27）；2026-09-28 产品规划修订：首次推荐选择具体服务，取消长期 Auto 选项；以下设置/授权/解析基础及设备验收记录仍对应旧版实现，修订后的产品 UI 尚未实现；D035 运行时 fallback 未实现。**
 
+**Toolbar visibility note：PARTIALLY SUPERSEDED by D046。** D034 的 Provider recommendation、authorization、current-service 与 fallback 语义仍然有效；但 Toolbar Mic 的 configured visibility/readiness 语义已由 D046 取代。Provider resolution 仍控制 Voice 是否以及如何实际启动，不再定义用户持久的 Toolbar Mic configured visibility。**不要把本段历史实现中的旧 Toolbar visibility 规则作为当前行为实现；请以 D046 为准。**
+
 历史实现与验收（`fcitx5-android` `818dc671` + `fb3b0c26`，CI `36329322686` / `36330310566` PASS）：设备验收 CLOSED（2026-09-28）：vivo X100 Pro 全部通过，Redmi K90 Pro Max 可测部分通过、依赖 System ASR 的用例因设备 System ASR 不可用而不可测，无新观察到的 blocker；release 构建本地编译通过（2026-09-28，项目所有者在 Windows 上对 `fb3b0c26` 执行 arm64 `.\gradlew.bat :app:assembleRelease`：BUILD SUCCESSFUL，6m 22s，272 tasks：264 executed、8 up-to-date）；release APK 的安装与设备运行行为未测试。
 
 实现记录（2026-09-27，描述当时实现，不代表下述修订已落地）：
 
-- 已实现：“语音输入”设置页，含“语音识别服务”（自动（推荐）/ 本地语音识别 / Android 系统语音识别，默认自动）、“允许使用 Android 系统语音识别”开关（摘要即披露）与原“显示语音输入按钮”（存储键不变）；一次性披露对话框（允许/不允许均持久化，未作答则下次再问；允许后紧接着请求麦克风权限）；单一解析函数按“调试覆盖（Doubao > 采集探针）→ 正式服务”决定后端；先解析服务、后请求 RECORD_AUDIO；麦克风按钮在可启动或需授权时显示（D030）。
+- 已实现：“语音输入”设置页，含“语音识别服务”（自动（推荐）/ 本地语音识别 / Android 系统语音识别，默认自动）、“允许使用 Android 系统语音识别”开关（摘要即披露）与原“显示语音输入按钮”（存储键不变）；一次性披露对话框（允许/不允许均持久化，未作答则下次再问；允许后紧接着请求麦克风权限）；单一解析函数按“调试覆盖（Doubao > 采集探针）→ 正式服务”决定后端；先解析服务、后请求 RECORD_AUDIO；麦克风按钮在可启动或需授权时显示（D030 历史 visibility 规则；当前 Toolbar configured visibility 语义以 D046 为准）。
 - 当前 Local 可用性：仅 debug 构建带 Local runtime，且调试研究选择的模型文件齐全时视为可用；未选定任何正式 Local 模型（D036）。
 - 已验证：单元测试与 CI（debug 构建 + `:app:testDebugUnitTest`）；设备验收见 `docs/provider-settings-acceptance.md` §7——vivo 全部通过；Redmi 通过 A、B1、E，B2 按钮隐藏符合设计（System ASR 不可用），披露/System 识别路径在 Redmi 上不可测。另：release 构建本地编译通过（2026-09-28，项目所有者在 Windows 上对 `fb3b0c26` 执行 arm64 `.\gradlew.bat :app:assembleRelease`：BUILD SUCCESSFUL，6m 22s，272 tasks：264 executed、8 up-to-date）；release APK 的安装与设备运行行为未测试（这不是 release 发布，也不是 release 设备验收 PASS）。**未验证**：release APK 安装与设备运行行为。
 
@@ -694,3 +702,57 @@ attribution、限制和 distribution status；首次下载与已安装详情使�
 以及麦克风/长按空格/Stop/Cancel/重启持久化回归。该设备证据不改变 B/C 的公开分发
 许可状态；FunASR Nano 与 bilingual Zipformer 仍为研究/个人测试，
 `distribution_approved=false`。
+
+## D046 — Separate Toolbar Voice configuration from Provider readiness
+
+**状态：Accepted（2026-10-01；仅 supersede D030 与 D034 中相关的 Toolbar visibility 部分）**
+
+D046 不删除或改变 D034 仍有效的 Provider recommendation、authorization、current-service 与 fallback 行为；它只明确区分用户对 Toolbar Voice 的持久配置与 Provider readiness。D030/D034 的其他有效部分继续保留。
+
+### 当前 canonical state 与入口
+
+Toolbar Voice configured visibility 的唯一持久 canonical state 是：
+
+```text
+ToolbarAction.Voice ∈ toolbarActions
+```
+
+以下 UI 可以同时存在，并且都必须读写同一状态、保持同步：
+
+- Settings → Voice Input → Show voice input button
+- Tools → Edit Toolbar → Microphone
+
+当前不把 Settings → Keyboard 的历史 duplicate entry 记录为最终 UI requirement，待 source-history 单独核实。
+
+真正 clean install 的默认 configurable Toolbar actions 为 `Emoji`、`QuickPhrase`、`Voice`、`Clipboard`、`TextEditing`。没有 `toolbar_actions` 时，legacy `show_voice_input_button == false` 只作为 migration input 使初始配置不含 Voice；legacy 为 true 或 absent 则包含 Voice。`toolbar_actions` 一旦存在即被 honor；migration 后不得维护第二个独立的 Toolbar Voice visibility preference。
+
+### 当前 Voice flow
+
+```text
+UI entries
+    |
+    v
+toolbarActions.Voice
+    | persistent configured visibility
+    v
+runtime context/security eligibility
+    |
+    v
+Toolbar Mic
+    | click
+    v
+shared Voice Input flow
+    |
+    v
+Provider resolution/readiness
+    +-> ready
+    +-> authorization/permission
+    +-> configuration guidance
+    +-> unavailable handling
+```
+
+Toolbar Mic 是 Voice Trigger/UI entry，而不是仅表示“已有 ASR backend 配置完成”的状态指示器。Provider readiness 与用户 Toolbar configuration 是不同的 state dimensions；在正常且未被合法安全/context 原因抑制的输入环境中，没有先配置 ASR provider 不得使已配置的默认 Mic 消失。Provider resolution 仍决定点击后 Voice 是否以及如何实际启动。
+
+合法的 password/security-sensitive context 可以临时 suppress Voice trigger，但不得修改 `toolbarActions`；限制消失后按持久配置恢复。不得把 unavailable/unselected ASR 泛化为 preference OFF。Toolbar Mic 与长按 Space 继续进入同一个 Voice Input flow；隐藏 Mic 不得禁用 Space long-press Voice，也不得建立第二套 pipeline。
+
+本决定同时确立工程规则：**Single Source of Truth != Single UI Entry**。多个 UI 入口可以改善 UX，但必须投影同一 canonical state，不得据此删除有用的既有入口。

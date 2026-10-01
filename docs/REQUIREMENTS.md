@@ -12,6 +12,26 @@
 - 可配置 ASR 与可选 LLM 后处理；
 - 数据流透明、可审计、可配置。
 
+## 1.1 Current Architectural Invariants
+
+### Single Source of Truth != Single UI Entry
+
+一个 canonical state 可以为了改善 UX 而拥有多个 UI projection/entry point。所有入口必须读写同一 canonical state 并保持同步；不得仅因为另一个入口控制相同状态就删除仍有用的用户可见入口。
+
+### Persistent configuration != runtime eligibility
+
+用户的持久配置与临时 runtime/context 限制是不同概念。临时限制不得被当作持久配置变化。
+
+### Runtime hide != preference OFF
+
+临时 runtime hiding 不得静默修改用户持久 preference。限制消失后，显示状态必须按用户持久配置恢复。
+
+### UI/configuration tasks preserve business semantics by default
+
+UI/configuration 工作默认保持业务语义不变：移动 UI 入口不等于删除入口；增加 UI 入口不等于建立第二 source of truth；改变 preference storage 不等于改变 preference semantics；Toolbar customization 不等于 Voice/ASR business-logic refactoring；显示/隐藏 Toolbar action 不等于重新定义 provider availability。
+
+如果 UI/configuration 任务看似需要修改业务逻辑、provider resolution、authorization、fallback、session lifecycle 或 trigger semantics，必须先停止实现并报告所需的边界扩展、影响文件/符号/调用链、现有与拟议行为及回归风险，未经明确确认不得修改。
+
 ## 2. 中文主输入
 
 - Pinyin / Shuangpin 为主输入方式。
@@ -158,6 +178,43 @@ Long-press Space ──┘
 - Direct/Fcitx-owned Audio Capture 能提供 microphone input level 时，Panel 显示由真实 PCM 音量级驱动的实时波形/电平；UI 只消费归一化 level，不取得或拥有 PCM/AudioRecord。System ASR 等不能提供 level 的 backend 使用不依赖 PCM 的静态 Listening indicator。
 
 长按 Space 作为 `SpaceLongPressBehavior.VoiceInput` 接入统一 Voice Input flow，不建立第二套 pipeline。Phase 4B.2 已实现 gesture Down/Move/Up：长按阈值达到 → start，正常松开 → stop，按住上滑越过阈值 → cancel；未显式保存该设置的新安装默认使用 VoiceInput，已有用户已保存的选择保持不变。麦克风与 Space 共用同一个 `VoiceInputSession` 状态：Listening/Recording、Cancel-armed、Processing/Recognizing 均应提供明确反馈。实现提交与真机状态见 ROADMAP。
+
+### 7.1 Current Toolbar / Voice Requirements
+
+#### Default Toolbar
+
+真正 clean install 的默认 Toolbar 为：
+
+```text
+[Tools] [Emoji] [Quick Phrase] [Voice / Microphone] [Clipboard] [Edit] [Hide Keyboard]
+```
+
+Tools 与 Hide Keyboard 是固定 outer actions；可配置 middle actions 的默认顺序为 `Emoji`、`QuickPhrase`、`Voice`、`Clipboard`、`TextEditing`。Undo 与 Redo 是可选 action，但不属于默认 action set。
+
+#### Canonical Toolbar Voice configuration
+
+Toolbar Voice configured visibility 的唯一 canonical persistent state 是 `ToolbarAction.Voice` 是否属于 `toolbarActions`。migration 完成后不得维护第二个互相竞争的 Boolean source of truth；历史 `show_voice_input_button` 只能在升级兼容所需时作为 migration input。
+
+以下 UI 必须是同一状态的 projection，并保持同步：
+
+- `Settings -> Voice Input -> Show voice input button`
+- `Tools -> Edit Toolbar -> Microphone`
+
+当前不把 `Settings -> Keyboard` 的历史 duplicate entry 记录为最终 requirement；其历史位置/语义仍需单独核对。
+
+#### Clean install and migration
+
+没有 `toolbar_actions` 且没有适用 legacy preference 的真正 clean install，其 `ToolbarAction.Default` 为 `Emoji`、`QuickPhrase`、`Voice`、`Clipboard`、`TextEditing`，因此 Voice/Microphone 默认 configured ON。在正常且未因合法安全/context 原因抑制 Voice Trigger 的输入环境中，用户不需要先选择/配置 ASR provider 才能看到默认 configured Toolbar Mic。
+
+若 `toolbar_actions` 已存在，必须 honor 它。若不存在：legacy `show_voice_input_button == false` 初始化为不含 Voice 的 Default；legacy 为 true 或 absent 初始化为含 Voice 的 Default。migration 后 `toolbarActions` 是唯一 canonical persistent configuration state。
+
+#### Provider readiness and runtime suppression
+
+Toolbar Voice configured visibility、provider selection/readiness、authorization、permission 与 runtime availability 必须保持独立。没有 configured ASR provider 不等于 Toolbar Mic preference OFF，也不得静默改变 `ToolbarAction.Voice`；用户点击 Mic 后由 shared Voice Input flow 解析 provider/readiness，并按既有 flow 进入 ready、授权/权限、配置引导或 unavailable handling。
+
+密码/安全敏感输入框等合法临时 runtime restriction 可以暂时 suppress Voice trigger，但不得修改 `toolbarActions`；限制消失后应按持久配置恢复。不得将“unavailable/unselected ASR 隐藏已配置 Mic”作为一般规则，除非未来另有明确 accepted requirement。
+
+Toolbar Mic 与 `SpaceLongPressBehavior.VoiceInput` 继续共用同一个 Voice Input flow；隐藏 Toolbar Mic 不得禁用 Space 长按 Voice，也不得建立第二套 Voice pipeline。
 
 ## 8. Android Voice Input
 

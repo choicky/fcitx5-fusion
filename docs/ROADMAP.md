@@ -2,6 +2,36 @@
 
 > 路线图按当前已验证架构安排；源码研究或 PoC 结果可以触发有记录的调整。
 
+## Current checkpoint — Toolbar regression recovery / scope audit
+
+**状态：IN PROGRESS**
+
+当前工作冻结实现，先完成 Toolbar 回归恢复与范围审计：
+
+1. Freeze implementation。
+2. 使用 Android commit `47ba520b` 作为 pre-Toolbar behavior baseline。
+3. 审计从 `47ba520b` 到当前 relevant HEAD 的完整 Toolbar-related cumulative diff。
+4. 将变更分类为：explicitly requested、necessary implementation adaptation、pre-existing behavior、unauthorized behavior change、genuine regression、以及 clarified/current requirement not yet implemented。
+5. 仅在审计/评审后恢复已确认的 invariants。
+6. Review complete cumulative diff。
+7. Run CI。
+8. 执行 true clean-install physical-device regression。
+9. 执行 upgrade/migration physical-device regression。
+
+当前已观察到的真机事实与源码证据：
+
+- 最新测试构建在真正 clean installation 后，Toolbar 初始未显示 Microphone；
+- 在 Redmi 上，Toolbar Voice 已配置/启用但尚未选择可用/current ASR 时，Mic 仍然缺失；
+- 选择 current ASR 后，Mic 在 TextEditing/Edit 之后出现，即位于 configurable middle-action list 的末尾；
+- `fcitx5-android` commit `33ec5f0a` 已确认直接 ordering cause：`ToolbarAction.withVoice(actions, true)` 使用 `(actions + Voice).distinct()`；当 Voice 缺失时，会把 Voice append 到有序 `toolbarActions` list 的末尾；
+- 对应 unit test 当前明确期望 `hidden + ToolbarAction.Voice`，因此 CI 将该 append-at-end 行为视为预期行为；
+- Restore Default 赋值为 `ToolbarAction.Default`，其顺序为 `Emoji, QuickPhrase, Voice, Clipboard, TextEditing`，所以 Restore Default 会将 Mic 放回 QuickPhrase 与 Clipboard 之间；
+- 因此 direct ordering root cause 已确认，不再标记为 **TO BE VERIFIED**；
+- 但对于用户自定义 Toolbar 顺序，隐藏 action 重新启用时应恢复原自定义位置、按默认相对顺序插入，还是采用其他明确策略，产品 ordering policy 仍为 **TO BE DECIDED / TO BE VERIFIED**；本 checkpoint 不选择其中任何一种；
+- 完整 Toolbar-related source audit 仍 pending。
+
+本 checkpoint 记录已确认的 ordering cause，但不把 Toolbar 工作标记为 complete。
+
 ## Phase 0 — 需求确认
 
 **状态：COMPLETE**
@@ -321,7 +351,9 @@ B. 由源码推断、需实机确认的风险：
 
 - [x] **4B.1 — capture-only AudioRecord PoC**：建立最小 `VoiceBackend`，把现有 SpeechRecognizer 代码迁入 `SystemAsrBackend`，新增只采集、不识别的 capture backend（不含 ASR、不联网、不持久化音频，不增加 `INTERNET` 权限）；麦克风入口经同一 `VoiceInputSession` 驱动；单元测试以 fake backend 覆盖会话编排。实现：`choicky/fcitx5-android` 分支 `phase4-voice-poc`，`90ae5a55`（VoiceBackend + capture probe）+ `877c9c0c`（code review 修复：startRecording 失败时仍释放录音器，补充 3 个 flow 测试）；CI run `36300480076` 成功（编译、`:app:testDebugUnitTest`、APK 构建与内容断言、产物 `moqi-debug-apk`）；capture probe 仅在 debug 构建中经 Developer 开关启用；
 - [x] **硬关口 — vivo X100 Pro + Redmi K90 Pro Max 真机：PASS（2026-09-27）**：两台设备都须证明真实**非静音**采集（不仅是 `AudioRecord.read()` 成功；API 29+ 以 client-silenced 状态作辅助证据），以及 stop / cancel / release 与各 lifecycle 路径正确、系统麦克风占用指示及时消失；System ASR 行为不回退。**STOP 条件：若 Redmi 上 Direct capture 被拒绝或被静音，停止，不接入真实 Direct ASR Provider，先重新评估。**（未触发，见下方关口结果）
-- [x] **4B.2 — Voice Trigger + Voice Session Panel：COMPLETE / DUAL-DEVICE PASS（2026-09-27）**。基础 commit `bdae6138` 实现 Space long-press start / release stop / swipe-up cancel；follow-up `8accd92f` 实现 fresh default = VoiceInput、Mic/Space 共享状态及 D030 configured-backend visibility；Voice Panel commit `89e964885af14f87832a2008ca1fa9271241364e` 以 overlay 覆盖主键盘按键区但保留原 keyboard/gesture owner，Mic 提供“取消/完成”，Space 显示 release/cancel 状态；Direct backend 从既有 PCM 计算 RMS/dBFS level 并经 optional event 驱动平滑电平条，UI 不取得 PCM、不新建 AudioRecord，System ASR 无 level 时使用静态 indicator。CI run `36318396011` PASS，ChatGPT GitHub diff review PASS。项目所有者随后在 **Redmi K90 Pro Max 与 vivo X100 Pro** 完成最终真机 gate：Mic Panel、真实音量响应、Done/final/commit、Cancel/discard、Space 越阈值→滑回→松手正常 stop、Space 上滑 cancel、Space tap/横滑回归、连续/混合 session 均 PASS；密码输入框中麦克风隐藏且 Space Voice trigger 被抑制。vivo 另验证：fresh install 未启用 Doubao Direct debug backend 时 System ASR 仍可识别但无真实波形；启用 Doubao Direct 后出现 PCM-driven 波形，符合 D031 的 backend capability fallback。
+- [x] **4B.2 — Voice Trigger + Voice Session Panel：COMPLETE / DUAL-DEVICE PASS（2026-09-27）**。基础 commit `bdae6138` 实现 Space long-press start / release stop / swipe-up cancel；follow-up `8accd92f` 实现 fresh default = VoiceInput、Mic/Space 共享状态及 D030 configured-backend visibility（**历史实现；Toolbar Mic visibility semantics 后续由 D046 部分 supersede**）；Voice Panel commit `89e964885af14f87832a2008ca1fa9271241364e` 以 overlay 覆盖主键盘按键区但保留原 keyboard/gesture owner，Mic 提供“取消/完成”，Space 显示 release/cancel 状态；Direct backend 从既有 PCM 计算 RMS/dBFS level 并经 optional event 驱动平滑电平条，UI 不取得 PCM、不新建 AudioRecord，System ASR 无 level 时使用静态 indicator。CI run `36318396011` PASS，ChatGPT GitHub diff review PASS。项目所有者随后在 **Redmi K90 Pro Max 与 vivo X100 Pro** 完成最终真机 gate：Mic Panel、真实音量响应、Done/final/commit、Cancel/discard、Space 越阈值→滑回→松手正常 stop、Space 上滑 cancel、Space tap/横滑回归、连续/混合 session 均 PASS；密码输入框中麦克风隐藏且 Space Voice trigger 被抑制。vivo 另验证：fresh install 未启用 Doubao Direct debug backend 时 System ASR 仍可识别但无真实波形；启用 Doubao Direct 后出现 PCM-driven 波形，符合 D031 的 backend capability fallback。
+
+历史实现：D030 configured-backend visibility 在本阶段实现。当前行为：Toolbar Mic visibility semantics 后续由 D046 supersede；本历史 checkpoint 不得作为当前实现 specification。
 - [x] **Provider Selection / 4B.3 设计 checkpoint：ACCEPTED（2026-09-27，D028/D029）**：Provider 逻辑分类 Local / Cloud-BYOK / Custom；正式构建不内置维护者云端凭据，云端 credential 为 Provider-specific runtime configuration；ASR/LLM credential 分离。Local 的 Provider/runtime/model 分层：当前优先 sherpa-onnx 作为首个 runtime 候选，但不提前冻结具体模型；4B.3b 集成前增加窄 runtime/model checkpoint。
 - [x] **4B.3a — Doubao Direct Cloud ASR PoC：COMPLETE / DUAL-DEVICE PASS（2026-09-27）**。实现链路：Fcitx-owned `AudioRecord` → PCM streaming → Doubao Seed-ASR 2.0（`bigmodel_async` + `enable_nonstream=true`）→ provisional/definite/last-package 解析 → final Raw Transcript → IME。主要提交：`8a0f6d79`（Direct Doubao backend）、`4bc74a87`（按官方协议将 definite utterance 与 final last-package 分离）、`8502f0b1`（OkHttp 4.12.0 Android 兼容修复）。provisional/stable 仅观测，不写入 Fcitx preedit；stop 等待 server final，cancel 丢弃迟到结果；无 `bigmodel_nostream` fallback。vivo X100 Pro 与 Redmi K90 Pro Max 均完成 Direct Cloud E2E 真机验证，包括 stop→final→commit、cancel 不提交、重复会话、网络失败恢复与资源释放；Redmi Direct 路径不依赖 Xiaomi RecognitionService。PoC credential 仍仅通过本地 debug 配置注入，不是正式 BYOK 路径。通过 4B.3a 只证明 Cloud Direct ASR 可行，不选定 Doubao 为默认 Provider；
 - [x] **4B.3b-0 — Local ASR runtime/model 窄 checkpoint：COMPLETE（2026-09-27）**。研究记录见 `docs/local-asr-checkpoint.md`。确认 sherpa-onnx v1.13.8 下：A = streaming Zipformer zh INT8 / `OnlineRecognizer` / 真 streaming / 约 168 MB；B = FunASR Nano INT8 / `OfflineRecognizer` / 非真 streaming / 约 1 GB。A 的权重许可未声明且训练数据许可存在进一步风险，故仅限 research/device-evaluation，许可澄清前不得进入正式 release/distribution；B 的许可链当前更清晰，但 Android RAM/load/stop→final 尚未实测。经后续复核，没有发现推翻 Online/Offline 核心结论的新证据；训练数据条款对模型权重的法律效果不作推断。决定见 D032：第一轮不从 A/B 纸面选唯一胜者，而让 A/B 同时进入 comparative device PoC；
@@ -329,7 +361,7 @@ B. 由源码推断、需实机确认的风险：
 - [ ] 4B.3c — realtime preedit UX PoC（后续、有条件，不属于 4B.3a）：provisional 结果 → Fcitx preedit → 修订 → final 替换；单独研究 preedit 所有权、与现有 composition/候选的交互、provisional 修订/替换、stop 到 final 的过渡、cancel 回滚/丢弃；
 - [x] **Provider 分类 / 设置 UX / 首次推荐 / 自动 fallback 规划 checkpoint：ACCEPTED（2026-09-27；2026-09-28 修订，D033–D035；修订后的 UI/fallback 此后已在 Phase 4C 实现并通过 CI；设备仅有摘要级结果、fallback 未测，见“当前下一步”第 5 项）**：四类服务为 System / Local / Managed Cloud / Self-hosted；设置页允许独立配置、启用多个具体服务，“当前使用”只选一个，不提供长期 Auto。首次推荐一次性按健康 Local → 经授权的可用 System → 提示配置，保存具体选择；不静默推荐云端/自托管。Managed Cloud 与 Self-hosted 同级，外部服务早期技术失败只回落到已启用、健康的正式 Local；System 即使获授权也不是自动 fallback 目标。V1 不做中途 PCM 迁移；`onStarted` 不能作为可用会话边界。
 - [x] **Local A/B checkpoint：CLOSED（2026-09-27，D036）**：A、B 均不选为正式/默认 Local ASR；保留共同 Local 架构；不为研究候选实现 Model Manager/Downloader；首次使用引导是否推荐/下载 Local 模型待正式候选确定后再定（D034 未冻结项）。
-- [x] **ASR Provider Settings Foundation（D034）：IMPLEMENTED，CI PASS；设备验收 CLOSED（2026-09-28）**——vivo X100 Pro 全部通过；Redmi K90 Pro Max 通过可测部分（A、B1、E），依赖 System ASR 的用例因设备 System ASR 不可用/受限而不可测；无新观察到的 Settings Foundation blocker（结果见验收文档 §7）。`fcitx5-android` `818dc671`（设置页、System ASR 授权、单一 Provider 解析）+ `fb3b0c26`（先解析服务再请求麦克风；首次使用 2 次触发即可开始识别），CI `36329322686` / `36330310566` PASS（debug 构建 + 单元测试）。验收脚本与结果：`docs/provider-settings-acceptance.md`。release 构建本地编译通过（2026-09-28，项目所有者在 Windows 上对 `fb3b0c26` 执行 arm64 `.\gradlew.bat :app:assembleRelease`：BUILD SUCCESSFUL，6m 22s，272 tasks：264 executed、8 up-to-date）；release APK 的安装与设备运行行为未测试；这不是 release 发布或 release 设备 PASS。**D035 运行时 fallback 当时未实现**，此后在 Phase 4C 实现（见“当前下一步”第 5 项）。Candidate B 设备测试基线仍为 `a8a0e1b3`。
+- [x] **ASR Provider Settings Foundation（D034）：IMPLEMENTED，CI PASS；设备验收 CLOSED（2026-09-28）**——vivo X100 Pro 全部通过；Redmi K90 Pro Max 通过可测部分（A、B1、E），依赖 System ASR 的用例因设备 System ASR 不可用/受限而不可测；无新观察到的 Settings Foundation blocker（结果见验收文档 §7）。`fcitx5-android` `818dc671`（设置页、System ASR 授权、单一 Provider 解析）+ `fb3b0c26`（先解析服务再请求麦克风；首次使用 2 次触发即可开始识别），CI `36329322686` / `36330310566` PASS（debug 构建 + 单元测试）。验收脚本与结果：`docs/provider-settings-acceptance.md`。release 构建本地编译通过（2026-09-28，项目所有者在 Windows 上对 `fb3b0c26` 执行 arm64 `.\gradlew.bat :app:assembleRelease`：BUILD SUCCESSFUL，6m 22s，272 tasks：264 executed、8 up-to-date）；release APK 的安装与设备运行行为未测试；这不是 release 发布或 release 设备 PASS。**D035 运行时 fallback 当时未实现**，此后在 Phase 4C 实现（见“当前下一步”第 5 项）。Candidate B 设备测试基线仍为 `a8a0e1b3`。本条为历史实现/验收记录；Toolbar Mic configured visibility 当前以 D046 为准。
 - [ ] **Local ASR 正式发布候选**（2026-09-27 研究补充见 `docs/local-asr-checkpoint.md` §12–§13：FunASR Nano 的 1024 上下文导出把空 final 推后到 ≥38 s，但 46 s 出现重复退化且解码超线性变慢——不是已验证的修复；许可清晰的流式中英双语 Zipformer 已作为候选 C 加入 Model Manager，待设备 gate）：识别并验证许可清晰、Android 体积/延迟合适、中文与中英混说质量合适的模型，或能解决体积/内存与上下文长度风险的实质改进 FunASR Nano 导出/配置；须通过含长语音的双机设备 gate。除非有具体未决问题，不重开 A/B 设备测试。
 - [~] **Managed Cloud + Self-hosted checkpoint**：Managed Cloud 以 Doubao（已有基线）对比 Alibaba Qwen ASR 系列与 Tencent Realtime ASR；Self-hosted 研究 FunASR 2-pass / Paraformer、Fun-ASR-Nano Server、sherpa-onnx Server。比较维度与核实项见 D033。**文档研究部分已完成（2026-09-27，与 B 实测并行）**，见 `docs/network-asr-checkpoint.md`：全部候选可留在现有 `VoiceBackend` 之后并复用 `AudioCapture`，无需 JNI；V1 继续采用 Provider-specific backend，不建通用网络协议抽象；Alibaba 官方面向输入法的实时族为 Qwen-Audio-3.x-ASR-Flash-Streaming（模型名不冻结）。Cloud B/C 与 S1–S3 均尚无 PoC，不预选胜者；各项 PoC 待证事实见该文档 §5.6。
 - [ ] Default Provider checkpoint：首次推荐规则已定（D034），选定并保存具体服务；正式 Local 模型与各网络 Provider 的产品化仍待后续 checkpoint，不预设具体模型或 Doubao 为默认。现有长期 Auto 属于 `fb3b0c26` 的已验收基础实现，后续迁移到修订后的设置。
