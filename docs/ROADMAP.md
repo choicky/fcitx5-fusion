@@ -27,8 +27,17 @@
 - 对应 unit test 当前明确期望 `hidden + ToolbarAction.Voice`，因此 CI 将该 append-at-end 行为视为预期行为；
 - Restore Default 赋值为 `ToolbarAction.Default`，其顺序为 `Emoji, QuickPhrase, Voice, Clipboard, TextEditing`，所以 Restore Default 会将 Mic 放回 QuickPhrase 与 Clipboard 之间；
 - 因此 direct ordering root cause 已确认，不再标记为 **TO BE VERIFIED**；
-- 但对于用户自定义 Toolbar 顺序，隐藏 action 重新启用时应恢复原自定义位置、按默认相对顺序插入，还是采用其他明确策略，产品 ordering policy 仍为 **TO BE DECIDED / TO BE VERIFIED**；本 checkpoint 不选择其中任何一种；
+- Toolbar ordering semantics are accepted: Toolbar Editor `+` appends the action to the right end of the current configurable actions; Toolbar Editor available → Toolbar drag inserts at the explicit drop position; Settings “Show voice input button” OFF → ON restores Voice according to `ToolbarAction.Default` relative ordering while preserving the relative order of the other enabled actions as much as possible;
 - 完整 Toolbar-related source audit 仍 pending。
+
+本轮 reconciliation 新增的待实施/验证 checkpoint：
+
+- Voice Settings 从 OFF → ON 时按默认相对顺序恢复 Voice，不能继续采用简单 append-at-end；Toolbar Editor `+` 的 append 与 drag-in drop-position 语义保持独立；
+- 窄屏 runtime presentation suppression：QuickPhrase first，仍不足再 Emoji；不得写回 `toolbarActions`，更进一步降级策略 TBD；
+- Preserve/restore and test the upstream-compatible entries `Settings → Virtual Keyboard → Show voice input button` and `Settings → Virtual Keyboard → Long-press Space behavior`, while keeping the project `Voice Settings` projections synchronized to the same canonical states; 47ba520b 的 fork IA 不覆盖该 upstream compatibility requirement；
+- 验证三处 Toolbar Voice UI projection、两处 Space long-press projection 的同步与 migration 兼容；
+- 验证 collapse/expand 不改变 membership/order/preferences；
+- 实施并验证 direct-manipulation Toolbar Editor（`−` remove、`+` append、drag reorder/remove/drop-position add、Restore Default）。
 
 本 checkpoint 记录已确认的 ordering cause，但不把 Toolbar 工作标记为 complete。
 

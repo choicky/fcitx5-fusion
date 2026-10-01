@@ -719,10 +719,13 @@ ToolbarAction.Voice ∈ toolbarActions
 
 以下 UI 可以同时存在，并且都必须读写同一状态、保持同步：
 
+- Settings → Virtual Keyboard → Show voice input button（与 current upstream IA 兼容的官方入口）
 - Settings → Voice Input → Show voice input button
 - Tools → Edit Toolbar → Microphone
 
-当前不把 Settings → Keyboard 的历史 duplicate entry 记录为最终 UI requirement，待 source-history 单独核实。
+这三处入口都是 `ToolbarAction.Voice ∈ toolbarActions` 的 UI projection，不得因此建立第二个 persistent preference。47ba520b 是本项目经过 Phase 4 Voice 改造后的 fork 状态，其中 Voice Settings 位置不能覆盖 current upstream 的 Virtual Keyboard compatibility requirement。历史 `show_voice_input_button` 仍只作为 migration input。
+
+Space long-press 同样允许多个 UI entry：Settings → Virtual Keyboard → Long-press Space behavior 与 Settings → Voice Input → Long-press Space 都必须投影同一个 `spaceKeyLongPressBehavior`；`SpaceLongPressBehavior.VoiceInput` 是本项目保留的扩展，不得建立新的 Boolean/key/state。Toolbar Mic 与 Space long-press Voice 是独立 trigger，但进入同一个 shared Voice Input flow。
 
 真正 clean install 的默认 configurable Toolbar actions 为 `Emoji`、`QuickPhrase`、`Voice`、`Clipboard`、`TextEditing`。没有 `toolbar_actions` 时，legacy `show_voice_input_button == false` 只作为 migration input 使初始配置不含 Voice；legacy 为 true 或 absent 则包含 Voice。`toolbar_actions` 一旦存在即被 honor；migration 后不得维护第二个独立的 Toolbar Voice visibility preference。
 
@@ -756,3 +759,11 @@ Toolbar Mic 是 Voice Trigger/UI entry，而不是仅表示“已有 ASR backend
 合法的 password/security-sensitive context 可以临时 suppress Voice trigger，但不得修改 `toolbarActions`；限制消失后按持久配置恢复。不得把 unavailable/unselected ASR 泛化为 preference OFF。Toolbar Mic 与长按 Space 继续进入同一个 Voice Input flow；隐藏 Mic 不得禁用 Space long-press Voice，也不得建立第二套 pipeline。
 
 本决定同时确立工程规则：**Single Source of Truth != Single UI Entry**。多个 UI 入口可以改善 UX，但必须投影同一 canonical state，不得据此删除有用的既有入口。
+
+### Toolbar configuration and presentation invariants
+
+Settings 中的 Voice OFF → ON 使用默认 configurable action 顺序恢复 Voice 的默认相对位置，并尽量保持其他已启用 actions 的相对顺序；这不同于 Toolbar Editor `+` 的“追加到右端”语义，也不同于 available action 拖入时的明确 drop-position 语义。
+
+Toolbar Editor 的 accepted target 是 direct manipulation：当前 Toolbar 区域按实际顺序显示并支持 `−` remove，available 区域支持 `+` append；Toolbar → Toolbar reorder、Toolbar → available remove、available → Toolbar 按 drop position add。Tools/Hide Keyboard 固定，不进入 action collection；Restore Default 使用 `ToolbarAction.Default`。
+
+Toolbar configured state 与 transient presentation state 分离。Collapse/Expand 不得改写 action membership/order/preferences；宽度不足时先临时隐藏 QuickPhrase、再临时隐藏 Emoji，空间恢复后按持久配置恢复。更进一步的超窄屏策略仍未决定。

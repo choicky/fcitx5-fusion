@@ -197,10 +197,43 @@ Toolbar Voice configured visibility 的唯一 canonical persistent state 是 `To
 
 以下 UI 必须是同一状态的 projection，并保持同步：
 
+- `Settings -> Virtual Keyboard -> Show voice input button`（与当前 upstream IA 兼容的官方入口）
 - `Settings -> Voice Input -> Show voice input button`
 - `Tools -> Edit Toolbar -> Microphone`
 
-当前不把 `Settings -> Keyboard` 的历史 duplicate entry 记录为最终 requirement；其历史位置/语义仍需单独核对。
+三处入口都必须读写 `ToolbarAction.Voice ∈ toolbarActions`；不得因为存在多个 UI entry 而建立多个 persistent preference。当前 upstream 的 Virtual Keyboard category 还同时承载长按空格设置；本项目集中式 Voice Settings 入口也必须保留，二者是同一状态的 UI projections。
+
+本项目在 pre-Toolbar baseline `47ba520b` 中的 Voice Settings 位置，不得被误认为 current upstream IA：upstream 的兼容入口是 `Settings -> Virtual Keyboard`，本项目的 Voice Settings 入口仍然保留。历史 `show_voice_input_button` 只按下述 migration 规则作为输入，不能恢复为第二 source of truth。
+
+#### Voice re-enable ordering
+
+通过 Settings 中任一“显示语音输入按钮”入口从 OFF → ON 时，Voice 必须按默认 configurable action 顺序恢复其默认相对位置，同时尽量保持其他当前已启用 actions 的相对顺序。例如：
+
+```text
+Emoji, QuickPhrase, Clipboard, TextEditing
+    → Emoji, QuickPhrase, Voice, Clipboard, TextEditing
+```
+
+这不改变 Toolbar Editor 中 `+` 的不同语义：`+` 将 action 添加到当前 configurable actions 的最右端；available action 拖入 Toolbar 则插入明确的 drop position。
+
+#### Toolbar editor
+
+最终 Toolbar Editor 使用 direct manipulation，而不是当前 checkbox + ↑/↓ 页面：上方显示当前 enabled configurable actions 的实际顺序，每项有 `−`；下方显示未启用 actions，每项有 `+`。点击 `−` 移除到 available area；点击 `+` 添加到当前 configurable actions 最右端；Toolbar 内拖动负责 reorder，拖到 available area 负责 remove，从 available area 拖入 Toolbar 按明确 drop position 添加。Tools 与 Hide Keyboard 固定在两端，不进入 configurable collection。Restore Default 恢复 `Emoji, QuickPhrase, Voice, Clipboard, TextEditing`。
+
+#### Toolbar presentation invariants
+
+Toolbar configured actions 数量因屏幕宽度无法完整展示时，runtime presentation suppression 的优先级为：先临时隐藏 `QuickPhrase`，仍不足时再临时隐藏 `Emoji`。不得从 `toolbarActions` 删除它们，不得改变 configured membership/order、Toolbar Editor 配置或 Voice/Clipboard/TextEditing 的顺序；空间恢复后应自动按持久配置恢复。Tools 与 Hide Keyboard 始终为 fixed actions。更进一步的超窄屏降级策略为 TBD，须另行决定。
+
+Collapse/Expand 只是 transient presentation state，不得修改 `toolbarActions`、enabled membership、ordering、默认值或 preference。展开后必须恢复收拢前完全相同的 action 集合与顺序。Tools menu 的动作文案与图标为：expanded → `收拢工具栏` / `Collapse toolbar` + chevron-left；collapsed → `展开工具栏` / `Expand toolbar` + chevron-right。
+
+#### Space long-press settings projections
+
+以下两个入口都投影同一个既有 canonical state `spaceKeyLongPressBehavior`：
+
+- `Settings -> Virtual Keyboard -> Long-press Space behavior`
+- `Settings -> Voice Input -> Long-press Space`
+
+本项目的 `SpaceLongPressBehavior.VoiceInput` 扩展继续保留；不得为 Voice Settings 创建新的 Boolean、preference key 或第二套 state。Toolbar Mic 与 Space long-press Voice 是进入同一 shared Voice Input flow 的两个独立 trigger；关闭/启用一个不得自动改变另一个。
 
 #### Clean install and migration
 
