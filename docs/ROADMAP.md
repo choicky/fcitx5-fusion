@@ -684,9 +684,12 @@ recommendation 按 FunASR Nano → bilingual Zipformer → 已授权 System ASR�
 ## X-ASR manual comparison integration — 2026-10-02
 
 Two exact punctuation INT8 packages (offline 2026-06-03 and streaming 960ms
-2026-06-05) added to the existing Local management/manual-selection flow on the
-isolated `feature/x-asr-model-integration` branch. Both are import-only pending
-fixed-source/distribution audit, excluded from recommendation and D035 fallback.
+2026-06-05) were added to the existing Local management/manual-selection flow on
+the isolated `feature/x-asr-model-integration` branch. The initial checkpoint was
+import-only; the current implementation also downloads each fixed tar.bz2 archive
+through the existing ModelJobs/ModelTasks lifecycle, with Range resume, pause,
+cancel, whole-archive verification, safe extraction and existing atomic install.
+Both remain excluded from recommendation and D035 fallback.
 No Voice Settings layout/style/section change; no Provider/VoiceInputFlow change.
 Current roughly 60s capture behavior and retained model eligibility preserved.
 
@@ -699,15 +702,15 @@ runtime is still absent and remains out of scope. Native Android load, latency,
 peak PSS, quality, cancel/late-result and continuous-session device acceptance
 remain pending; checklist is Android `docs/x-asr-model-integration.md`.
 
-Focused JVM/real-file import checks and CI outcome are recorded in the batch
-report. Local Android Gradle configuration fails for missing SDK; no SDK was
-installed. Public model download, release integration/publication, longer than
+Focused JVM/real-file and archive lifecycle checks and CI outcome are recorded in
+the batch report. Local Android Gradle configuration fails for missing SDK; no SDK
+was installed. Release integration/publication, longer than
 60s capture, accumulation, Nano segmentation and 90/120s/5-minute tests are
 follow-up work, not completed or silently added in this batch.
 
-Batch validation: 126 focused JVM tests passed, including exact archive-file
-imports and tamper rejection. Android CI [36957620360](https://github.com/choicky/fcitx5-android/actions/runs/36957620360)
-passed debug APK build, release Kotlin compilation, instrumented-test compilation
-and APK resource/signature checks at Android implementation commit `e7eded6403f5624b44d57aedbc1a77d556f6c695`.
-Later Android changes only clarify documentation; no device test or release Local
-runtime availability is implied by these compile results.
+The initial checkpoint had 126 focused JVM tests. The download-adaptation batch
+adds archive extraction, path rejection, hash-preservation and Range pause/resume
+coverage; the focused suite now passes 130 tests. Android CI [36957620360](https://github.com/choicky/fcitx5-android/actions/runs/36957620360)
+passed the earlier implementation commit; a new CI run is required for the
+archive dependency and Android build. No device test or release Local runtime
+availability is implied by these compile results.

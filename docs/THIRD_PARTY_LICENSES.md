@@ -22,6 +22,7 @@
 | CustomPinyinDictionary | Phase 5C normalized release candidate | CC BY-SA 4.0 at upstream license commit `cf17f96af885cb818c2fad87184f383a52482351`; README retains attribution to listed third-party sources | `technical_approved=true`, `distribution_approved=true` for the upstream project artifact with required attribution; transformed artifact records the normalization/modification notice | Phase 5C native audit and normalized rebuild |
 | Rime Ice | Phase 5C research candidate; private/research device acceptance PASS | GPL-3.0-only at fixed commit `3aea6d3694fb3d94ec663641f021f788822897ad`; authoritative pronunciation reproduced through pinned Librime. The project decision treats `cn_dicts/tencent.dict.yaml` under this overall Ice GPLv3 treatment. | `technical_approved=true`, `research_private_approved=true`, and physical-device acceptance PASS. Public distribution remains blocked by a separate provenance/licensing gap in external inputs named by `cn_dicts/base.dict.yaml`: Huayu and the indiejoseph Gist have no license/NOTICE or relicensing evidence in the pinned Ice tree. `distribution_approved=false`, `public_release_approved=false`. THUOCL is separately identified as MIT. This is not a Tencent blocker. | Phase 5C Ice PoC and physical-device acceptance; pinned source files and upstream links reviewed |
 | sherpa-onnx v1.13.8 | Local ASR runtime candidate | Apache-2.0 | PoC runtime；正式分发时保留适用 license/copyright/NOTICE | 4B.3b-0 已核 |
+| Apache Commons Compress 1.27.1 | tar.bz2 archive download/extraction adapter | Apache-2.0 | 随 APK 依赖；保留上游 LICENSE/NOTICE，release SBOM 复核 | 本批固定版本；Android CI 待新依赖构建复核 |
 | ONNX Runtime used by sherpa-onnx | inference runtime | MIT（checkpoint 中尚未直接读取最终引入版本 LICENSE） | PoC 前/正式引入时核最终 artifact 与 LICENSE | 待最终 artifact 复核 |
 | A: sherpa-onnx-streaming-zipformer-zh-int8-2025-06-30 | Local ASR model A / OnlineRecognizer | **模型权重未声明明确 license**；训练数据含若干 non-commercial 条款，条款对权重的法律效果未判定 | **research/device-evaluation only**；许可澄清前不得进入公开发布、正式模型目录，项目不打包/镜像/托管其权重。2026-09-28 所有者个人测试决定（D037 修订）：测试（debug）构建的 Model Manager 从 HF 转换仓库固定 revision `ad658fa0` 下载并校验 SHA-256；该仓库公开、无访问门槛、无 license 元数据；原始检查点 `yuekai/icefall-asr-multi-zh-hans-zipformer-large` 在 HF 设访问门槛（同意分享联系方式）且未声明 license | **公开发布：BLOCKED（许可未解决）**；个人测试构建：可下载（debug-only） |
 | B: sherpa-onnx-funasr-nano-int8-2025-12-30 | Local ASR model B / OfflineRecognizer | Fun-ASR-Nano HF metadata Apache-2.0；第三方 ONNX export metadata Apache-2.0；Qwen3-0.6B Apache-2.0 | 4B.3b PoC 已完成；当前 artifact 未被选为正式/默认模型（D036：体积/内存与长语音失败，非许可原因）。D037：Model Manager 从上游固定 revision（HF csukuangfj @ `6f16bd37`）逐文件下载并校验 SHA-256，项目不托管、不镜像；UI 显示 Apache-2.0 归属。导出者 GitHub 仓库（Wasser1462/FunASR-nano-onnx）无 LICENSE 文件，许可依据为 ModelScope 元数据——此下载决定待所有者复核（2026-09-28：个人测试阶段保留下载，UI 同时显示许可依据与 34–39 s 长语音空结果） | 部分验证；下载许可依据为平台元数据 |
@@ -100,7 +101,7 @@ product release.
 | Self-hosted 服务器（sherpa-onnx、FunASR、Fun-ASR-Nano） | 用户自建的识别服务 | 本项目只实现客户端协议；服务器、模型由用户自行部署与取得许可 | 不随 APK 分发；互通测试所用的上游模型仅用于本机测试，未提交、未分发 | 不适用于分发 |
 | Qwen（阿里云百炼）、腾讯云实时语音识别 | Managed Cloud 服务 | 服务条款，不是开源许可 | BYOK；维护者凭据不进入仓库/APK/CI/release | 服务条款未逐条复核 |
 
-## X-ASR manual import checkpoint (2026-10-02)
+## X-ASR download and manual comparison checkpoint (2026-10-02)
 
 Two fixed GitHub archives are retained for private manual comparison:
 X-ASR punctuation offline INT8 (asset 460927314, 2026-06-03) and 960ms streaming
@@ -117,7 +118,11 @@ Android `docs/x-asr-model-integration.md` records the exact archive URLs, IDs,
 sizes/hashes, source/attribution chain, rejected nonmatching HF mirror, import
 instructions and gates. Android preserves the author LICENSE in
 `docs/licenses/X-ASR-Apache-2.0.txt`; no model/audio/export script is bundled.
-Both entries are import-only (`downloadBase=null`, distributionApproved=false).
-Manual recognition eligibility, recommendation=false, production=false and
-release runtime availability are independent. D045 retained models and their
-licensing status remain unchanged.
+The initial Android checkpoint was import-only (`downloadBase=null`); the current
+feature branch adds the two fixed archive URLs to the existing download lifecycle.
+Archives are verified before safe extraction and the four recognition files are
+verified again by the existing installer. `distributionApproved=false` remains a
+separate record of missing package notices and historical export mapping, not a
+claim that the fixed source is unavailable. Manual recognition eligibility,
+recommendation=false, production=false and release runtime availability remain
+independent. D045 retained models and their licensing status remain unchanged.
