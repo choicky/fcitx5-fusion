@@ -630,6 +630,14 @@ Android 架构稳定后再评估 Windows、Linux、macOS、iOS，并保持 Trigg
 
 ## 当前下一步
 
+### 当前权威状态（2026-10-02）
+
+- Local ASR 当前支持 FunASR Nano、X-ASR 离线 INT8、X-ASR 960 ms 流式 INT8；旧 Zipformer 不恢复，也不做兼容迁移。
+- UI、推荐和 D035 候选顺序统一为 X-ASR 离线 → X-ASR 流式 → Nano；资格、触发、持久化、production、installed、enabled、runtime-ready 与许可状态继续分层。
+- debug/release 均支持应用内从固定上游按需下载上述模型，权重不内置 APK；archive NOTICE、转换来源等证据仍待补齐，不表述为独立法律审计 PASS。
+- Dictionary、Voice/ASR 和 Toolbar 已有实现批次；剩余真机回归、长语音/下载控制与 Toolbar 冻结审计按各自 checkpoint 继续，不把未测项目记为 PASS。
+- 下一步入口：Toolbar/Voice Settings 真机回归与缺陷收口、Local 下载/长语音/许可证据收口、Managed Cloud/Self-hosted checkpoint；LLM 仍为后续事项。
+
 **Dictionary / Voice UI V2 自动验证 checkpoint（D049，2026-10-02）**：Android
 `phase5c-dictionary-manager` 已完成受限的 presentation/navigation 批次：Dictionary
 分组对象列表 → 条件详情（所有可见 catalog 对象均列出，保留 Edit 多选和下载对话框）；
@@ -645,6 +653,8 @@ debug APK、release Kotlin 与 instrumentation 编译；**instrumentation 未执
 以下既有阶段/设备结果保留为各自批次历史，不代表新 UI 已通过真机验收。
 
 **4B.2 已 COMPLETE / DUAL-DEVICE PASS；4B.3b Local ASR A/B comparative device PoC 已 COMPLETE，A、B 均未选为正式/默认 Local ASR（D036）。**
+
+以下 Phase 4C 列表是历史进度快照；其中 Local 模型集、顺序和发布下载口径已由 D050 部分替代，保留用于追溯，不作为当前状态唯一来源。
 
 执行顺序：
 
@@ -669,7 +679,7 @@ debug APK、release Kotlin 与 instrumentation 编译；**instrumentation 未执
 6. 正式 Provider selector、Provider-specific BYOK/API Key UI 与 Local Model Manager/Downloader 已进入 Requirements/D029/Phase 7，但**不提前塞进 4B.3b PoC**；正式版模型按需下载，不要求用户 adb。
 7. 4B.3c realtime preedit UX 仍为后续有条件 PoC；LLM 后处理继续独立，本阶段不接入。upstream PR #899 / Android `SpeechRecognizer` 继续作为 System ASR backend 跟踪。
 
-**当前 Local ASR 产品状态修订（D045，2026-10-01）**：旧的 A/B/C 研究目录状态是历史记录。
+**历史 Local ASR 产品状态修订（D045，2026-10-01；由 D050 部分 supersede）**：旧的 A/B/C 研究目录状态是历史记录。
 当前 Android 支持的 Local 模型为 FunASR Nano 与 Streaming Zipformer bilingual；Chinese-only
 Zipformer A 已从实现/catalog/UI/test 支持集中删除，不做旧用户迁移。用户主动 One-click
 recommendation 按 FunASR Nano → bilingual Zipformer → 已授权 System ASR，入口由

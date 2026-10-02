@@ -427,7 +427,7 @@ Settings 同 source/state/control/options/save，且保持独立；当前服务�
 
 每个 Provider 只显示其所需的配置；云端 Provider 可包含 API Key、model、endpoint/resource 等，Local Provider 不显示 API Key。配置、启用和“当前使用”分别持久化；禁用当前服务时需提示重新选择，不得静默选中另一家云端服务。可提供 Provider-specific“测试配置”，但不得为了测试凭据而未经明确告知上传用户录音。
 
-Local ASR 的 **Provider / runtime / model** 必须区分：例如 Local Provider 可使用 sherpa-onnx runtime，而 Zipformer、FunASR Nano 等是具体 model；runtime 可用不等于任一模型已获准打包或再分发，模型许可须逐一核对。
+Local ASR 的 **Provider / runtime / model** 必须区分：例如 Local Provider 可使用 sherpa-onnx runtime，而 X-ASR、FunASR Nano 等是具体 model；runtime 可用不等于任一模型已获准打包或再分发，模型许可须逐一核对。
 
 当前产品支持的 Local model set 为 FunASR Nano、X-ASR 离线 INT8、X-ASR 960 ms 流式 INT8；旧
 Streaming Zipformer Chinese-English bilingual 按本批决定移除，Chinese-only Zipformer 是已删除的历史研究候选，
@@ -440,7 +440,7 @@ runtime/model maturity 与 public distribution approval 必须分别表达。
 
 正式版应提供 Local Model Manager/Downloader，至少覆盖 model catalog、大小/版本/License 展示、下载/重试（是否支持暂停/断点续传按实现验证）、完整性校验、原子安装、更新与删除。大型 Local 模型原则上不因启用 Voice 而强制内置 APK；模型安装完成后，Local ASR 的日常识别应能完全离线工作。Downloader/Model Manager 不属于 4B.3b 最小 PoC，须在实际 runtime/model 的文件结构、加载方式和许可确认后设计。
 
-4B.3b A/B PoC 的模型均不打包进 APK，也不实现下载器；使用固定模型文件/hash，通过 `adb` 放入测试设备可访问的应用目录。（历史记录；当时的 Phase 5 D045 曾由 Model Manager 支持 FunASR Nano 与 bilingual Zipformer，Chinese-only A 已从实现和 catalog 删除；该段不替代当前 D050 三模型决策。）正式产品不要求用户使用 adb，而是在后续 Model Manager/Downloader 中按需获取已通过许可审查的模型。A 的模型权重许可未明确前，不得进入正式模型目录、release artifact 或由项目提供下载。第三方 runtime、模型与训练数据许可必须分层记录；Local ASR 引入前建立并维护 `docs/THIRD_PARTY_LICENSES.md`。
+4B.3b A/B PoC 的模型均不打包进 APK；该段通过 `adb` 外置模型是历史测试边界，不替代当前 D050 三模型决策。当前 debug/release 均通过既有 Model Manager 从固定上游来源按需下载 FunASR Nano 与两个 X-ASR；项目不镜像、不托管、不将权重内置 APK。上游下载许可、项目托管/镜像、APK 内置和 runtime/model/training-data 证据必须分层记录；archive NOTICE、转换来源等未完成证据单列，不自动等同于 APK 发布阻断项。旧 Zipformer 的许可限制不套用于两个 X-ASR。
 
 ### 9.2 首次推荐具体服务（D034）
 

@@ -667,7 +667,11 @@ an expiring CI artifact URL or a public Release asset.
 
 ## D045 — Retained Local ASR models and user-initiated recommendation
 
-**状态：Accepted（2026-10-01；Android implementation and owner-reported physical-device acceptance PASS）**
+**状态：Accepted（2026-10-01；Android implementation and owner-reported physical-device acceptance PASS；当前模型集与顺序的部分规则由 D050 supersede）**
+
+**仍然有效：** Provider/runtime/model 分层、推荐入口由 `current == null` 控制、推荐资格与 production/D035/许可状态分离、具体服务持久化及 System ASR 授权边界。
+
+**已由 D050 部分替代：** 当前 Local 模型集、UI/推荐顺序、D035 Local 候选顺序和当前三模型发布方式。D045 中关于旧 Zipformer/B/C 当前集及其研究下载限制只保留为历史记录；旧 Chinese-only Zipformer A 的移除与不做兼容迁移仍有效。
 
 当前支持的 Local ASR 模型只有 FunASR Nano（B）和 Streaming Zipformer Chinese-English
 bilingual（C）。旧的 Chinese-only Zipformer（A，`ZipformerZh`）此前只被从用户目录隐藏，
@@ -870,6 +874,8 @@ debug/release 均包含同一 Local runtime/native library 和现有 Model Manag
 模型按需下载，不因发布内置权重。debug GitHub CI 成功后允许由 GitHub CI 构建正式版发布，
 本轮不以新增真机验收作为发布条件。runtime/model 可用性与第三方权重许可证/NOTICE 审计
 仍独立，X-ASR archive 的缺失 LICENSE/NOTICE 证据不得因本决定而视为闭合。
+
+**发布下载口径（2026-10-02，所有者确认的项目发布口径，不等同于独立法律审计）：** APK 发布包含应用内 Model Manager；用户可从固定的上游来源按需下载 FunASR Nano 与两个 X-ASR。项目不托管、不镜像、不将权重内置 APK。两个 X-ASR 的上游声明 Apache-2.0；Nano 保留 Apache-2.0 声明、FunASR 模型协议 v1.1 证据及署名/模型名称要求。精确 archive LICENSE/NOTICE、转换来源等缺口继续记录于 `docs/THIRD_PARTY_LICENSES.md`，是模型证据待补项，不笼统写成阻止 APK 发布的结论。
 
 发布收口证据：debug run `36983652048` 成功；Android
 `82b7fcf44ec916b54de1d9295d14f93ac9372a7c` 以 `v0.1.3-moqi.5` 经 Release run

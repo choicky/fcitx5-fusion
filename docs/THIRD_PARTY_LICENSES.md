@@ -24,10 +24,10 @@
 | sherpa-onnx v1.13.8 | Local ASR runtime candidate | Apache-2.0 | PoC runtime；正式分发时保留适用 license/copyright/NOTICE | 4B.3b-0 已核 |
 | ONNX Runtime used by sherpa-onnx | inference runtime | MIT（checkpoint 中尚未直接读取最终引入版本 LICENSE） | PoC 前/正式引入时核最终 artifact 与 LICENSE | 待最终 artifact 复核 |
 | A: sherpa-onnx-streaming-zipformer-zh-int8-2025-06-30 | Local ASR model A / OnlineRecognizer | **模型权重未声明明确 license**；训练数据含若干 non-commercial 条款，条款对权重的法律效果未判定 | **research/device-evaluation only**；许可澄清前不得进入公开发布、正式模型目录，项目不打包/镜像/托管其权重。2026-09-28 所有者个人测试决定（D037 修订）：测试（debug）构建的 Model Manager 从 HF 转换仓库固定 revision `ad658fa0` 下载并校验 SHA-256；该仓库公开、无访问门槛、无 license 元数据；原始检查点 `yuekai/icefall-asr-multi-zh-hans-zipformer-large` 在 HF 设访问门槛（同意分享联系方式）且未声明 license | **公开发布：BLOCKED（许可未解决）**；个人测试构建：可下载（debug-only） |
-| B: sherpa-onnx-funasr-nano-int8-2025-12-30 | Local ASR model B / OfflineRecognizer | Fun-ASR-Nano HF metadata Apache-2.0；第三方 ONNX export metadata Apache-2.0；Qwen3-0.6B Apache-2.0 | 4B.3b PoC 已完成；当前 artifact 未被选为正式/默认模型（D036：体积/内存与长语音失败，非许可原因）。D037：Model Manager 从上游固定 revision（HF csukuangfj @ `6f16bd37`）逐文件下载并校验 SHA-256，项目不托管、不镜像；UI 显示 Apache-2.0 归属。导出者 GitHub 仓库（Wasser1462/FunASR-nano-onnx）无 LICENSE 文件，许可依据为 ModelScope 元数据——此下载决定待所有者复核（2026-09-28：个人测试阶段保留下载，UI 同时显示许可依据与 34–39 s 长语音空结果） | 部分验证；下载许可依据为平台元数据 |
+| B: sherpa-onnx-funasr-nano-int8-2025-12-30 | Local ASR model / OfflineRecognizer | Fun-ASR-Nano HF metadata Apache-2.0；FunASR 模型协议 v1.1 证据；第三方 ONNX export metadata Apache-2.0；Qwen3-0.6B Apache-2.0 | D050 当前产品模型；Model Manager 从固定上游 revision（HF csukuangfj @ `6f16bd37`）逐文件下载并校验 SHA-256，项目不托管、不镜像、不内置 APK；UI 应显示来源、Apache-2.0 依据、归属和模型名称。Wasser1462/FunASR-nano-onnx 无 LICENSE 文件，转换来源与完整 notice 链仍待补证；34–39 s 空 final 限制保留 | **应用内固定上游按需下载：允许（所有者确认口径）；项目镜像/托管或 APK 内置：否；独立完整法律审计：未完成** |
 | C: sherpa-onnx-streaming-zipformer-bilingual-zh-en-2023-02-20 | Local ASR 候选 C / OnlineRecognizer（评估中） | HF 镜像元数据 `apache-2.0`；上游 `pfluo/k2fsa-zipformer-chinese-english-mixed` 元数据与 README 均为 `apache-2.0`；训练数据未公开（UNVERIFIED） | Model Manager 从 HF 固定 revision `98590b7e` 逐文件下载并校验 SHA-256，项目不托管；非正式、实验性候选，待双机设备结果 | 元数据验证；训练数据来源未核实 |
-| X-ASR offline INT8 / `sherpa-onnx-x-asr-zipformer-transducer-zh-en-punct-int8-2026-06-03` | Local ASR model / OfflineRecognizer | Author card and source repository declare Apache-2.0; exact archive has no embedded LICENSE/NOTICE; exporter/checkpoint historical mapping and package notices remain incomplete | Public upstream archive is downloaded on demand from fixed URL, asset ID `460927314`, archive SHA-256 `5d02c36d7b44e886b7c8f0d8e051f8713acab96c264bb6ef9e718be39a6a2224`; `distribution_approved=false` pending notice/provenance audit | Archive/file sizes and hashes recorded; no claim of license closure |
-| X-ASR 960 ms streaming INT8 / `sherpa-onnx-x-asr-960ms-streaming-zipformer-transducer-zh-en-punct-int8-2026-06-05` | Local ASR model / OnlineRecognizer | Same Apache-2.0 author/source evidence; exact archive has no embedded LICENSE/NOTICE; exporter/checkpoint historical mapping and package notices remain incomplete | Public upstream archive is downloaded on demand from fixed URL, asset ID `460927089`, archive SHA-256 `0a92b798bd6801c333c7ce8aebf5ba769bfe7f3f3511699a67837b2288428603`; `distribution_approved=false` pending notice/provenance audit | Archive/file sizes and hashes recorded; no claim of license closure |
+| X-ASR offline INT8 / `sherpa-onnx-x-asr-zipformer-transducer-zh-en-punct-int8-2026-06-03` | Local ASR model / OfflineRecognizer | Author card and source repository declare Apache-2.0; exact archive has no embedded LICENSE/NOTICE; exporter/checkpoint historical mapping and package notices remain incomplete | Fixed upstream archive URL, asset ID `460927314`, archive SHA-256 `5d02c36d7b44e886b7c8f0d8e051f8713acab96c264bb6ef9e718be39a6a2224`; project does not host/mirror/embed weights. Missing archive notice/provenance remains an evidence gap | **应用内固定上游按需下载：允许（所有者确认口径）；项目镜像/托管或 APK 内置：否；独立完整法律审计：未完成** |
+| X-ASR 960 ms streaming INT8 / `sherpa-onnx-x-asr-960ms-streaming-zipformer-transducer-zh-en-punct-int8-2026-06-05` | Local ASR model / OnlineRecognizer | Same Apache-2.0 author/source evidence; exact archive has no embedded LICENSE/NOTICE; exporter/checkpoint historical mapping and package notices remain incomplete | Fixed upstream archive URL, asset ID `460927089`, archive SHA-256 `0a92b798bd6801c333c7ce8aebf5ba769bfe7f3f3511699a67837b2288428603`; project does not host/mirror/embed weights. Missing archive notice/provenance remains an evidence gap | **应用内固定上游按需下载：允许（所有者确认口径）；项目镜像/托管或 APK 内置：否；独立完整法律审计：未完成** |
 | Doubao Seed-ASR 2.0 API | Direct Cloud ASR PoC | 服务/API条款，不是 OSS model/runtime license | BYOK；维护者 credential 不进入 repo/APK/CI/release；正式产品按届时服务条款复核 | PoC only |
 
 ## Phase 4B.3b PoC policy
@@ -66,9 +66,11 @@ clearance.
 The Android model catalog now carries source/revision, source and license URLs,
 attribution, limitations, and distribution status for the three retained models.
 Recommendation eligibility is separate from `production`/D035 fallback
-maturity and public distribution approval. The first-download disclosure and
-installed details read these catalog fields rather than duplicating
-model-specific license prose.
+maturity and license evidence. Under the owner-confirmed project release
+posture, the application may offer fixed upstream on-demand downloads for Nano
+and both X-ASR models; this is not project hosting, mirroring, or APK-embedded
+weights. The first-download disclosure and installed details read these catalog
+fields rather than duplicating model-specific license prose.
 
 The earlier project-owner physical-device acceptance remains a historical PASS
 for the then-retained model set. Its evidence is Android
@@ -76,19 +78,29 @@ for the then-retained model set. Its evidence is Android
 `11136369038`; it does not prove the current three-model set or the new D035
 order. The owner now reports basic use of both X-ASR models and a subjective
 quality advantage over the retired bilingual model, but supplied no device,
-case, or quantitative details. This does not change model distribution status:
-FunASR Nano and the X-ASR models remain `distribution_approved=false` and
-public in-product distribution pending their documented license/provenance
-review.
+case, or quantitative details. This does not turn the owner report into a
+device acceptance or independent legal audit. Exact archive LICENSE/NOTICE and
+conversion/provenance gaps remain pending; they do not change the accepted
+distinction between fixed upstream on-demand download, project hosting/mirroring,
+and APK-embedded weights.
 
 The following older bullets are historical policy context, superseded for the
-current catalog by D045; the release gate below still applies to any public
-product release.
+current catalog by D050; the release gate below still applies to legal/source
+evidence and any project-hosted or embedded artifact, while it does not negate
+the owner-confirmed fixed-upstream-download posture.
 
 - 当时不实现 Model Manager/Downloader；此后 D037 与其 2026-09-28 修订引入 Model Manager。
 - A 的许可 blocker 当时不阻止内部研究测试，但阻止正式分发；A 现已从支持集删除。
 - B 的许可证据更清晰不等于已经完成正式 release audit。
-- 正式版只允许 Model Manager 展示/下载已经通过相应商用、再分发与 attribution 审查的模型。
+- 正式版不应把未完成证据写成法律审计 PASS；D050 当前允许固定上游按需下载，同时保留逐模型证据补齐要求。
+
+## Current distribution interpretation (D050)
+
+- Application-internal fixed upstream download: accepted project release posture for FunASR Nano and both X-ASR models.
+- Project hosting or mirroring of model weights: not used.
+- Model weights embedded in the APK: not used.
+- Apache-2.0/source/NOTICE/provenance evidence: retain exact source, revision, URL and SHA-256; missing archive NOTICE or conversion evidence remains an explicit follow-up.
+- This is an owner-confirmed project release posture, not a claim that an independent legal audit has completed. It must not be collapsed into runtime readiness, recommendation eligibility, `production`, or D035 qualification.
 
 ## Release gate
 

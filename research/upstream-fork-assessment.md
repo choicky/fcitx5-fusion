@@ -1,7 +1,7 @@
 # Upstream Contribution / Long-term Fork Assessment
 
 > 目的：明确各组改动的归属与长期维护边界，回答上游贡献与 fork 必要性。
-> 基线：addon fork `choicky/fcitx5-chinese-addons@73f59a9`（相对 latest upstream `61474bd`：**落后 0 / 领先 37**，净 diff **16 文件 +886/−102**）；Android fork `choicky/fcitx5-android@moqi-test-apk@f16be46`（tag `v0.1.3-moqi.1`）；总控 `fcitx5-moqi@9023b8d`。
+> 早期基线仅适用于 Phase 3 墨奇集成。当前状态：addons 发布依赖固定完整提交 `022028550c3827f7018df47dab96be7317298c27`；Android fork 已承载 Voice/ASR、Local Model Manager、词库管理、Toolbar 及发布基础设施；总控仓库现名为 `choicky/fcitx5-fusion`。历史基线和净 diff 数字保留作历史事实，不代表当前 fork 面。
 
 ## A. 适合提交 addon upstream（真正的通用价值）
 
@@ -26,7 +26,7 @@
 - `choicky/fcitx5-android` fork：`.github/workflows/moqi-test-apk.yml`、`.github/workflows/release-apk.yml`、`.github/moqi-release-notes.md`、`app/build.gradle.kts` 的 `.moqi` / `.debug` 包名后缀
 - 签名密钥与仓库 secrets；发布 `v0.1.3-moqi.1`（正式线）、`v0.1.3-moqi-test.1`（调试线）
 
-结论：**不应提上游**，应作为发行基础设施单独维护，并尽量与上游保持极小的文件差异（当前 3 个文件）。
+结论：早期“仅发行用途、约 3 文件差异”结论已被当前 Android 产品代码范围 supersede。当前应按功能边界评估：通用 Auxiliary Filter/上游兼容改动可独立研究贡献；MoQi 码表与 selection-frontier 语义留在 addon fork；Voice/ASR、Local Model Manager、词库管理和 Toolbar 的 Android 产品改动分别评估上游可接受边界；发布 workflow、包名后缀和签名配置仍属于本项目发行线。不创建上游 PR，不预设上游接受。
 
 ## D. 可删除 / 不应长期维护
 
@@ -35,7 +35,7 @@
 | `.gitignore` 的 `/modules/pinyinhelper/moqima_gb18030.txt` | **已失去意义**：新的 configure-time fetch 不再往源码目录写文件 → 建议删除（审计发现，未实施） |
 | `d7ec70b` + revert `619c7b4`；`458a331` + revert `a6cf1cf` | 仅历史噪音，**净 diff 为 0**；保留（未获 force-push 授权，不 squash/rebase） |
 | 早期 CI 里的临时 staging 步骤 | 已移除；run `36135660468` 证明不再需要 |
-| 测试工作流跟踪 `feature/moqi-filter` tip | 保留（有意用于快速试新提交），但**发布工作流必须固定 commit**（见复现性审计） |
+| 测试/发布工作流 addons 来源 | 当前 debug/release 均固定完整提交 `022028550c3827f7018df47dab96be7317298c27`，checkout 后断言 HEAD；不依赖 branch tip |
 
 ## 四个特定问题的答复
 
@@ -53,15 +53,9 @@
 
 ## 复现性审计
 
-- **发现（缺陷）**：`release-apk.yml:36-37`（以及 `moqi-test-apk.yml:34-35`）在构建期 `git fetch … feature/moqi-filter` + `git checkout --detach FETCH_HEAD` → **同一 tag 重建会取到当时的分支 tip，不可复现**。
+- **已修复（本轮）**：debug/release workflow 均 fetch 固定完整 addons SHA `022028550c3827f7018df47dab96be7317298c27`、checkout 该 SHA，并断言实际 HEAD；同一 Android commit 不再随 branch tip 漂移。
 - 其余输入已固定：Android 仓库 tree（含 fcitx5 / libime / fcitx5-lua 等 submodule 的 commit 由 tree 记录）、墨奇表（上游 commit + SHA256）、actions 版本。浮动项只有 addon commit。
-- 最小修法（均**未实施**，待批准）：
-  - **A（推荐，最小 diff）**：把发布工作流里的分支名换成显式 commit：
-    ```diff
-    -          git fetch --depth 1 https://github.com/choicky/fcitx5-chinese-addons.git feature/moqi-filter
-    +          git fetch --depth 1 https://github.com/choicky/fcitx5-chinese-addons.git 73f59a9
-    ```
-  - **B（更规范）**：在 Android fork 中提交 addon submodule 指针、并把 `.gitmodules` 的 url 指向本 fork；发布工作流删除 fetch 步骤（tag 完整决定两棵树），测试工作流保留 fetch（有意跟踪 tip）。
+- 不在本轮引入 addon submodule 重构或发布框架；固定 SHA + checkout 后断言是当前最小依赖边界。
 - 附带建议：把 addon commit 与码表 SHA256 写入 Release notes，便于追溯。
 
 ## 快速 CI 回路评估
