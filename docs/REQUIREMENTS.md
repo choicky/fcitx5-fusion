@@ -436,6 +436,15 @@ recommendation 按“已安装、已启用、runtime-ready 的 FunASR Nano → b
 时入口可再次运行，`recommendationDone` 不是入口可见性开关。推荐资格、D035 fallback、
 runtime/model maturity 与 public distribution approval 必须分别表达。
 
+本次 X-ASR 测试批次新增 X-ASR Zipformer 中英带标点离线 INT8（2026-06-03）与
+960 ms 流式 INT8（2026-06-05），仅复用现有本地模型管理、导入/已批准来源下载和手动
+选择流程；不加入一键推荐或 D035 回落（recommendationEligible=false、production=false）。
+D045 对既有两模型资格和推荐顺序继续有效；其“当前仅两模型”的集合描述由本段扩展。
+production=false 在此仅表示未批准自动回落资格，不限制手动识别，也不代表许可或构建
+资格。公开下载入口须有对应固定来源及许可记录；证据未闭合时保留导入/私有测试，
+不宣称下载已完成。保持现有 Section、样式、交互、partial/preedit 与录音时长限制；
+不增加 LLM、transcript handoff、原始音频或识别文本的持久化/日志。
+
 正式版应提供 Local Model Manager/Downloader，至少覆盖 model catalog、大小/版本/License 展示、下载/重试（是否支持暂停/断点续传按实现验证）、完整性校验、原子安装、更新与删除。大型 Local 模型原则上不因启用 Voice 而强制内置 APK；模型安装完成后，Local ASR 的日常识别应能完全离线工作。Downloader/Model Manager 不属于 4B.3b 最小 PoC，须在实际 runtime/model 的文件结构、加载方式和许可确认后设计。
 
 4B.3b A/B PoC 的模型均不打包进 APK，也不实现下载器；使用固定模型文件/hash，通过 `adb` 放入测试设备可访问的应用目录。（历史记录；当前 Phase 5 D045 已由 Model Manager 支持 FunASR Nano 与 bilingual Zipformer，Chinese-only A 已从实现和 catalog 删除，不做兼容迁移。）正式产品不要求用户使用 adb，而是在后续 Model Manager/Downloader 中按需获取已通过许可审查的模型。A 的模型权重许可未明确前，不得进入正式模型目录、release artifact 或由项目提供下载。第三方 runtime、模型与训练数据许可必须分层记录；Local ASR 引入前建立并维护 `docs/THIRD_PARTY_LICENSES.md`。

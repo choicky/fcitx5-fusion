@@ -680,3 +680,27 @@ recommendation 按 FunASR Nano → bilingual Zipformer → 已授权 System ASR�
 被静默替换，以及麦克风/长按空格/Stop/Cancel/重启持久化回归均 PASS。证据为 Android
 `c916d3e144d5e057936723f3e221930409dc2229`、CI run `36802256868`、APK artifact
 `11136369038`；B/C 公开分发许可状态不变，仍为 pending。
+
+## X-ASR manual comparison integration — 2026-10-02
+
+Two exact punctuation INT8 packages (offline 2026-06-03 and streaming 960ms
+2026-06-05) added to the existing Local management/manual-selection flow on the
+isolated `feature/x-asr-model-integration` branch. Both are import-only pending
+fixed-source/distribution audit, excluded from recommendation and D035 fallback.
+No Voice Settings layout/style/section change; no Provider/VoiceInputFlow change.
+Current roughly 60s capture behavior and retained model eligibility preserved.
+
+Archive sizes and full SHA matched; per-file verification recorded. Both load
+and infer nonempty output on four upstream samples under sherpa-onnx 1.13.8
+Linux aarch64; an in-memory 21.6s mixed/pause case also passed. X-ASR-specific
+960ms end-padding fixes demonstrated tail omissions without changing old models.
+This is native interop evidence, not Android device PASS. Current release Local
+runtime is still absent and remains out of scope. Native Android load, latency,
+peak PSS, quality, cancel/late-result and continuous-session device acceptance
+remain pending; checklist is Android `docs/x-asr-model-integration.md`.
+
+Focused JVM/real-file import checks and CI outcome are recorded in the batch
+report. Local Android Gradle configuration fails for missing SDK; no SDK was
+installed. Public model download, release integration/publication, longer than
+60s capture, accumulation, Nano segmentation and 90/120s/5-minute tests are
+follow-up work, not completed or silently added in this batch.

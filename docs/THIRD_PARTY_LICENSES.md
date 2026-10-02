@@ -99,3 +99,25 @@ product release.
 5. 对许可证不明确的模型从 release artifact、catalog 与项目托管下载中剥离。
 | Self-hosted 服务器（sherpa-onnx、FunASR、Fun-ASR-Nano） | 用户自建的识别服务 | 本项目只实现客户端协议；服务器、模型由用户自行部署与取得许可 | 不随 APK 分发；互通测试所用的上游模型仅用于本机测试，未提交、未分发 | 不适用于分发 |
 | Qwen（阿里云百炼）、腾讯云实时语音识别 | Managed Cloud 服务 | 服务条款，不是开源许可 | BYOK；维护者凭据不进入仓库/APK/CI/release | 服务条款未逐条复核 |
+
+## X-ASR manual import checkpoint (2026-10-02)
+
+Two fixed GitHub archives are retained for private manual comparison:
+X-ASR punctuation offline INT8 (asset 460927314, 2026-06-03) and 960ms streaming
+INT8 (asset 460927089, 2026-06-05). Actual archive size/SHA and extracted per-file
+SHA were verified. The original model card at
+`GilgameshWind/X-ASR-zh-en@689ff18c584d29910da37b6fe904db0c1489c9d1` declares
+Apache-2.0; `Gilgamesh-J/X-ASR@838297cd47fed858e6cf72eaf5a52f948a3edd73` has
+Apache-2.0 LICENSE. Sherpa and icefall tool licenses were separately checked.
+Neither actual archive has LICENSE/NOTICE; its README only points to the author.
+Precise historical export revision and notices remain pending. Do not treat
+third-party registry availability as completed distribution approval.
+
+Android `docs/x-asr-model-integration.md` records the exact archive URLs, IDs,
+sizes/hashes, source/attribution chain, rejected nonmatching HF mirror, import
+instructions and gates. Android preserves the author LICENSE in
+`docs/licenses/X-ASR-Apache-2.0.txt`; no model/audio/export script is bundled.
+Both entries are import-only (`downloadBase=null`, distributionApproved=false).
+Manual recognition eligibility, recommendation=false, production=false and
+release runtime availability are independent. D045 retained models and their
+licensing status remain unchanged.
