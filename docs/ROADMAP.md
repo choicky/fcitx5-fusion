@@ -51,7 +51,7 @@
 - [x] Stroke regression；
 - [x] 验证 generic Android config exposure（进程内契约 + Android 实机）。
 
-实现已提交到 `choicky/fcitx5-chinese-addons` 的 `feature/moqi-filter` 分支，当前 tip 为 `f903176f8ffe970bd9e4baf3d974d6b3828c85c5`，对应 PR #1。源码已包含上述已勾选能力及 Pinyin/Shuangpin 自动化测试。
+实现已提交到 `choicky/fcitx5-chinese-addons` 的 `feature/moqi-filter` 分支；本段为 Phase 3 历史快照，`f903176f8ffe970bd9e4baf3d974d6b3828c85c5` 是当时记录的 tip，对应 PR #1。源码已包含上述已勾选能力及 Pinyin/Shuangpin 自动化测试。
 
 CI（run `36121191299`，tip `f903176`）三个 job 全部通过：clang-format、Build and test (gcc)、Build and test (clang)；ctest 9/9 全部通过，其中 `testpinyinhelper` 用固定码表验证墨奇反查，`testpinyin` 覆盖 Stroke / MoQi / Disabled、partial selection、继续输入与 config 契约。
 
@@ -227,7 +227,7 @@ Exit Criteria：
 
 证据：
 
-- CI run `36252101559`：workflow `MoQi test APK`，手动触发（`workflow_dispatch`），分支 `phase4-voice-poc`，head `fc5b909c`；唯一 job `build_debug_apk` 成功。该 workflow 只执行 `BUILD_ABI=arm64-v8a ./gradlew :app:assembleDebug` 及 APK 内容断言（码表路径与 SHA256、`libpinyin.so` 含 AuxiliaryFilter、`.debug` 包名），**不运行单元测试或 lint**；addon 取构建时 `feature/moqi-filter` 的 tip（测试 workflow 设计如此）。产物 `moqi-debug-apk`；
+- CI run `36252101559`：workflow `MoQi test APK`，手动触发（`workflow_dispatch`），分支 `phase4-voice-poc`，head `fc5b909c`；唯一 job `build_debug_apk` 成功。该 workflow 只执行 `BUILD_ABI=arm64-v8a ./gradlew :app:assembleDebug` 及 APK 内容断言（码表路径与 SHA256、`libpinyin.so` 含 AuxiliaryFilter、`.debug` 包名），**不运行单元测试或 lint**；本条为历史证据，当时 addon 取构建时 `feature/moqi-filter` 的 tip；现行 debug/release 均固定完整 SHA `022028550c3827f7018df47dab96be7317298c27`。产物 `moqi-debug-apk`；
 - 单元测试：`VoiceInputSessionTest` 4/4 通过，**仅在项目所有者本机**（`testDebugUnitTest`，2026-09-26，提交前运行），未在 CI 中运行；
 - 实机：**无**（截至批次 4.1 提交时）。
 
