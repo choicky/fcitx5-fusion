@@ -857,8 +857,9 @@ X-ASR 离线 INT8、X-ASR 960 ms 流式 INT8，Chinese-only Zipformer A 仍按 D
 用例或量化数据，该证据仅记为基础实机使用/主观比较，不替代逐项验收。
 
 本批将当前产品集进一步收敛为 FunASR Nano 与两款 X-ASR，移除旧 bilingual Zipformer，
-不做旧模型兼容迁移。三款模型均 `production=true`，但 One-click recommendation 仍与
-production 独立并保持既有 Nano 优先策略。D035 只在既有外部云端/自建服务早期失败条件下
+不做旧模型兼容迁移。三款模型均 `production=true`，且三款本地模型的
+`recommendationEligible` 默认均为 `true`；推荐资格与 production 独立，按当前模型列表
+顺序在已安装、已启用且 runtime-ready 的本地模型中选择。D035 只在既有外部云端/自建服务早期失败条件下
 生效，固定按 X-ASR 离线 → FunASR Nano → X-ASR 960 ms 流式选择首个已启用、完整安装且
 当前 runtime 可用的模型；三者均不可用时沿用既有失败处理。该顺序不是由 UI 排序隐式决定。
 

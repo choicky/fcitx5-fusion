@@ -432,8 +432,8 @@ Local ASR 的 **Provider / runtime / model** 必须区分：例如 Local Provide
 当前产品支持的 Local model set 为 FunASR Nano、X-ASR 离线 INT8、X-ASR 960 ms 流式 INT8；旧
 Streaming Zipformer Chinese-English bilingual 按本批决定移除，Chinese-only Zipformer 是已删除的历史研究候选，
 不保留兼容迁移。用户主动的 One-click recommendation 仍按既有策略，仅在“已安装、已启用、
-runtime-ready”的 FunASR Nano 中选择，之后才考虑已授权且可用的
-System ASR；X-ASR 的 `recommendationEligible=false` 不改变其 D035 `production=true`。Managed
+runtime-ready”的本地模型中按当前模型列表顺序选择；三款本地模型的
+`recommendationEligible` 默认均为 `true`，之后才考虑已授权且可用的 System ASR。Managed
 Cloud/Self-hosted 不被静默选择。`current == null`
 时入口可再次运行，`recommendationDone` 不是入口可见性开关。推荐资格、D035 fallback、
 runtime/model maturity 与 public distribution approval 必须分别表达。
