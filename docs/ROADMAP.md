@@ -709,5 +709,5 @@ LLM 后处理仍为后续事项。
 
 - 总控仓库已由 `choicky/fcitx5-moqi` 直接改名为 `choicky/fcitx5-fusion`，保留原仓库身份、历史、默认分支、分支和 tag。
 - 本地 checkout 目录仍保留为 `fcitx5-moqi`，以免影响正在运行的终端和工作区；origin 已更新为新 SSH 地址。
-- 本轮不追溯修改历史记录、已发布内容或产品代码。后续 debug/release APK 文件名使用 `fusion` 标识，但 applicationId/package name（包括 `.moqi` 与 `.debug`）、namespace、签名和版本规则保持不变。
-- 具体基线、提交、推送与未覆盖范围见 `/tmp/fcitx5-fusion-rename-report.md`。
+- 本轮不追溯修改历史记录、已发布内容或产品代码。后续 debug/release APK 保留 `org.fcitx.fcitx5.android.moqi-` / `org.fcitx.fcitx5.android.debug-` 包名前缀，仅将前缀后版本部分的 `moqi` 项目标识改为 `fusion`；applicationId/package name（包括 `.moqi` 与 `.debug`）、namespace、签名和版本规则保持不变。
+- 改名范围、提交和未覆盖事项见 [`docs/repository-rename.md`](repository-rename.md)；`/tmp/fcitx5-fusion-rename-report.md` 仅为临时交付报告。

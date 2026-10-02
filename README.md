@@ -68,6 +68,7 @@ Phase 3 已完成（证据与限制见 ROADMAP 的 Phase 3 Final Review），当
 - [需求规格](docs/REQUIREMENTS.md)
 - [路线图](docs/ROADMAP.md)
 - [技术决策](docs/DECISIONS.md)
+- [总控仓库改名记录](docs/repository-rename.md)
 - [研究记录](research/README.md)
 
 ## 上游与 fork
