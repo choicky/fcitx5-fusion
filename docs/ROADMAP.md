@@ -114,7 +114,7 @@ Phase 2 Exit Criteria 满足前，不进入完整 Android UI 或 Voice 实现。
 - [x] Android 实机回归：新分发机制下配置项显示、持久化与过滤行为不变。**项目所有者人工回报（2026-09-25）：12 项操作 12/12 全部通过**，所用包为正式发布 `v0.1.3-moqi.2`；**证据为人工回报，未附截图或 logcat，非自动化测试结果，亦非本仓库维护者复测**。操作与记录表见 `docs/phase3-device-verification.md`；
 - [x] 自构建发布线：固定 `.moqi` 包名 + 自有稳定签名密钥（仓库 secrets，复用上游 `SIGN_KEY_*` 接口）+ tag 触发发布 workflow。首个正式发布 `v0.1.3-moqi.1`（[release](https://github.com/choicky/fcitx5-android/releases/tag/v0.1.3-moqi.1)）：CI 校验签名存在、`.moqi` 包名、码表 SHA256 = pin；本机另行确认 APK 内签名证书指纹与自有密钥一致（`C9:01:22:D6:52:B6:24:FA:E7:04:0A:78:69:EF:C1:D6:CD:15:06:D2:80:3D:58:B1:9F:F4:59:9D:2A:BB:AD:A7`）；
 - [x] edge cases 补测：新增 5 组测试（触发入口守卫、MoQi 两位码上限、无匹配即过滤、筛选模式下修饰键被吞、翻页进出筛选）；断言统一走核心 `InputPanel::auxUp()`（用户可见的辅助栏），不依赖引擎内部。CI run `36143794062` 三个 job 全绿、ctest 9/9。
-- [x] 发布复现性：`release-apk.yml` 固定 addon commit（**完整 SHA**，`env.ADDON_COMMIT`），并在 workflow 内断言检出结果；Release notes 自动写入 addon commit / 码表 SHA256 / Android commit。证据：tag `v0.1.3-moqi.2` → run `36158362313`（日志 `addon commit checked out: 0d0102b82b35debf4cf22ce192060c07f10e7b35`，`pinned table sha256` 与包内一致）；`v0.1.3-moqi.1` 的 tag/APK 未被改动；
+- [x] 发布复现性：`release-apk.yml` 固定 addon commit（**完整 SHA**，`env.ADDON_COMMIT`），并在 workflow 内断言检出结果；Release notes 自动写入 addon commit / 码表 SHA256 / Android commit。历史证据：tag `v0.1.3-moqi.2` → run `36158362313`（旧 pin `0d0102b8…`）；当前证据：tag [`v0.1.3-fusion.6`](https://github.com/choicky/fcitx5-android/releases/tag/v0.1.3-fusion.6) → run [`37037562844`](https://github.com/choicky/fcitx5-android/actions/runs/37037562844)，固定 addon `9b3448e6b3889e4281ea39e334c7e5714f8a8b12`，码表 SHA256 与包内一致；历史 tag/APK 未被改动；
 - [x] 收口审计清理：删除 `.gitignore` 中已失效的墨奇表条目（新的 configure-time fetch 不再写源码目录）→ 相对 upstream 的净 diff 由 16 文件降为 **15 文件 +885/−102**；addon 最终提交 `0d0102b82b35debf4cf22ce192060c07f10e7b35` 的完整 PR CI run `36158212213` 三个 job 全绿；
 - [x] 双拼"部分选择后继续输入"断言（按 `research/shuangpin-cursor-selection.md` 的**变体 B**：选择 **西** 前不移动光标，随后输入 `n`、`i`，断言 composition 保留且候选仍含 **安**；不涉及辅助筛选，也不把 cursor-boundary 插入场景写成末尾追加）：commit `8ccb09f01da675eda53527136d07a977eb63320e`（仅 `test/testpinyin.cpp`，+39 行），完整 PR CI run `36246062225` 三个 job 全绿、ctest 9/9（`testpinyin Passed 4.03 sec`）；
 
@@ -480,6 +480,12 @@ paired punctuation 的 formatter-only repair 暴露出验证状态必须分层�
 - debug/release 均支持应用内从固定上游按需下载上述模型，权重不内置 APK；archive NOTICE、转换来源等证据仍待补齐，不表述为独立法律审计 PASS。
 - Dictionary、Voice/ASR 和 Toolbar 已有实现批次；剩余真机回归、长语音/下载控制与 Toolbar 冻结审计按各自 checkpoint 继续，不把未测项目记为 PASS。
 - 下一步入口：Toolbar/Voice Settings 真机回归与缺陷收口、Local 下载/长语音/许可证据收口、Managed Cloud/Self-hosted checkpoint；LLM 仍为后续事项。
+
+### 发布记录（2026-10-02）
+
+- 已发布 [`v0.1.3-fusion.6`](https://github.com/choicky/fcitx5-android/releases/tag/v0.1.3-fusion.6)：Android commit `e48896accb8c6f85ccee6006cfb689c1419ec227`，addons commit `9b3448e6b3889e4281ea39e334c7e5714f8a8b12`，发布 CI run [`37037562844`](https://github.com/choicky/fcitx5-android/actions/runs/37037562844)；对应 debug CI run [`37036451307`](https://github.com/choicky/fcitx5-android/actions/runs/37036451307) 也成功。
+- 正式 APK：`org.fcitx.fcitx5.android.moqi-v0.1.3-fusion.6-0-ge48896ac-arm64-v8a-release.apk`，SHA256 `dfeefe4571c82f073c2a6618acc824959eccb93d61aff0efeb4b8cf1640a0982`；码表 SHA256 `66deab4aaba1285e3c85eb3a364c21bc08db1911b61df8e934f0d006ca7e7923`，签名证书 SHA-256 `c90122d652b624fae7040a7869efc1d6cd1506d2803d58b19ff4599d2abbada7`。
+- 发布 APK 已核验包名 `.moqi`、versionCode `112`、`zh_CN` 的 `fcitx5-chinese-addons.mo` 实际 `msgid/msgstr`、码表和 sherpa-onnx/ONNX native runtime；未执行真机检查，不将资源核验写成真机 UI PASS。
 
 以下 Phase 4C 列表是历史进度快照；其中 Local 模型集、顺序和发布下载口径已由 D050 部分替代，保留用于追溯，不作为当前状态唯一来源。
 

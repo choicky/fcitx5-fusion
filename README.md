@@ -63,7 +63,7 @@ Phase 3 已完成；Phase 4 的 Voice/ASR 产品化、Phase 5 的词库管理和
 自构建 Android 发布线（与上游官方构建无隶属关系，请勿当作官方版本）：
 
 - 包名：release 为 `org.fcitx.fcitx5.android.moqi`，debug 测试包为 `org.fcitx.fcitx5.android.debug`；两者都能与官方 Fcitx5 共存，同一条线内可覆盖升级。
-- 发布流程：确认 `fcitx5-chinese-addons` 的固定完整提交（当前后续构建依赖 `022028550c3827f7018df47dab96be7317298c27`）→ 在 `fcitx5-android` 上打 tag（如 `v0.1.3-moqi.2`）并推送 → `Release APK` workflow 自动构建、校验并创建 Release 并附 APK。历史 Release 使用的旧依赖保持为历史事实。
+- 发布流程：确认 `fcitx5-chinese-addons` 的固定完整提交（当前后续构建依赖 `9b3448e6b3889e4281ea39e334c7e5714f8a8b12`）→ 在 `fcitx5-android` 上打未占用的版本 tag → `Release APK` workflow 自动构建、校验并创建 Release 并附 APK。已发布 `v0.1.3-fusion.6`；历史 Release 使用的旧依赖保持为历史事实。
 - 签名：由 `choicky/fcitx5-android` 的仓库 secrets `SIGN_KEY_BASE64` / `SIGN_KEY_PWD` / `SIGN_KEY_ALIAS` 提供，复用上游 `build-logic` 既有接口，fork 内不含签名代码。密钥与口令不得提交进任何仓库，且必须在仓库之外另行备份——丢失后无法再发布可覆盖升级的版本。
 - 许可：发布二进制时须在 release notes 中给出 LGPL-2.1 许可与对应源码链接（两个 fork 的提交/tag）。
 
