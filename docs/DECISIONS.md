@@ -152,7 +152,9 @@ Phase 2 不为未来 Filter 建立复杂 Plugin Framework；优先在 `fcitx5-ch
 
 **状态：Accepted**
 
-相关改动组成逻辑完整、可审查的批次。push 前先完成源码/API 核对、diff review、格式/静态检查和适用本地测试。GitHub Actions 用于阶段性集成验证，不作为猜测性试错工具；纯文档修改原则上不触发重型 CI。
+相关改动组成逻辑完整、可审查的批次。push 前先完成源码/API 核对、diff review、格式/静态检查和适用本地测试。验证必须区分 Gate 1 Source/Semantic Review、Gate 2 Mechanical/Static Review 与 Gate 3 Real Validation；没有实际 compiler/build 时只能记录 `STATIC REVIEW PASS; COMPILE UNVERIFIED`，人工 compile-oriented audit 不能替代 compiler。GitHub Actions 用于 source/diff/local checks 之后的阶段性集成验证，不作为逐个发现基础编译错误的猜测性试错工具；纯文档修改原则上不触发重型 CI。
+
+2026-10-02 paired punctuation formatter-only repair 暴露了这条流程风险：formatter/static review 可以证明局部机械检查完成，但不能证明声明/定义组合可编译；未完成的 addons CI 也不能提前改变 Phase A 结果。后续批次必须按三层 Gate 分别记录状态，并在缺少本地真实 toolchain 时明确标注 `COMPILE UNVERIFIED`。
 
 ## D023 — Auxiliary Filter 配置持久化沿用上游路径，单元测试不覆盖
 

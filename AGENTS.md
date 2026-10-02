@@ -38,6 +38,20 @@
 - 提交/推送前审查完整累计 actual diff、negative diff 和范围边界；diff 交付物必须对应 base→final，不能只交摘要。
 - 只有根因明确、修复机械、仍在 Change Contract 内且不改变业务/架构/provider/fallback/lifecycle/隐私语义的 CI 失败，才可自主最小修复并复跑 CI。
 - 若需扩大范围、削弱测试、绕过检查、改变行为或根因不确定，必须停止并请求审查；CI 绿不替代累计 diff 审查，也不授权发布。
+
+## 三层验证与状态措辞
+
+每个需要编译或测试的代码批次必须区分以下三层，不能用较低层级的结果代替较高层级：
+
+1. **Gate 1 — Source / Semantic Review**：审查架构、范围、API 边界、行为语义、回归推理以及源码/调用链，回答“设计和实现方向从源码层面是否合理”。
+2. **Gate 2 — Mechanical / Static Review**：审查完整实际 diff、`git diff --check`、本地可用的 formatter、namespace、include、声明/定义一致性、访问控制、const correctness 和明显类型/签名问题，回答“未执行真实 compiler/test 时是否发现明显机械问题”。
+3. **Gate 3 — Real Validation**：按适用范围运行真实 compiler/build、unit/integration/product-path tests、GitHub CI 或 device tests，回答“是否经过真实工具链/产品路径验证”。
+
+Gate 1 或 Gate 2 通过时，若没有实际运行 compiler/build，必须写明 `STATIC REVIEW PASS; COMPILE UNVERIFIED`（或等价表述）。人工 compile-oriented audit 不能替代 compiler，也不能升级为 `compile validated`、`compile-safe` 或 `build verified`。
+
+本地能够验证的内容优先在本地验证；但必须先核对当前环境能力。缺少真实 build environment 时，不得假装完成 build validation，也不得为一次小任务盲目搭建重型环境，应明确记录 `COMPILE UNVERIFIED` 并选择可用的验证路由。当前环境事实是：OracleKR3 适合 Codex CLI/source review，但当前没有 `fcitx5-chinese-addons` native build environment；Windows development machine 可承担适用本地构建/测试；GitHub CI 是 authoritative Linux build/test validation。这些是当前路由事实，不是永久架构限制。
+
+CI 只能作为 source review、actual diff review 和可用本地验证之后的 staged/final validation，不得作为逐个发现基础编译错误的猜测性试错工具。CI 失败只有在根因明确、修复机械且仍在 Change Contract 内时才可自主修复；formatter-only repair、未完成 CI 或 static review 均不得被写成 Gate 3 PASS，也不得改变尚未完成的阶段结果。
 - 运行仓库可用且与改动相关的格式检查、静态检查、构建和测试；优先使用项目现有脚本与 CI 等价命令。
 - 如因环境、依赖、权限、平台或时间限制未运行某项检查，必须如实列出未运行项目和原因。失败、跳过或未运行不等于通过。
 - 不使用反复提交或触发远端 CI 的方式猜测性调试；先在本地完成可行的源码核对和验证。

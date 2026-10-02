@@ -468,6 +468,10 @@ Android 架构稳定后再评估 Windows、Linux、macOS、iOS，并保持 Trigg
 - 不通过反复提交猜测性修复；
 - docs-only 原则上不触发重型 CI。
 
+### 验证流程收口（2026-10-02）
+
+paired punctuation 的 formatter-only repair 暴露出验证状态必须分层：源码/语义审查、机械/静态审查和真实 compiler/build/test/CI/device validation 不是同一件事。未运行真实 compiler 时只能记录 `STATIC REVIEW PASS; COMPILE UNVERIFIED`；未完成的 CI 不得被记为 Gate 3 通过，也不得提前改变对应 Phase 结果。当前验证路由按环境能力选择：OracleKR3 做 source/diff/static review，Windows development machine 承担适用本地构建，GitHub CI 提供 authoritative Linux build/test validation；这是当前路由，不是永久环境限制。
+
 ## 当前下一步
 
 ### 当前权威状态（2026-10-02）
