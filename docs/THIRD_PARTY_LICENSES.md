@@ -26,6 +26,8 @@
 | A: sherpa-onnx-streaming-zipformer-zh-int8-2025-06-30 | Local ASR model A / OnlineRecognizer | **模型权重未声明明确 license**；训练数据含若干 non-commercial 条款，条款对权重的法律效果未判定 | **research/device-evaluation only**；许可澄清前不得进入公开发布、正式模型目录，项目不打包/镜像/托管其权重。2026-09-28 所有者个人测试决定（D037 修订）：测试（debug）构建的 Model Manager 从 HF 转换仓库固定 revision `ad658fa0` 下载并校验 SHA-256；该仓库公开、无访问门槛、无 license 元数据；原始检查点 `yuekai/icefall-asr-multi-zh-hans-zipformer-large` 在 HF 设访问门槛（同意分享联系方式）且未声明 license | **公开发布：BLOCKED（许可未解决）**；个人测试构建：可下载（debug-only） |
 | B: sherpa-onnx-funasr-nano-int8-2025-12-30 | Local ASR model B / OfflineRecognizer | Fun-ASR-Nano HF metadata Apache-2.0；第三方 ONNX export metadata Apache-2.0；Qwen3-0.6B Apache-2.0 | 4B.3b PoC 已完成；当前 artifact 未被选为正式/默认模型（D036：体积/内存与长语音失败，非许可原因）。D037：Model Manager 从上游固定 revision（HF csukuangfj @ `6f16bd37`）逐文件下载并校验 SHA-256，项目不托管、不镜像；UI 显示 Apache-2.0 归属。导出者 GitHub 仓库（Wasser1462/FunASR-nano-onnx）无 LICENSE 文件，许可依据为 ModelScope 元数据——此下载决定待所有者复核（2026-09-28：个人测试阶段保留下载，UI 同时显示许可依据与 34–39 s 长语音空结果） | 部分验证；下载许可依据为平台元数据 |
 | C: sherpa-onnx-streaming-zipformer-bilingual-zh-en-2023-02-20 | Local ASR 候选 C / OnlineRecognizer（评估中） | HF 镜像元数据 `apache-2.0`；上游 `pfluo/k2fsa-zipformer-chinese-english-mixed` 元数据与 README 均为 `apache-2.0`；训练数据未公开（UNVERIFIED） | Model Manager 从 HF 固定 revision `98590b7e` 逐文件下载并校验 SHA-256，项目不托管；非正式、实验性候选，待双机设备结果 | 元数据验证；训练数据来源未核实 |
+| X-ASR offline INT8 / `sherpa-onnx-x-asr-zipformer-transducer-zh-en-punct-int8-2026-06-03` | Local ASR model / OfflineRecognizer | Author card and source repository declare Apache-2.0; exact archive has no embedded LICENSE/NOTICE; exporter/checkpoint historical mapping and package notices remain incomplete | Public upstream archive is downloaded on demand from fixed URL, asset ID `460927314`, archive SHA-256 `5d02c36d7b44e886b7c8f0d8e051f8713acab96c264bb6ef9e718be39a6a2224`; `distribution_approved=false` pending notice/provenance audit | Archive/file sizes and hashes recorded; no claim of license closure |
+| X-ASR 960 ms streaming INT8 / `sherpa-onnx-x-asr-960ms-streaming-zipformer-transducer-zh-en-punct-int8-2026-06-05` | Local ASR model / OnlineRecognizer | Same Apache-2.0 author/source evidence; exact archive has no embedded LICENSE/NOTICE; exporter/checkpoint historical mapping and package notices remain incomplete | Public upstream archive is downloaded on demand from fixed URL, asset ID `460927089`, archive SHA-256 `0a92b798bd6801c333c7ce8aebf5ba769bfe7f3f3511699a67837b2288428603`; `distribution_approved=false` pending notice/provenance audit | Archive/file sizes and hashes recorded; no claim of license closure |
 | Doubao Seed-ASR 2.0 API | Direct Cloud ASR PoC | 服务/API条款，不是 OSS model/runtime license | BYOK；维护者 credential 不进入 repo/APK/CI/release；正式产品按届时服务条款复核 | PoC only |
 
 ## Phase 4B.3b PoC policy
@@ -33,10 +35,11 @@
 - A/B 模型均不打包进 APK。
 - 使用固定模型文件/hash，通过 `adb` 放入测试设备可访问的应用目录。
 
-## Current Local ASR catalog checkpoint (D045, 2026-10-01)
+## Current Local ASR catalog checkpoint (D050, 2026-10-02)
 
-The current Android supported Local model set is FunASR Nano and Streaming
-Zipformer Chinese-English bilingual. The former Chinese-only Zipformer A is a
+The current Android supported Local model set is FunASR Nano and the two X-ASR
+models. The former bilingual Zipformer is retired by D050 without compatibility
+migration; the former Chinese-only Zipformer A is a
 historical research candidate and has been removed from the supported enum,
 catalog, UI, and tests; no compatibility migration is provided.
 
@@ -51,7 +54,7 @@ not recorded as completed public in-product redistribution approval. Known
 tested limitation: the current export produced empty final results for roughly
 34–39 second utterances.
 
-The bilingual Zipformer uses the exact Android artifact
+The historical bilingual Zipformer used the exact Android artifact
 `csukuangfj/sherpa-onnx-streaming-zipformer-bilingual-zh-en-2023-02-20` at HF
 revision `98590b7ed6443e77b714204da2757d75e1a642f4`. Its README and the
 `pfluo/k2fsa-zipformer-chinese-english-mixed` source metadata declare
@@ -61,21 +64,20 @@ pinned per-file SHA-256 and no claim of broader training-data redistribution
 clearance.
 
 The Android model catalog now carries source/revision, source and license URLs,
-attribution, limitations, and distribution status for both retained models.
+attribution, limitations, and distribution status for the three retained models.
 Recommendation eligibility is separate from `production`/D035 fallback
 maturity and public distribution approval. The first-download disclosure and
 installed details read these catalog fields rather than duplicating
 model-specific license prose.
 
-The project owner has completed physical-device acceptance for the retained
-Local ASR/recommendation batch. The PASS covers removal of Chinese-only
-Zipformer A, FunASR-before-bilingual recommendation ordering, System fallback/
-disclosure when no Local model is usable, repeat recommendation after clearing
-`current`, preservation of an unavailable explicit selection, and microphone/
-Space/Stop/Cancel/restart regressions. Evidence: Android
+The earlier project-owner physical-device acceptance remains a historical PASS
+for the then-retained model set. Its evidence is Android
 `c916d3e144d5e057936723f3e221930409dc2229`, CI run `36802256868`, artifact
-`11136369038`. This does not change either model's public distribution status:
-FunASR Nano and bilingual Zipformer remain `distribution_approved=false` and
+`11136369038`; it does not prove the current three-model set or the new D035
+order. The owner now reports basic use of both X-ASR models and a subjective
+quality advantage over the retired bilingual model, but supplied no device,
+case, or quantitative details. This does not change model distribution status:
+FunASR Nano and the X-ASR models remain `distribution_approved=false` and
 public in-product distribution pending their documented license/provenance
 review.
 

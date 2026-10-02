@@ -845,3 +845,24 @@ provider 类型。Installed/enabled/current/runtime-ready 不得合并。
 lifecycle、VoiceInputFlow、audio/session、permission/privacy 语义均不在本批修改
 范围。此决定只批准 presentation/navigation；真实设备验收仍 TBV，不能由源码、
 JVM tests 或 APK compilation 替代。
+
+## D050 — Local ASR 三模型收敛与发布线
+
+**状态：Accepted（2026-10-02；部分 supersede D045 的当前模型集表述）**
+
+D045 之前的当前目录曾包括旧 bilingual Zipformer；本批将当前支持集收敛为 FunASR Nano、
+X-ASR 离线 INT8、X-ASR 960 ms 流式 INT8，Chinese-only Zipformer A 仍按 D045 保持移除且不做兼容迁移。
+所有者报告已实际
+使用两款 X-ASR，主观认为其识别效果优于旧 bilingual Zipformer；由于未提供设备名称、具体
+用例或量化数据，该证据仅记为基础实机使用/主观比较，不替代逐项验收。
+
+本批将当前产品集进一步收敛为 FunASR Nano 与两款 X-ASR，移除旧 bilingual Zipformer，
+不做旧模型兼容迁移。三款模型均 `production=true`，但 One-click recommendation 仍与
+production 独立并保持既有 Nano 优先策略。D035 只在既有外部云端/自建服务早期失败条件下
+生效，固定按 X-ASR 离线 → FunASR Nano → X-ASR 960 ms 流式选择首个已启用、完整安装且
+当前 runtime 可用的模型；三者均不可用时沿用既有失败处理。该顺序不是由 UI 排序隐式决定。
+
+debug/release 均包含同一 Local runtime/native library 和现有 Model Manager 下载/安装路径；
+模型按需下载，不因发布内置权重。debug GitHub CI 成功后允许由 GitHub CI 构建正式版发布，
+本轮不以新增真机验收作为发布条件。runtime/model 可用性与第三方权重许可证/NOTICE 审计
+仍独立，X-ASR archive 的缺失 LICENSE/NOTICE 证据不得因本决定而视为闭合。

@@ -680,3 +680,18 @@ recommendation 按 FunASR Nano → bilingual Zipformer → 已授权 System ASR�
 被静默替换，以及麦克风/长按空格/Stop/Cancel/重启持久化回归均 PASS。证据为 Android
 `c916d3e144d5e057936723f3e221930409dc2229`、CI run `36802256868`、APK artifact
 `11136369038`；B/C 公开分发许可状态不变，仍为 pending。
+
+**Local ASR 三模型收敛（D050，2026-10-02）**：在上述历史状态之后，Android 当前支持集
+收敛为 FunASR Nano、X-ASR 离线 INT8、X-ASR 960 ms 流式 INT8；旧 bilingual Zipformer 和
+Chinese-only Zipformer A 均不恢复。X-ASR 通过既有 Model Manager 的 archive 下载、Range
+续传、暂停/继续/取消、archive 与逐文件 SHA-256、路径校验和原子安装流程进入用户可见目录。
+四个模型均可手动启用/选择，三款目标模型的 D035 `production=true`，One-click 推荐仍保持
+既有 Nano 优先策略，不因 production 标志改变。D035 明确使用 X-ASR 离线 → Nano →
+X-ASR 流式，并逐项跳过未启用、未完整安装或 runtime 不可用模型。sherpa-onnx v1.13.8
+官方 AAR 及 JNI/native 库已从 debug-only 提升为 debug/release 共用；模型仍按需下载，不
+内置 APK。所有者报告已实际使用两款 X-ASR，并主观认为识别效果优于旧 bilingual Zipformer；
+设备名称、具体用例和量化数据未提供，这只是基础实机使用/主观比较证据，不证明下载控制、
+校验失败、长语音、延迟/内存、取消/重复提交或新 D035 顺序逐项实机通过。X-ASR archive
+的 LICENSE/NOTICE 证据缺口仍按 `THIRD_PARTY_LICENSES.md` 标记，不得写成许可审计 PASS。
+debug/release CI 与正式发布条件为：debug GitHub CI 成功后，再由 GitHub CI 构建正式版；
+本轮不以新增真机验收为发布条件。实际 run、tag、commit 和 Release URL 待完成后补录。

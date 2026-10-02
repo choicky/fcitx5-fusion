@@ -429,10 +429,12 @@ Settings 同 source/state/control/options/save，且保持独立；当前服务�
 
 Local ASR 的 **Provider / runtime / model** 必须区分：例如 Local Provider 可使用 sherpa-onnx runtime，而 Zipformer、FunASR Nano 等是具体 model；runtime 可用不等于任一模型已获准打包或再分发，模型许可须逐一核对。
 
-当前产品支持的 Local model set 为 FunASR Nano 与 Streaming Zipformer Chinese-English bilingual；
-Chinese-only Zipformer 是已删除的历史研究候选，不保留兼容迁移。用户主动的 One-click
-recommendation 按“已安装、已启用、runtime-ready 的 FunASR Nano → bilingual Zipformer →
-已授权且可用的 System ASR”选择；Managed Cloud/Self-hosted 不被静默选择。`current == null`
+当前产品支持的 Local model set 为 FunASR Nano、X-ASR 离线 INT8、X-ASR 960 ms 流式 INT8；旧
+Streaming Zipformer Chinese-English bilingual 按本批决定移除，Chinese-only Zipformer 是已删除的历史研究候选，
+不保留兼容迁移。用户主动的 One-click recommendation 仍按既有策略，仅在“已安装、已启用、
+runtime-ready”的 FunASR Nano 中选择，之后才考虑已授权且可用的
+System ASR；X-ASR 的 `recommendationEligible=false` 不改变其 D035 `production=true`。Managed
+Cloud/Self-hosted 不被静默选择。`current == null`
 时入口可再次运行，`recommendationDone` 不是入口可见性开关。推荐资格、D035 fallback、
 runtime/model maturity 与 public distribution approval 必须分别表达。
 
@@ -460,7 +462,9 @@ System ASR 授权：System ASR 与 Local ASR 在隐私上不等价，显式选�
 
 自动 fallback 默认开启。Managed Cloud 与 Self-hosted 同级，不在两者之间自动切换：
 
-- 当前使用 Managed Cloud / Self-hosted：该具体服务 →（启动/早期技术失败）已安装、启用且健康的正式 Local → 识别失败；Local 不可用时直接报告失败；
+- 当前使用 Managed Cloud / Self-hosted：该具体服务 →（启动/早期技术失败）按固定顺序
+  X-ASR 离线 INT8 → FunASR Nano → X-ASR 960 ms 流式 INT8，逐个选择首个已安装、启用且
+  当前 runtime 可用的 Local → 识别失败；Local 不可用时直接报告失败；
 - 当前使用 Local 或 System：其失败直接报告失败。
 
 **System 即使已授权也永不进入自动 fallback 链**；它只在用户显式选为当前服务，或首次推荐经披露/授权选定为当前服务时使用。不得静默发生 Doubao → Alibaba、Alibaba → Tencent、Managed Cloud ↔ Self-hosted、Local → 云端、任何服务 → System 等。
