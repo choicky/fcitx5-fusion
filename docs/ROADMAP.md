@@ -695,3 +695,10 @@ X-ASR 流式，并逐项跳过未启用、未完整安装或 runtime 不可用�
 的 LICENSE/NOTICE 证据缺口仍按 `THIRD_PARTY_LICENSES.md` 标记，不得写成许可审计 PASS。
 debug/release CI 与正式发布条件为：debug GitHub CI 成功后，再由 GitHub CI 构建正式版；
 本轮不以新增真机验收为发布条件。实际 run、tag、commit 和 Release URL 待完成后补录。
+**D050 发布收口（2026-10-02）**：debug run `36980804642` 成功；Android commit
+`c0a9f95964a92d674ebcae965cf334dae2f76257` 以 tag `v0.1.3-moqi.4` 通过 Release run
+`36981898289` 发布。Release 页面为
+https://github.com/choicky/fcitx5-android/releases/tag/v0.1.3-moqi.4 ，正式 APK
+SHA-256 为 `fd35e5627a36ec23a342534969cc5c93bbb7bed55633cab9fc60fae39a623e88`。
+本证据证明构建、签名、包名/码表及发布流程，不替代未完成的真机逐项验收；长语音和
+LLM 后处理仍为后续事项。

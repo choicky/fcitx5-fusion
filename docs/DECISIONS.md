@@ -866,3 +866,10 @@ debug/release 均包含同一 Local runtime/native library 和现有 Model Manag
 模型按需下载，不因发布内置权重。debug GitHub CI 成功后允许由 GitHub CI 构建正式版发布，
 本轮不以新增真机验收作为发布条件。runtime/model 可用性与第三方权重许可证/NOTICE 审计
 仍独立，X-ASR archive 的缺失 LICENSE/NOTICE 证据不得因本决定而视为闭合。
+
+发布收口证据：debug run `36980804642` 成功；Android
+`c0a9f95964a92d674ebcae965cf334dae2f76257` 以 `v0.1.3-moqi.4` 经 Release run
+`36981898289` 发布。正式 APK SHA-256 为
+`fd35e5627a36ec23a342534969cc5c93bbb7bed55633cab9fc60fae39a623e88`，Release 页面为
+https://github.com/choicky/fcitx5-android/releases/tag/v0.1.3-moqi.4 。这只记录 CI/发布
+证据，不把 owner-reported 实机使用或未执行的逐项验收改写为 PASS。
