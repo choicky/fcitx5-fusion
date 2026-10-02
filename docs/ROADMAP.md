@@ -494,3 +494,7 @@ Android 架构稳定后再评估 Windows、Linux、macOS、iOS，并保持 Trigg
 5. **4B.3b 已关闭**：A/B 在同一 sherpa-onnx runtime 与共同 Local 架构下完成双机测试（`204fc324` + `a8a0e1b3`）；A 仍仅限研究（许可）；B 当前 artifact 因约 1 GB 体积、约 2 GB PSS 与 `max_total_len` = 512 长语音空 final 不适合作为默认；两者均未选定（D036）。下一步寻找/验证正式发布候选；不为研究候选实现 Model Manager/Downloader。
 6. 正式 Provider selector、Provider-specific BYOK/API Key UI 与 Local Model Manager/Downloader 已进入 Requirements/D029/Phase 7，但**不提前塞进 4B.3b PoC**；正式版模型按需下载，不要求用户 adb。
 7. 4B.3c realtime preedit UX 仍为后续有条件 PoC；LLM 后处理继续独立，本阶段不接入。upstream PR #899 / Android `SpeechRecognizer` 继续作为 System ASR backend 跟踪。
+
+## Repository rename record
+
+改名决定、范围、保留项和验证依据见 [`docs/repository-rename.md`](repository-rename.md)。总控仓库已由 `choicky/fcitx5-moqi` 改名为 `choicky/fcitx5-fusion`，日期为 2026-10-02；原仓库身份、历史、分支、tag 和 Release 保留。

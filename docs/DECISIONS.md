@@ -134,7 +134,7 @@ ASR 只负责 Audio → Raw Transcript。LLM/Text Post Processor 独立、可关
 
 **状态：Accepted**
 
-`fcitx5-moqi` 为总控仓库。Phase 2 使用 `choicky/fcitx5-chinese-addons` fork。当前不 fork LibIME；是否 fork `fcitx5-android` 待 Voice PoC 实际修改边界确认。
+`fcitx5-fusion` 为总控仓库（原名 `fcitx5-moqi`，2026-10-02 改名并保留原仓库身份与历史）。Phase 2 使用 `choicky/fcitx5-chinese-addons` fork。当前不 fork LibIME；是否 fork `fcitx5-android` 待 Voice PoC 实际修改边界确认。
 
 ## D020 — 暂不确定总仓库 LICENSE
 
