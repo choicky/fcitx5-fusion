@@ -18,8 +18,8 @@
 
 ## 验证依据
 
-- 改名前总控活跃分支基线：`phase5c-dictionary-manager` @ `bf9b43d`；改名后文档提交为 `d5798169f46f1283e76c8ce74234f83a1d7c99c1`。
-- Android 命名/路径提交：`e7121c02abeb99220f45a5938b681182dfc2abb3`；debug run `36999371572` 由 push 自动触发并成功。
+- 改名前总控活跃分支基线：`phase5c-dictionary-manager` @ `bf9b43d`；仓库改名本身不改变 refs，随后上一轮文档提交为 `d5798169f46f1283e76c8ce74234f83a1d7c99c1`，本轮长期记录提交为 `248a9b4`。
+- Android 上一轮 artifact/path 提交为 `e7121c02abeb99220f45a5938b681182dfc2abb3`；本轮精确命名提交为 `a31d45da`。debug run `36999371572` 由上一轮 Android push 自动触发并成功；本轮 Android push 也自动触发既有 debug workflow，状态见临时报告。
 - workflow 按单 APK 断言恰好一个产物，校验包名前缀不变、版本部分按规则转换，并在移动前后比较 SHA-256；内容校验、签名校验、artifact/Release 路径使用重命名后的文件。
 - 正式版命名尚无本轮实际 release 构建验证；未发布新版本。
 
