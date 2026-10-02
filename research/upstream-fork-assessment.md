@@ -43,7 +43,7 @@
    **是。** 墨奇表经 addon 自身的 `config` component 进入 APK assets，而安装该 component 是 stock fcitx5-android 的既有行为——run `36135660468` 就是在 `app/src/main/cpp/CMakeLists.txt` 与上游逐字一致的情况下通过校验的。唯一前提是把 addon submodule 指向本 fork（构建配置，不是代码改动）。
 
 2. **Phase 3 后是否仍需长期维护 `fcitx5-android` fork？**
-   代码上**不需要**（fork 内无任何 MoQi 逻辑）；**发行基础设施上需要**——必须有仓库承载发布 workflow、包名后缀与签名 secrets。建议定位为"仅发行用途"，差异保持 3 文件，并定期从上游同步。
+该“代码上不需要、仅发行用途、约 3 文件差异”的判断只适用于早期 Phase 3 墨奇集成，已被当前 Android fork 承载的 Voice/ASR、Local Model Manager、词库管理和 Toolbar 产品代码 supersede。发布 workflow、包名后缀与签名 secrets 仍属于发行线；未来按功能边界评估上游贡献，不创建 PR、不预设接受。
 
 3. **`.moqi` applicationId、固定签名、Release workflow 是否仅属于我们自己的发行基础设施？**
    **是。** 上游有自己的包名、签名与 CD 流程；这些改动对上游无价值，也不应提。
@@ -54,7 +54,7 @@
 ## 复现性审计
 
 - **已修复（本轮）**：debug/release workflow 均 fetch 固定完整 addons SHA `022028550c3827f7018df47dab96be7317298c27`、checkout 该 SHA，并断言实际 HEAD；同一 Android commit 不再随 branch tip 漂移。
-- 其余输入已固定：Android 仓库 tree（含 fcitx5 / libime / fcitx5-lua 等 submodule 的 commit 由 tree 记录）、墨奇表（上游 commit + SHA256）、actions 版本。浮动项只有 addon commit。
+- 其余输入已固定：Android 仓库 tree（含 fcitx5 / libime / fcitx5-lua 等 submodule 的 commit 由 tree 记录）、墨奇表（上游 commit + SHA256）、actions 版本。历史审计中的浮动 addon commit 已由当前两个 workflow 的完整 SHA 固定取代。
 - 不在本轮引入 addon submodule 重构或发布框架；固定 SHA + checkout 后断言是当前最小依赖边界。
 - 附带建议：把 addon commit 与码表 SHA256 写入 Release notes，便于追溯。
 

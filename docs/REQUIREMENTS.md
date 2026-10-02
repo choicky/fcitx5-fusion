@@ -403,4 +403,4 @@ PoC 证明现有接口不足前，不修改 LibIME。
 
 当前支持 FunASR Nano、X-ASR 离线 INT8、X-ASR 960 ms 流式 INT8；旧 Zipformer 不恢复，也不做兼容迁移。UI、推荐和 D035 候选顺序为 X-ASR 离线 → X-ASR 流式 → Nano，但推荐资格、触发、持久化、production、installed、enabled、runtime-ready 与许可状态必须分层表达。
 
-debug/release 均通过既有 Model Manager 从固定上游来源按需下载模型，权重不得内置 APK，项目不镜像或托管权重。应用内上游下载、项目托管/镜像和 APK 内置是不同发布形态；archive NOTICE、转换来源等待补证事项必须单列，不得虚报法律审计完成，也不得仅据此笼统阻止 APK 发布。Provider、runtime、model、training-data provenance 与隐私/授权规则继续按现有章节执行。
+debug/release 均通过既有 Model Manager 从固定上游来源按需下载模型，三款模型 `production=true` 且 `recommendationEligible` 默认均为 `true`，实际使用仍需 installed/enabled/runtime-ready 检查。权重不得内置 APK，项目不镜像或托管权重。应用内上游下载、项目托管/镜像和 APK 内置是不同发布形态；archive NOTICE、转换来源等待补证事项必须单列，不得虚报法律审计完成，也不得仅据此笼统阻止 APK 发布。Provider、runtime、model、training-data provenance 与隐私/授权规则继续按现有章节执行。

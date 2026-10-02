@@ -22,7 +22,7 @@
 | sherpa-onnx v1.13.8 | Local ASR runtime candidate | Apache-2.0 | PoC runtime；正式分发时保留适用 license/copyright/NOTICE | 4B.3b-0 已核 |
 | ONNX Runtime used by sherpa-onnx | inference runtime | MIT（checkpoint 中尚未直接读取最终引入版本 LICENSE） | PoC 前/正式引入时核最终 artifact 与 LICENSE | 待最终 artifact 复核 |
 | A: sherpa-onnx-streaming-zipformer-zh-int8-2025-06-30 | Local ASR model A / OnlineRecognizer | **模型权重未声明明确 license**；训练数据含若干 non-commercial 条款，条款对权重的法律效果未判定 | **research/device-evaluation only**；许可澄清前不得进入公开发布、正式模型目录，项目不打包/镜像/托管其权重。2026-09-28 所有者个人测试决定（D037 修订）：测试（debug）构建的 Model Manager 从 HF 转换仓库固定 revision `ad658fa0` 下载并校验 SHA-256；该仓库公开、无访问门槛、无 license 元数据；原始检查点 `yuekai/icefall-asr-multi-zh-hans-zipformer-large` 在 HF 设访问门槛（同意分享联系方式）且未声明 license | **公开发布：BLOCKED（许可未解决）**；个人测试构建：可下载（debug-only） |
-| B: sherpa-onnx-funasr-nano-int8-2025-12-30 | Local ASR model B / OfflineRecognizer | Fun-ASR-Nano HF metadata Apache-2.0；第三方 ONNX export metadata Apache-2.0；Qwen3-0.6B Apache-2.0 | 4B.3b PoC 已完成；当前 artifact 未被选为正式/默认模型（D036：体积/内存与长语音失败，非许可原因）。D037：Model Manager 从上游固定 revision（HF csukuangfj @ `6f16bd37`）逐文件下载并校验 SHA-256，项目不托管、不镜像；UI 显示 Apache-2.0 归属。导出者 GitHub 仓库（Wasser1462/FunASR-nano-onnx）无 LICENSE 文件，许可依据为 ModelScope 元数据——此下载决定待所有者复核（2026-09-28：个人测试阶段保留下载，UI 同时显示许可依据与 34–39 s 长语音空结果） | 部分验证；下载许可依据为平台元数据 |
+| B: sherpa-onnx-funasr-nano-int8-2025-12-30 | Current Local ASR / OfflineRecognizer | Fun-ASR-Nano HF metadata Apache-2.0；FunASR 模型协议 v1.1；第三方 ONNX export metadata Apache-2.0；导出者仓库无 LICENSE，转换/NOTICE 链仍待补证 | D050 当前产品模型；Model Manager 从固定 HF revision `6f16bd378457e13f36ccf3910df9017f96c346fb` 逐文件下载并校验 SHA-256；项目不托管、不镜像、不内置 APK。应用内固定上游按需下载是所有者确认的项目发布口径，不等于独立法律审计 PASS；34–39 s 空 final 限制保留 | 逐模型证据未完全闭合；不再写成“尚未批准因此阻止 APK 发布” |
 | C: sherpa-onnx-streaming-zipformer-bilingual-zh-en-2023-02-20 | Local ASR 候选 C / OnlineRecognizer（评估中） | HF 镜像元数据 `apache-2.0`；上游 `pfluo/k2fsa-zipformer-chinese-english-mixed` 元数据与 README 均为 `apache-2.0`；训练数据未公开（UNVERIFIED） | Model Manager 从 HF 固定 revision `98590b7e` 逐文件下载并校验 SHA-256，项目不托管；非正式、实验性候选，待双机设备结果 | 元数据验证；训练数据来源未核实 |
 | X-ASR offline INT8 / `sherpa-onnx-x-asr-zipformer-transducer-zh-en-punct-int8-2026-06-03` | Current Local ASR / OfflineRecognizer | Author card/source repository declare Apache-2.0; exact archive has no embedded LICENSE/NOTICE; exporter/checkpoint mapping remains incomplete | Fixed upstream asset `460927314`, archive SHA-256 `5d02c36d7b44e886b7c8f0d8e051f8713acab96c264bb6ef9e718be39a6a2224`; project does not host/mirror/embed weights; evidence gap remains | 应用内固定上游按需下载允许（所有者确认口径）；独立法律审计未完成 |
 | X-ASR 960 ms streaming INT8 / `sherpa-onnx-x-asr-960ms-streaming-zipformer-transducer-zh-en-punct-int8-2026-06-05` | Current Local ASR / OnlineRecognizer | Same Apache-2.0 author/source evidence; exact archive has no embedded LICENSE/NOTICE; exporter/checkpoint mapping remains incomplete | Fixed upstream asset `460927089`, archive SHA-256 `0a92b798bd6801c333c7ce8aebf5ba769bfe7f3f3511699a67837b2288428603`; project does not host/mirror/embed weights; evidence gap remains | 应用内固定上游按需下载允许（所有者确认口径）；独立法律审计未完成 |
@@ -33,9 +33,9 @@
 - A/B 模型均不打包进 APK。
 - 使用固定模型文件/hash，通过 `adb` 放入测试设备可访问的应用目录。
 - 当前不实现 Model Manager/Downloader。（历史记录；此后 D037 与其 2026-09-28 修订引入 Model Manager，见上表。）
-- A 的许可 blocker 不阻止当前内部研究测试，但阻止正式分发/项目提供下载。
-- B 的许可证据更清晰不等于已经完成正式 release audit。
-- 正式版只允许 Model Manager 展示/下载已经通过相应商用、再分发与 attribution 审查的模型。
+- A 的许可 blocker 仍是旧研究候选的历史限制；A 已从 D050 当前支持集删除。
+- B/Nano 的逐项 archive、转换和 NOTICE 证据仍待补齐，但当前接受固定上游按需下载口径；不得把缺口写成独立法律审计 PASS，也不得笼统宣称阻止 APK 发布。
+- 正式版仍须保留精确来源、revision、SHA-256、归属和可获得的许可证/NOTICE 证据。
 
 ## Release gate
 

@@ -566,10 +566,32 @@ Rime Ice（固定提交 `3aea6d3694fb3d94ec663641f021f788822897ad`）因 Phase
 
 workflow 不接受来源 URL、提交、Base 版本或用户矩阵；`workflow_dispatch`
 只运行仓库定义的固定构建，`dictionary-v*` maintainer tag 才创建 Release。
+## D045 — Retained Local ASR models and user-initiated recommendation
+
+**状态：Accepted；当前模型集、顺序和发布口径由 D050 部分替代。** Provider/runtime/model 分层、`current == null` 推荐入口、推荐资格与 production/D035/许可分离、具体服务持久化和 System 授权边界仍有效；旧 Zipformer 集合与研究下载限制保留为历史。
+
+## D046 — Separate Toolbar Voice configuration from Provider readiness
+
+**状态：Accepted；仅部分替代 D030/D034 的 Toolbar visibility 规则。** `ToolbarAction.Voice ∈ toolbarActions` 是持久 canonical state；Virtual Keyboard、Voice Settings、Toolbar Editor 是同一状态的 UI projection。Provider readiness 决定启动结果，不得使已配置的 Mic 静默消失；password/security context 可临时 suppress，但不得改写配置。
+
+## D047 — Toolbar physical-device repair boundary and retained upstream compatibility
+
+**状态：Accepted。** 保留 upstream-compatible Virtual Keyboard projection、Space long-press 单一 canonical state、Toolbar/Voice 配置语义和既有业务行为；真机验收要求 action icons、可操作区域及窄屏行为，不扩展到 provider 或输入业务重构。
+
+## D048 — Toolbar Editor V2 complete intent and right-end runtime projection
+
+**状态：Accepted；替代旧的 capacity gate 和 action-type-specific narrow-width policy。** `toolbarActions` 只持久化 Current membership/order；Editor 是 Cancel/OK transaction，Current 可为空或包含全部 actions；Available order 不持久化。运行时按实际宽度从配置右端临时隐藏，不改写配置。
+
+## D049 — Dictionary Manager and Voice Settings UI V2 presentation boundary
+
+**状态：Accepted。** Dictionary 使用对象列表→条件详情→既有操作的窄范围 presentation；保留 catalog/provenance、Pinyin/Shuangpin 共用 runtime/config 和下载/校验语义。Voice Settings 只做 presentation/navigation，不改变 Provider、词库、生命周期或输入行为；未完成真机项目仍不得记为 PASS。
+
+以上 D045–D049 是当前有效共识摘要；完整历史实现、验收和 supersession 关系继续保留在功能分支记录中。D050 仅替代其中明确列出的模型集、顺序和发布下载口径。
+
 ## D050 — Local ASR 三模型收敛与发布线
 
 **状态：Accepted（2026-10-02；部分 supersede 旧 Local 模型集、顺序和下载限制）**
 
-当前 Local 支持 FunASR Nano、X-ASR 离线 INT8、X-ASR 960 ms 流式 INT8；旧 bilingual/Chinese-only Zipformer 不恢复，且不做兼容迁移。UI、推荐和 D035 候选顺序统一为 X-ASR 离线 → X-ASR 流式 → Nano。推荐资格、触发、持久化、production、installed、enabled、runtime-ready 与许可状态保持独立。
+当前 Local 支持 FunASR Nano、X-ASR 离线 INT8、X-ASR 960 ms 流式 INT8；旧 bilingual/Chinese-only Zipformer 不恢复，且不做兼容迁移。三款模型均 `production=true`，`recommendationEligible` 默认均为 `true`；实际推荐仍逐项检查 installed/enabled/runtime-ready。UI、推荐和 D035 候选顺序统一为 X-ASR 离线 → X-ASR 流式 → Nano。推荐资格、触发、持久化、production、installed、enabled、runtime-ready 与许可状态保持独立。
 
 debug/release 均支持应用内从固定上游按需下载三款模型，权重不内置 APK；这不表示项目托管或镜像模型。两个 X-ASR 的上游声明 Apache-2.0；Nano 保留 Apache-2.0、FunASR 模型协议 v1.1 与署名/模型名称证据。archive LICENSE/NOTICE、转换来源等缺口继续记录，不写成独立法律审计 PASS，也不笼统作为 APK 发布阻断项。旧决定中关于 Provider/runtime/model 分层、隐私、授权、fallback 资格和持久化的部分仍有效。
