@@ -600,10 +600,10 @@ debug/release 均支持应用内从固定上游按需下载三款模型，权重
 
 ## D051 — 成对标点固定为 19 组并复用上游机制
 
-**状态：Accepted（2026-10-03；目标行为已决定，具体 table mapping pending source verification）**
+**状态：Accepted（2026-10-03；目标行为已决定，table mapping 已应用，runtime validation pending）**
 
 Fusion 的成对标点目标固定为 19 组，完整 authoritative list 见 docs/REQUIREMENTS.md §5.1。选择依据是此前检查的 Doubao APK 确认 18 组，再加上检查的 WeChat pair data 中存在的 ‹›；WeChat 中其他装饰性/表情导向扩展（例如 ʚɞ、⊱⊰、༺༻）不自动采用。超出这 19 组必须另行作出明确决定。
 
-实现复用现有 Fcitx5 Chinese Addons paired-punctuation mechanism。现有 modules/punctuation/punc.mb.zh_CN 已用第三列/AltMapping 表达配对；已有 first-column double-quote → AltMapping curly double-quote、first-column apostrophe → AltMapping curly apostrophe 等形式。本决定不引入 structured candidate API、Pinyin/Table paired-punctuation plumbing、新 punctuation state machine、LibIME、Fcitx core 或 Android candidate protocol 改动。
+实现已复用现有 Fcitx5 Chinese Addons paired-punctuation mechanism，选定 mapping 已应用于 `fcitx5-chinese-addons/modules/punctuation/punc.mb.zh_CN`。现有表格使用第三列/AltMapping 表达配对；已有 first-column double-quote → AltMapping curly double-quote、first-column apostrophe → AltMapping curly apostrophe 等形式。本决定不引入 structured candidate API、Pinyin/Table paired-punctuation plumbing、新 punctuation state machine、LibIME、Fcitx core 或 Android candidate protocol 改动；此前 abandoned structured-candidate implementation 已回滚。
 
-但第一列是 trigger key，部分 trigger key 有多个 mapping；所有 19 组如何准确映射到既有 trigger semantics，以及最终 punc.mb.zh_CN 的最小 diff，必须先完成 source review，当前为 **PENDING SOURCE VERIFICATION**。本决定不批准直接盲改 19 行，也不把尚未实现或未编译验证的行为写成已完成。
+第一列是 trigger key，部分 trigger key 有多个 mapping；本次已按选定的 46 行表内容完成 table mapping。当前仍为 **runtime validation pending**：本决定不把尚未完成的编译、运行时、Pinyin/Shuangpin E2E 或 Android 真机验证写成已通过。

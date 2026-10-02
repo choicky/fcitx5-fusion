@@ -155,7 +155,7 @@ Auxiliary Filter:
 
 这 19 组是本项目的 authoritative target set。扩展到集合之外必须另行作出明确决定。
 
-实现方向是复用现有上游 paired-punctuation mechanism，最小扩展 modules/punctuation/punc.mb.zh_CN；不得因此引入 structured candidate API、Pinyin/Table paired-punctuation plumbing、新 punctuation state machine、LibIME/Fcitx core/Android candidate protocol 修改。第一列是 trigger key，部分 trigger key 存在多个 mapping；因此所有 19 组如何映射到现有 trigger semantics，以及最终最小 table diff，仍为 **PENDING SOURCE VERIFICATION**，不能宣称可直接修改 19 行完成。
+实现已复用现有上游 paired-punctuation mechanism，并将选定 mapping 应用于 `fcitx5-chinese-addons/modules/punctuation/punc.mb.zh_CN`；不得因此引入 structured candidate API、Pinyin/Table paired-punctuation plumbing、新 punctuation state machine、LibIME/Fcitx core/Android candidate protocol 修改。此前的 abandoned structured-candidate implementation 已回滚。当前状态为 **table mapping applied; runtime validation pending**：表文件变更已提交，但尚未据此宣称编译、运行时、Pinyin/Shuangpin E2E 或 Android 真机验证通过。
 
 ## 6. 词库与语言模型
 
