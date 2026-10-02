@@ -597,3 +597,13 @@ workflow 不接受来源 URL、提交、Base 版本或用户矩阵；`workflow_d
 当前 Local 支持 FunASR Nano、X-ASR 离线 INT8、X-ASR 960 ms 流式 INT8；旧 bilingual/Chinese-only Zipformer 不恢复，且不做兼容迁移。三款模型均 `production=true`，`recommendationEligible` 默认均为 `true`；实际推荐仍逐项检查 installed/enabled/runtime-ready。UI、推荐和 D035 候选顺序统一为 X-ASR 离线 → X-ASR 流式 → Nano。推荐资格、触发、持久化、production、installed、enabled、runtime-ready 与许可状态保持独立。
 
 debug/release 均支持应用内从固定上游按需下载三款模型，权重不内置 APK；这不表示项目托管或镜像模型。两个 X-ASR 的上游声明 Apache-2.0；Nano 保留 Apache-2.0、FunASR 模型协议 v1.1 与署名/模型名称证据。archive LICENSE/NOTICE、转换来源等缺口继续记录，不写成独立法律审计 PASS，也不笼统作为 APK 发布阻断项。旧决定中关于 Provider/runtime/model 分层、隐私、授权、fallback 资格和持久化的部分仍有效。
+
+## D051 — 成对标点固定为 19 组并复用上游机制
+
+**状态：Accepted（2026-10-03；目标行为已决定，具体 table mapping pending source verification）**
+
+Fusion 的成对标点目标固定为 19 组，完整 authoritative list 见 docs/REQUIREMENTS.md §5.1。选择依据是此前检查的 Doubao APK 确认 18 组，再加上检查的 WeChat pair data 中存在的 ‹›；WeChat 中其他装饰性/表情导向扩展（例如 ʚɞ、⊱⊰、༺༻）不自动采用。超出这 19 组必须另行作出明确决定。
+
+实现复用现有 Fcitx5 Chinese Addons paired-punctuation mechanism。现有 modules/punctuation/punc.mb.zh_CN 已用第三列/AltMapping 表达配对；已有 first-column double-quote → AltMapping curly double-quote、first-column apostrophe → AltMapping curly apostrophe 等形式。本决定不引入 structured candidate API、Pinyin/Table paired-punctuation plumbing、新 punctuation state machine、LibIME、Fcitx core 或 Android candidate protocol 改动。
+
+但第一列是 trigger key，部分 trigger key 有多个 mapping；所有 19 组如何准确映射到既有 trigger semantics，以及最终 punc.mb.zh_CN 的最小 diff，必须先完成 source review，当前为 **PENDING SOURCE VERIFICATION**。本决定不批准直接盲改 19 行，也不把尚未实现或未编译验证的行为写成已完成。

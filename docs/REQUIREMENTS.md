@@ -129,6 +129,34 @@ Auxiliary Filter:
 
 `fcitx5-android` 已有 ConfigEnum/ConfigKey 通用 UI，应优先复用；除非实际验证不足，不增加 MoQi-specific Android settings UI 或修改 candidate frontend protocol。
 
+### 5.1 成对标点目标（D051）
+
+成对标点复用现有 Fcitx5 Chinese Addons 的 punctuation setting/mechanism。启用成对标点行为时，当前用户可见目标集合严格为以下 19 组；不得静默扩展：
+
+1. （）
+2. “”
+3. ‘’
+4. ()
+5. []
+6. {}
+7. ""
+8. 【】
+9. 「」
+10. 『』
+11. 《》
+12. 〈〉
+13. ［］
+14. ｛｝
+15. 〖〗
+16. 〔〕
+17. «»
+18. <>
+19. ‹›
+
+这 19 组是本项目的 authoritative target set。扩展到集合之外必须另行作出明确决定。
+
+实现方向是复用现有上游 paired-punctuation mechanism，最小扩展 modules/punctuation/punc.mb.zh_CN；不得因此引入 structured candidate API、Pinyin/Table paired-punctuation plumbing、新 punctuation state machine、LibIME/Fcitx core/Android candidate protocol 修改。第一列是 trigger key，部分 trigger key 存在多个 mapping；因此所有 19 组如何映射到现有 trigger semantics，以及最终最小 table diff，仍为 **PENDING SOURCE VERIFICATION**，不能宣称可直接修改 19 行完成。
+
 ## 6. 词库与语言模型
 
 - 词库质量优先。
