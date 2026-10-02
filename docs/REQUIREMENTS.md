@@ -456,20 +456,20 @@ System ASR 授权：System ASR 与 Local ASR 在隐私上不等价，显式选�
 
 首次使用引导是否推荐/下载 Local 模型尚未冻结，待正式 Local ASR 发布候选确定后再决定。
 
-### 9.3 自动 fallback（D035）
+### 9.3 自动 fallback（D035，历史基线；模型顺序与实现状态由 D050 部分替代）
 
 核心隐私规则：未经用户事先明确授权，自动 fallback 不得扩大可能接收用户语音数据的参与方/处理方集合。Local ASR 是 Fcitx 控制的设备端处理；System ASR 是独立的信任/数据处理边界，由 Android/OEM/system `RecognitionService` 实现，可能在本地或远程处理，Fcitx 不得假定其仅在本地处理。
 
 自动 fallback 默认开启。Managed Cloud 与 Self-hosted 同级，不在两者之间自动切换：
 
 - 当前使用 Managed Cloud / Self-hosted：该具体服务 →（启动/早期技术失败）按固定顺序
-  X-ASR 离线 INT8 → FunASR Nano → X-ASR 960 ms 流式 INT8，逐个选择首个已安装、启用且
+  X-ASR 离线 INT8 → X-ASR 960 ms 流式 INT8 → FunASR Nano，逐个选择首个已安装、启用且
   当前 runtime 可用的 Local → 识别失败；Local 不可用时直接报告失败；
 - 当前使用 Local 或 System：其失败直接报告失败。
 
 **System 即使已授权也永不进入自动 fallback 链**；它只在用户显式选为当前服务，或首次推荐经披露/授权选定为当前服务时使用。不得静默发生 Doubao → Alibaba、Alibaba → Tencent、Managed Cloud ↔ Self-hosted、Local → 云端、任何服务 → System 等。
 
-V1 只处理启动/早期技术失败：Provider 不可用、无网络/连接失败、endpoint 不可用、认证/服务初始化失败、可用识别会话建立前的早期超时。早期边界是“可用识别会话已建立”，现有 `onStarted` 太早，不能用它判定。V1 不做会话中途跨 Provider PCM replay/迁移、不因质量差自动重识别、不做双 Provider 同时识别、不把已采集音频静默重放给其他第三方；用户停止/取消后不切换，会话中途失败报告失败/允许重试。fallback 须可观测（第 11 节）。D035 实现仍未开始；没有正式 Local 模型时不把 debug A/B 当作产品回落目标。
+V1 只处理启动/早期技术失败：Provider 不可用、无网络/连接失败、endpoint 不可用、认证/服务初始化失败、可用识别会话建立前的早期超时。早期边界是“可用识别会话已建立”，现有 `onStarted` 太早，不能用它判定。V1 不做会话中途跨 Provider PCM replay/迁移、不因质量差自动重识别、不做双 Provider 同时识别、不把已采集音频静默重放给其他第三方；用户停止/取消后不切换，会话中途失败报告失败/允许重试。fallback 须可观测（第 11 节）。本段“D035 实现仍未开始”是历史基线；当前实现和三模型资格以 D050 为准。
 
 ## 10. ASR 与 LLM 解耦
 
