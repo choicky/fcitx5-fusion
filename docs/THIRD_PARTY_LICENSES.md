@@ -37,6 +37,13 @@
 
 ## Release gate
 
+## Current distribution interpretation (D050, 2026-10-02)
+
+- 当前接受的项目发布方式是 APK 内应用从固定上游按需下载 FunASR Nano 与两个 X-ASR。
+- 项目不托管、不镜像模型权重，模型权重不内置 APK；这三种形态不得混写。
+- 两个 X-ASR 保留上游 Apache-2.0 声明；Nano 保留 Apache-2.0、FunASR 模型协议 v1.1 和署名/模型名称证据。
+- 精确来源、revision、URL、SHA-256、archive LICENSE/NOTICE 与转换来源缺口继续逐项记录；本段是所有者确认的项目发布口径，不等同于独立法律审计，也不把待补证自动写成 APK 发布阻断。
+
 正式发行前至少完成：
 
 1. 从最终依赖/SBOM 反查实际版本与 artifact；

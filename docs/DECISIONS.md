@@ -348,6 +348,8 @@ Local ASR 的 Provider、runtime、model 分层管理。正式版需要 Local Mo
 
 ## D032 — Local ASR 第一轮采用 A/B comparative device PoC；PoC 模型外置
 
+**部分 supersede：** D050 替代本决定关于当前模型集、推荐/D035 顺序和发布下载限制的部分；A/B PoC 外置模型、研究证据和当时的设备结论仍为历史记录。
+
 **状态：Accepted（2026-09-27）**
 
 4B.3b-0 研究后，不在纸面阶段从 A/B 中选出唯一 Local ASR，而让两者同时进入第一轮真机比较：
@@ -481,6 +483,8 @@ System ASR 的一次性事先授权（D034）允许其作为当前服务使用�
 
 ## D036 — 关闭 Local ASR A/B checkpoint：A、B 均不选为正式/默认 Local ASR
 
+**部分 supersede：** D050 替代本决定关于当前 Local 模型集和发布候选状态的部分；A 的许可风险、历史设备结果和不做兼容迁移的结论仍有效。
+
 **状态：Accepted（2026-09-27，Phase 4B.3b 关闭）**
 
 4B.3b A/B comparative device PoC 已在 Redmi K90 Pro Max 与 vivo X100 Pro 完成（测试基线 `fcitx5-android` `phase4-voice-poc` @ `a8a0e1b3`；证据见 `docs/local-asr-checkpoint.md` §10–§11）。
@@ -494,6 +498,8 @@ System ASR 的一次性事先授权（D034）允许其作为当前服务使用�
 - 当时的 D033–D035（Provider 分类、默认 Auto、隐私与 fallback）不变；在没有正式 Local 模型时，当时的 Auto 按 D034 走 System（需授权）或提示配置。**2026-09-28 注**：D034/D035 此后已修订为首次推荐具体服务、System 不参与自动 fallback；不改变本 A/B checkpoint 的历史结论。
 
 ## D037 — Model Manager 以研究模型身份提供 Local A/B
+
+**部分 supersede：** D050 替代本决定关于当前目录和公开下载限制的部分；本决定中的固定来源、校验、原子安装和历史研究证据仍有效。
 
 **状态：Accepted（2026-09-28，所有者指示）；修订 D036 中“不为这两个研究候选实现 Model Manager/Downloader”一条；已实现（Android `4a8f7856`/`5c71b109`，候选 C `7bc28523`）；A 下载一条由下方 2026-09-28 修订取代**
 
@@ -560,3 +566,10 @@ Rime Ice（固定提交 `3aea6d3694fb3d94ec663641f021f788822897ad`）因 Phase
 
 workflow 不接受来源 URL、提交、Base 版本或用户矩阵；`workflow_dispatch`
 只运行仓库定义的固定构建，`dictionary-v*` maintainer tag 才创建 Release。
+## D050 — Local ASR 三模型收敛与发布线
+
+**状态：Accepted（2026-10-02；部分 supersede 旧 Local 模型集、顺序和下载限制）**
+
+当前 Local 支持 FunASR Nano、X-ASR 离线 INT8、X-ASR 960 ms 流式 INT8；旧 bilingual/Chinese-only Zipformer 不恢复，且不做兼容迁移。UI、推荐和 D035 候选顺序统一为 X-ASR 离线 → X-ASR 流式 → Nano。推荐资格、触发、持久化、production、installed、enabled、runtime-ready 与许可状态保持独立。
+
+debug/release 均支持应用内从固定上游按需下载三款模型，权重不内置 APK；这不表示项目托管或镜像模型。两个 X-ASR 的上游声明 Apache-2.0；Nano 保留 Apache-2.0、FunASR 模型协议 v1.1 与署名/模型名称证据。archive LICENSE/NOTICE、转换来源等缺口继续记录，不写成独立法律审计 PASS，也不笼统作为 APK 发布阻断项。旧决定中关于 Provider/runtime/model 分层、隐私、授权、fallback 资格和持久化的部分仍有效。

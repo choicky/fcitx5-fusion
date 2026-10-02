@@ -45,21 +45,25 @@ Trigger 只表达用户意图；具体 Filter / Provider 由配置决定。
 
 ## 当前阶段
 
-Phase 3 已完成（证据与限制见 ROADMAP 的 Phase 3 Final Review），当前处于 **Phase 4 — Voice Input PoC（进行中）**。
+Phase 3 已完成；Phase 4 的 Voice/ASR 产品化、Phase 5 的词库管理和 Toolbar V2
+均已有实现批次，但仍保留各自未完成的设备验收与研究项。当前权威状态以
+`docs/ROADMAP.md` 的当前状态段、`docs/DECISIONS.md` 的最新 Accepted decision
+和对应验收记录为准。
 
-当前状态：
+当前已接受的产品范围：
 
-- 麦克风入口的最小语音输入 PoC 已在 `choicky/fcitx5-android` 的 `phase4-voice-poc` 分支实现（`fc5b909c`），**尚未经 Android 实机验证**；
-- 下一道关口是实机验证；空格手势、ASR Provider 层与可选 LLM 后处理均不在当前批次。
-
-仍不修改 LibIME；不在 Voice PoC 验证前建设 ASR Provider framework。
+- 墨奇 Auxiliary Filter 长期保留，继续使用既有 trigger、selection-frontier、partial selection、composition 继续输入语义；
+- Local ASR 支持 FunASR Nano、X-ASR 离线 INT8、X-ASR 960 ms 流式 INT8；推荐与 D035 fallback 顺序均为 X-ASR 离线 → X-ASR 流式 → Nano，但资格、触发和持久化规则彼此独立；
+- debug/release 均包含 Local runtime，模型由用户在应用内从固定上游来源按需下载，不内置 APK 权重；模型许可和 archive NOTICE/provenance 的未完成证据仍单独记录；
+- 词库管理与 Toolbar V2 已有对应实现和 CI/源码证据，真机验收仍按 ROADMAP 中的具体条目区分，不把未测项目写成 PASS；
+- Provider recommendation、D035 fallback、Voice/ASR、词库和 Toolbar 的业务语义不因本次文档收口改变。
 
 ## 发布
 
 自构建 Android 发布线（与上游官方构建无隶属关系，请勿当作官方版本）：
 
 - 包名：release 为 `org.fcitx.fcitx5.android.moqi`，debug 测试包为 `org.fcitx.fcitx5.android.debug`；两者都能与官方 Fcitx5 共存，同一条线内可覆盖升级。
-- 发布流程：确认 `fcitx5-chinese-addons` 的 `feature/moqi-filter` 处于期望提交 → 在 `fcitx5-android` 上打 tag（如 `v0.1.3-moqi.2`）并推送 → `Release APK` workflow 自动构建、校验并创建 Release 并附 APK。
+- 发布流程：确认 `fcitx5-chinese-addons` 的固定完整提交（当前后续构建依赖 `022028550c3827f7018df47dab96be7317298c27`）→ 在 `fcitx5-android` 上打 tag（如 `v0.1.3-moqi.2`）并推送 → `Release APK` workflow 自动构建、校验并创建 Release 并附 APK。历史 Release 使用的旧依赖保持为历史事实。
 - 签名：由 `choicky/fcitx5-android` 的仓库 secrets `SIGN_KEY_BASE64` / `SIGN_KEY_PWD` / `SIGN_KEY_ALIAS` 提供，复用上游 `build-logic` 既有接口，fork 内不含签名代码。密钥与口令不得提交进任何仓库，且必须在仓库之外另行备份——丢失后无法再发布可覆盖升级的版本。
 - 许可：发布二进制时须在 release notes 中给出 LGPL-2.1 许可与对应源码链接（两个 fork 的提交/tag）。
 
@@ -78,4 +82,4 @@ Phase 3 已完成（证据与限制见 ROADMAP 的 Phase 3 Final Review），当
 - 总控仓库：[`choicky/fcitx5-fusion`](https://github.com/choicky/fcitx5-fusion)（原名 `choicky/fcitx5-moqi`，已保留原仓库身份与历史）
 - Phase 2 fork：`choicky/fcitx5-chinese-addons`
 - 当前不 fork LibIME
-- `choicky/fcitx5-android`：除发布基础设施（发布 workflow、包名后缀、签名 secrets）外，`phase4-voice-poc` 分支已包含最小语音输入 PoC 的产品代码，因此不能再描述为仅发行用途的 fork；该 PoC 尚未进入任何发布 tag。长期 fork 范围仍待 Voice PoC 的实际修改边界确认（D019，未决）
+- `choicky/fcitx5-android`：当前 fork 已承载 Voice/ASR、Local Model Manager、词库管理、Toolbar 及发布 workflow/包名/签名配置等产品代码；早期“仅发行用途、约 3 文件差异”的判断只适用于早期墨奇集成，已由当前 fork 评估记录替代。未来按功能边界评估向上游贡献，不预设上游接受。

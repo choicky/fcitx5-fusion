@@ -470,6 +470,15 @@ Android 架构稳定后再评估 Windows、Linux、macOS、iOS，并保持 Trigg
 
 ## 当前下一步
 
+### 当前权威状态（2026-10-02）
+- Local ASR 当前支持 FunASR Nano、X-ASR 离线 INT8、X-ASR 960 ms 流式 INT8；旧 Zipformer 不恢复，也不做兼容迁移。
+- UI、推荐和 D035 候选顺序统一为 X-ASR 离线 → X-ASR 流式 → Nano；资格、触发、持久化、production、installed、enabled、runtime-ready 与许可状态继续分层。
+- debug/release 均支持应用内从固定上游按需下载上述模型，权重不内置 APK；archive NOTICE、转换来源等证据仍待补齐，不表述为独立法律审计 PASS。
+- Dictionary、Voice/ASR 和 Toolbar 已有实现批次；剩余真机回归、长语音/下载控制与 Toolbar 冻结审计按各自 checkpoint 继续，不把未测项目记为 PASS。
+- 下一步入口：Toolbar/Voice Settings 真机回归与缺陷收口、Local 下载/长语音/许可证据收口、Managed Cloud/Self-hosted checkpoint；LLM 仍为后续事项。
+
+以下 Phase 4C 列表是历史进度快照；其中 Local 模型集、顺序和发布下载口径已由 D050 部分替代，保留用于追溯，不作为当前状态唯一来源。
+
 **4B.2 已 COMPLETE / DUAL-DEVICE PASS；4B.3b Local ASR A/B comparative device PoC 已 COMPLETE，A、B 均未选为正式/默认 Local ASR（D036）。**
 
 执行顺序：
