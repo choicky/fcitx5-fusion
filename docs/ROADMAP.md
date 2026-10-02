@@ -686,9 +686,10 @@ recommendation 按 FunASR Nano → bilingual Zipformer → 已授权 System ASR�
 Chinese-only Zipformer A 均不恢复。X-ASR 通过既有 Model Manager 的 archive 下载、Range
 续传、暂停/继续/取消、archive 与逐文件 SHA-256、路径校验和原子安装流程进入用户可见目录。
 三款模型均可手动启用/选择，三款目标模型的 D035 `production=true`，One-click 推荐仍保持
-既有本地模型列表优先策略，不因 production 标志改变；当前列表顺序为 Nano → X-ASR 离线 →
-X-ASR 流式，三款本地模型默认具备 recommendation eligibility。D035 明确使用 X-ASR 离线 → Nano →
-X-ASR 流式，并逐项跳过未启用、未完整安装或 runtime 不可用模型。sherpa-onnx v1.13.8
+既有本地模型列表优先策略，不因 production 标志改变；当前 UI、One-click 推荐和 D035 候选顺序统一为 X-ASR 离线 →
+X-ASR 流式 → Nano，三款本地模型默认具备 recommendation eligibility，并逐项跳过未启用、未完整安装或
+runtime 不可用模型。该顺序部分替代此前的 Nano → X-ASR 离线 → X-ASR 流式 UI/推荐顺序及 X-ASR 离线 → Nano →
+X-ASR 流式 D035 顺序；推荐与 D035 的资格和触发规则仍独立。sherpa-onnx v1.13.8
 官方 AAR 及 JNI/native 库已从 debug-only 提升为 debug/release 共用；模型仍按需下载，不
 内置 APK。所有者报告已实际使用两款 X-ASR，并主观认为识别效果优于旧 bilingual Zipformer；
 设备名称、具体用例和量化数据未提供，这只是基础实机使用/主观比较证据，不证明下载控制、

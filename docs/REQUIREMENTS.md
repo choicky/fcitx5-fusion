@@ -554,3 +554,8 @@ PoC 证明现有接口不足前，不修改 LibIME。
 `v0.1.3-moqi.5` 已发布。该状态仅证明对应 CI/build/release 检查，不替代长语音、
 取消/重复提交、下载控制、校验失败和新 D035 顺序的未完成真机验证。LLM 后处理继续等待，
 不属于本批实现。
+
+Local ASR 三模型当前顺序（覆盖此前 Nano → X-ASR 离线 → X-ASR 流式的 UI/推荐顺序及
+X-ASR 离线 → Nano → X-ASR 流式的 D035 顺序）统一为：X-ASR 离线 INT8 → X-ASR 960 ms
+流式 INT8 → FunASR Nano。推荐与 D035 仍分别执行各自的资格、触发和持久化规则；这不是
+将两条操作合并。
