@@ -704,3 +704,10 @@ report. Local Android Gradle configuration fails for missing SDK; no SDK was
 installed. Public model download, release integration/publication, longer than
 60s capture, accumulation, Nano segmentation and 90/120s/5-minute tests are
 follow-up work, not completed or silently added in this batch.
+
+Batch validation: 126 focused JVM tests passed, including exact archive-file
+imports and tamper rejection. Android CI [36957620360](https://github.com/choicky/fcitx5-android/actions/runs/36957620360)
+passed debug APK build, release Kotlin compilation, instrumented-test compilation
+and APK resource/signature checks at Android implementation commit `e7eded6403f5624b44d57aedbc1a77d556f6c695`.
+Later Android changes only clarify documentation; no device test or release Local
+runtime availability is implied by these compile results.
