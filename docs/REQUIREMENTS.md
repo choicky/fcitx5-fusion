@@ -550,7 +550,7 @@ Pinyin/Shuangpin
 
 PoC 证明现有接口不足前，不修改 LibIME。
 
-本批发布状态：debug run `36980804642` 与正式 Release run `36981898289` 均成功；
-`v0.1.3-moqi.4` 已发布。该状态仅证明对应 CI/build/release 检查，不替代长语音、
+本批发布状态：debug run `36983652048` 与正式 Release run `36984661240` 均成功；
+`v0.1.3-moqi.5` 已发布。该状态仅证明对应 CI/build/release 检查，不替代长语音、
 取消/重复提交、下载控制、校验失败和新 D035 顺序的未完成真机验证。LLM 后处理继续等待，
 不属于本批实现。
