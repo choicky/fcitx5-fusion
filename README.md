@@ -1,6 +1,6 @@
-# fcitx5-moqi
+# fcitx5-fusion
 
-面向 Android 的 Fcitx5 中文输入方案研究与实现项目。
+本项目旨在增加、改善 Fcitx5 的功能与体验，面向 Android 开展中文输入方案研究与实现；墨奇辅助码是其中一项功能。
 
 ## 目标
 
@@ -74,7 +74,7 @@ Phase 3 已完成（证据与限制见 ROADMAP 的 Phase 3 Final Review），当
 
 项目优先复用上游能力并缩小长期 fork 面。
 
-- 总控仓库：`fcitx5-moqi`
+- 总控仓库：[`choicky/fcitx5-fusion`](https://github.com/choicky/fcitx5-fusion)（原名 `choicky/fcitx5-moqi`，已保留原仓库身份与历史）
 - Phase 2 fork：`choicky/fcitx5-chinese-addons`
 - 当前不 fork LibIME
 - `choicky/fcitx5-android`：除发布基础设施（发布 workflow、包名后缀、签名 secrets）外，`phase4-voice-poc` 分支已包含最小语音输入 PoC 的产品代码，因此不能再描述为仅发行用途的 fork；该 PoC 尚未进入任何发布 tag。长期 fork 范围仍待 Voice PoC 的实际修改边界确认（D019，未决）

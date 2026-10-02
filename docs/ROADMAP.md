@@ -704,3 +704,10 @@ https://github.com/choicky/fcitx5-android/releases/tag/v0.1.3-moqi.5 ，正式 A
 SHA-256 为 `5e51f7895efd876a6f5d565fd7c95346449866af65628772ebd31f0423fb6d38`。
 本证据证明构建、签名、包名/码表及发布流程，不替代未完成的真机逐项验收；长语音和
 LLM 后处理仍为后续事项。
+
+## Repository rename record — 2026-10-02
+
+- 总控仓库已由 `choicky/fcitx5-moqi` 直接改名为 `choicky/fcitx5-fusion`，保留原仓库身份、历史、默认分支、分支和 tag。
+- 本地 checkout 目录仍保留为 `fcitx5-moqi`，以免影响正在运行的终端和工作区；origin 已更新为新 SSH 地址。
+- 本轮不追溯修改历史记录、已发布内容或产品代码。后续 debug/release APK 文件名使用 `fusion` 标识，但 applicationId/package name（包括 `.moqi` 与 `.debug`）、namespace、签名和版本规则保持不变。
+- 具体基线、提交、推送与未覆盖范围见 `/tmp/fcitx5-fusion-rename-report.md`。
