@@ -298,7 +298,7 @@ Mic / Long-press Space → VoiceInputFlow → Configured ASR Provider → Raw Tr
 
 PoC 使用某个 Provider 不得使 Voice Trigger、Audio Capture 或 IME 层绑定该 Provider。对于 Android System ASR，不强制要求 Fcitx5 提供 PCM；对于 direct cloud/local Provider，使用最小的 Fcitx5-owned Audio Capture 边界，不提前建立复杂 Provider framework。
 
-Provider 选择见 D028（逻辑分类已由 D033 更新）：Phase 4B.3a 选定 Doubao Seed-ASR 2.0 作为首个真实 Direct Cloud ASR PoC 的 Provider/路径，并已在 vivo X100 Pro 与 Redmi K90 Pro Max 完成 Direct Cloud E2E 真机验证；这**不**表示 Doubao 是正式/默认 ASR Provider。正式默认 Provider 仍未决定。Local ASR 的窄范围 runtime/model checkpoint 已完成：当前以 sherpa-onnx 作为首个 runtime 候选，并保留两个代表性模型进入同条件真机 A/B PoC：A) streaming Zipformer zh INT8（OnlineRecognizer，真流式、约 168 MB），仅作 research/device-evaluation，模型权重许可未澄清前不得进入正式 release/distribution；B) FunASR Nano INT8（OfflineRecognizer，约 1 GB），作为高质量/多语言本地候选。A/B 均未被选定为正式或默认 Local ASR。`android.permission.INTERNET` 在 capture-only 的 Phase 4B.1 中有意未声明；Phase 4B.3a 的真实云端 ASR 集成需要时可以增加，其数据流须满足第 11 节；这不意味着 Local ASR 需要联网。云端 Provider 采用 BYOK；API Key/credential 必须是 **Provider-specific runtime configuration**：各 Provider 独立配置、独立安全存储、独立使用，切换 Provider 不删除其他 Provider 已保存凭据，也不得跨 Provider 复用凭据；Local Provider 不需要云端凭据；ASR 与 LLM 的 Provider/credential 完全分离。维护者凭据不得进入 APK、仓库、CI 或 release，CI 与公开 APK 无需维护者凭据即可构建。Provider 的普通配置（model/endpoint 等）与 secret storage 应逻辑分离；secret 默认遮蔽，不得进入日志、普通配置导出或诊断信息。具体 Android 安全存储 API 在实现前按最新 Android/fcitx5-android 源码核实。详见 D028/D029。
+Provider 选择见 D028（逻辑分类已由 D033 更新）：Phase 4B.3a 选定 Doubao Seed-ASR 2.0 作为首个真实 Direct Cloud ASR PoC 的 Provider/路径，并已在 vivo X100 Pro 与 Redmi K90 Pro Max 完成 Direct Cloud E2E 真机验证；这**不**表示 Doubao 是正式/默认 ASR Provider。当前 Android 产品线已实现 System、Local、Managed Cloud 和 Self-hosted 的统一 Voice flow、Provider selection 与 Provider-specific credentials；Qwen、Tencent 和自托管适配器已有源码/协议测试，但其真实 endpoint/设备验收仍需单独记录。当前 Local 产品模型为 FunASR Nano、X-ASR 离线 INT8、X-ASR 960 ms 流式 INT8；推荐与 fallback 顺序为 X-ASR 离线 → X-ASR 流式 → Nano，资格、触发、持久化、production、installed、enabled、runtime-ready 与许可状态必须分层。模型通过 Model Manager 按固定来源按需下载，不内置权重；许可证/NOTICE/provenance 缺口不得写成已完成法律审计。云端 Provider 采用 BYOK；API Key/credential 必须是 **Provider-specific runtime configuration**：各 Provider 独立配置、独立安全存储、独立使用，切换 Provider 不删除其他 Provider 已保存凭据，也不得跨 Provider 复用凭据；Local Provider 不需要云端凭据；ASR 与 LLM 的 Provider/credential 完全分离。维护者凭据不得进入 APK、仓库、CI 或 release，CI 与公开 APK 无需维护者凭据即可构建。详见 D028/D029。
 
 ### 9.1 正式 Android Provider 设置与 Local Model Manager
 
@@ -330,11 +330,11 @@ Local ASR 的 **Provider / runtime / model** 必须区分：例如 Local Provide
 2. 否则 System ASR 可用：用户已授权 System ASR → System；尚未授权 → 使用前先显示一次性披露/授权（不授权则按第 3 步处理）；
 3. 否则提示当前没有可用的识别服务，并提供配置入口：安装 Local 模型、配置 Managed Cloud、配置 Self-hosted。
 
-首次推荐不得静默选择 BYOK Managed Cloud，也不得静默选择用户配置的 Self-hosted endpoint。之后可用性变化不重新运行推荐规则，也不悄悄更改“当前使用”；早期故障按 9.3 处理。`fb3b0c26` 中的默认 Auto 是此前已验收的基础实现，修订后的产品设置尚未实现。
+首次推荐不得静默选择 BYOK Managed Cloud，也不得静默选择用户配置的 Self-hosted endpoint。之后可用性变化不重新运行推荐规则，也不悄悄更改“当前使用”；早期故障按 9.3 处理。修订后的具体服务选择、首次推荐、Voice Settings 与迁移逻辑已在当前 Android 产品线实现；设备验收仍按对应验收文档区分。
 
 System ASR 授权：System ASR 与 Local ASR 在隐私上不等价，显式选为“当前使用”或首次推荐时，使用前需要用户事先一次性授权；启用条目不应绕过披露。设置应披露该服务由 Android/设备系统服务提供、语音数据处理取决于该系统服务且可能涉及远程处理；最终文案与 UI 未冻结。已有授权不意味着同意将 System 用作自动回落。
 
-首次使用引导是否推荐/下载 Local 模型尚未冻结，待正式 Local ASR 发布候选确定后再决定。
+首次使用推荐与 Local 模型按需下载已有实现；当前三模型顺序和资格由 D050 规定。推荐触发、下载控制、长语音和设备性能仍需按验收矩阵继续验证。
 
 ### 9.3 自动 fallback（D035）
 
@@ -347,7 +347,7 @@ System ASR 授权：System ASR 与 Local ASR 在隐私上不等价，显式选�
 
 **System 即使已授权也永不进入自动 fallback 链**；它只在用户显式选为当前服务，或首次推荐经披露/授权选定为当前服务时使用。不得静默发生 Doubao → Alibaba、Alibaba → Tencent、Managed Cloud ↔ Self-hosted、Local → 云端、任何服务 → System 等。
 
-V1 只处理启动/早期技术失败：Provider 不可用、无网络/连接失败、endpoint 不可用、认证/服务初始化失败、可用识别会话建立前的早期超时。早期边界是“可用识别会话已建立”，现有 `onStarted` 太早，不能用它判定。V1 不做会话中途跨 Provider PCM replay/迁移、不因质量差自动重识别、不做双 Provider 同时识别、不把已采集音频静默重放给其他第三方；用户停止/取消后不切换，会话中途失败报告失败/允许重试。fallback 须可观测（第 11 节）。D035 实现仍未开始；没有正式 Local 模型时不把 debug A/B 当作产品回落目标。
+V1 只处理启动/早期技术失败：Provider 不可用、无网络/连接失败、endpoint 不可用、认证/服务初始化失败、可用识别会话建立前的早期超时。早期边界是“可用识别会话已建立”，现有 `onStarted` 太早，不能用它判定。V1 不做会话中途跨 Provider PCM replay/迁移、不因质量差自动重识别、不做双 Provider 同时识别、不把已采集音频静默重放给其他第三方；用户停止/取消后不切换，会话中途失败报告失败/允许重试。D035 fallback 已在 `AsrSelection.fallbackTarget` 与 `VoiceInputFlow` 实现，并由 JVM tests 覆盖；真实设备 fallback 仍待验证。没有正式 Local 模型时不把研究/调试模型当作产品回落目标。
 
 ## 10. ASR 与 LLM 解耦
 

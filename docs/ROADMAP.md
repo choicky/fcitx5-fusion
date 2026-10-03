@@ -169,7 +169,44 @@ Phase 3 未定义独立的 "Exit Criteria" 小节（ROADMAP 中只有 Phase 2 �
 
 ## Phase 4 — Voice Input PoC
 
-**状态：IN PROGRESS — System SpeechRecognizer PoC 真机 checkpoint 已完成（vivo 通过 / Redmi OEM System ASR 失败）；Phase 4B 架构 checkpoint 已接受（D027）；Phase 4B.1 capture-only AudioRecord 硬关口 PASS（vivo + Redmi）；Provider Selection / 4B.3 设计 checkpoint 已接受（D028）；4B.2 与 4B.3a 双机 PASS；4B.3b Local A/B device PoC 已 COMPLETE，A/B 均未选定（D036）；Provider 分类/首次推荐具体服务/fallback 规划已接受（D033–D035，2026-09-28 修订）；下一步见“当前下一步”**
+**状态：实现已完成；阶段验收与后续验证仍 IN PROGRESS — 当前 Android 持续开发线已包含 Voice Input/ASR、Voice Settings、Provider selection、Local Model Manager、Toolbar 和 D035 fallback；历史 System/Direct/Local PoC 与双机关口按下文保留。尚未完成的是针对当前产品线的完整设备验收、真实云端/自托管服务矩阵、Local 长语音/性能/许可证证据和部分 UI 冻结审计，不是 Voice 功能本身尚未实现。**
+
+### 当前实现基线（跨仓库）
+
+当前实现应以 `fcitx5-android` 的 `phase5c-dictionary-manager` @
+`9163ec9630679f7bd7fdae56bf65fa50dcfba5b5` 为 Android 产品线基线；本地
+Android 工作树的旧 `master` checkout 不是当前功能基线。对应实现证据包括：
+
+- Dictionary Manager：`DictionaryManagerUi`、`DictionaryPresentation`、
+  `PinyinDictionaryFragment`，实现提交 `84b7f571`，导航修正提交
+  `583a525a`；`DictionaryPresentationTest`、`DictionaryManagerLayoutTest`，CI
+  `36906187024`（JVM、debug APK、release Kotlin、instrumented-test compilation、
+  APK/signature assertions）。
+- Voice Input/ASR：`VoiceInputSession`、`VoiceInputFlow`、`SystemAsrBackend`、
+  `LocalAsrBackend`、`DoubaoAsrBackend`、`NetworkAsrBackend`、`VoicePanelUi`；
+  Voice Settings 使用 `VoiceSettingsFragment`、`VoiceSettingsRows`、`AsrSelection`、
+  `VoiceSelectionStore`。麦克风与长按 Space 共用同一 Voice flow；历史双机 Mic/Space
+  session gate 保持有效，但当前设置页和模型批次仍需按各自验收记录验证。
+- Provider selection / Managed Cloud / Self-hosted：当前源码包含 Doubao、Qwen、
+  Tencent、OpenAI-compatible、FunASR 2-pass、Fun-ASR-Nano Server 和
+  sherpa-onnx Server 客户端/适配器。Doubao 有历史双机 Direct E2E；Qwen、Tencent
+  和自托管服务的真实 endpoint/设备矩阵仍是待验收项，不能因适配器和协议测试而写成
+  真实服务 PASS。
+- Local ASR / Model Manager：当前产品模型为 FunASR Nano、X-ASR 离线 INT8、
+  X-ASR 960 ms 流式 INT8；`LocalModelInstaller`、`ModelDownload`、`ModelTasks`
+  支持固定来源、校验、临时/原子安装、暂停/取消/重试和删除。相关实现提交包括
+  `1075184f`、`c8cab8d5`、`58c4d10f`；release `v0.1.3.7`（Android `b31ae5f7`，
+  CI `37045975799`）已包含三模型与 runtime，但未以新的真机验收作为 release gate。
+- Toolbar：`ToolbarAction`、`ToolbarEditorWindow`、`ToolbarEditorUi` 和 inline
+  edit mode 已由 `172ac602`、`5af093c4` 实现，`ToolbarActionTest` 覆盖核心状态。
+  Android 真机触摸、拖放、窄屏/字体/无障碍和 teardown gate 仍为 TBV。
+- D035：`AsrSelection.fallbackTarget` 与 `VoiceInputFlow` 已实现外部服务早期失败
+  → 已启用、已安装、runtime-ready 且 `production` 的 Local 模型；System 不进入
+  fallback 链。`VoiceInputFlowTest`、`AsrSelectionTest` 覆盖逻辑，真实设备 fallback
+  验收仍未完成。
+
+上述状态区分“代码已实现”和“设备/真实服务/发布证据已验证”；后文历史 checkpoint
+中的“尚未实现”只适用于其记录时点。
 
 优先复用：
 
@@ -236,15 +273,19 @@ Exit Criteria：
 - CI：自 `b92a5b67` 起，`moqi-test-apk.yml` 也在 push `phase4-voice-poc` 时触发，并在同一次 Gradle 调用中运行 `:app:testDebugUnitTest :app:assembleDebug`。首次运行 `36289772265` 因上游遗留的陈旧断言 `ThemeSerializationTest.version2` 失败（upstream `fda9ecbc` 将主题 `CURRENT_VERSION` 升到 2.1 但未更新该测试，与 Phase 4 无关）；`d94e8924` 修正该断言后，run `36290868094` 全部步骤通过（单元测试、APK 构建与内容断言、产物 `moqi-debug-apk` 上传）；
 - 实机：见下方"2026-09-27 真机 checkpoint 与架构关口"。
 
-### 已知问题与待确认项（来自 2026-09-27 源码审阅）
+### 历史 checkpoint 的已知问题与待确认项（来自 2026-09-27 源码审阅）
+
+以下条目描述早期 `phase4-voice-poc` checkpoint，不得覆盖当前
+`phase5c-dictionary-manager` 的实现状态；仍有效的设备/行为风险在“当前实现基线”和
+对应 Android 验收文档中重新列出。
 
 A. 源码层已确认的事实（非实机结论）：
 
-1. 长按空格手势未实现——按 D013 有意推迟，不是缺陷；
+1. 在该 2026-09-27 checkpoint，长按空格手势尚未实现——按当时 D013 有意推迟，不是缺陷；当前实现见上方 `SpaceVoiceTrigger` 基线；
 2. 原"切换到外部语音输入法"路径已移除：麦克风按钮不再调用 `InputMethodUtil.switchInputMethod`，`preferredVoiceInput` 设置项仍显示但不再被读取。是否保留、恢复或移除外部语音键盘行为是**未决的兼容性/行为问题**，尚无决定；
 3. 数据流审计：仅错误路径有日志；录音 start/stop/cancel、实际使用的 `RecognitionService`、raw transcript 与最终提交文本均未记录——Exit Criteria"数据流可审计"尚未满足。隐私约束：后续实现审计时须区分开发/诊断日志与 release 日志；release 日志默认不得记录完整的用户 transcript 或最终输入文本；
 4. Stopping 状态没有超时，且 Stopping 期间点击麦克风不做任何处理；
-5. 当前 PoC 在 `VoiceInputComponent` 内封装对 `SpeechRecognizer` 的直接调用，与 D015 记录的 Android `SpeechRecognizer` / `RecognitionService` 边界一致；Phase 5 的 ASR Provider abstraction 尚未实现；应用层 PoC 边界是否需要细化，待实机验证后再评估（2026-09-27 更新：应用层边界已由 D027 确定为内部 `VoiceBackend`，尚未实现）；
+5. 在该 checkpoint，PoC 在 `VoiceInputComponent` 内封装对 `SpeechRecognizer` 的直接调用；当时 Phase 5 的 ASR Provider abstraction 尚未实现。当前内部 `VoiceBackend`、`VoiceInputFlow` 和 Provider selection 已在上方产品基线实现；
 6. `fcitx5-android` fork 已包含语音产品代码，`research/upstream-fork-assessment.md` 中"仅发行用途、约 3 文件差异"的结论不再适用于该分支；长期 fork 范围（D019）未决。
 
 B. 由源码推断、需实机确认的风险：
@@ -277,7 +318,7 @@ B. 由源码推断、需实机确认的风险：
 
 | Exit Criterion | 状态 |
 |---|---|
-| microphone 与可选 long-press Space 进入同一 voice path | 麦克风已实现，vivo 真机通过；空格移入 Phase 4B（需 gesture 接入） |
+| microphone 与可选 long-press Space 进入同一 voice path | 历史 checkpoint：麦克风已实现、空格待接入；当前实现与双机 gate 见 4B.2 和当前实现基线 |
 | permission / lifecycle / start / stop / cancel 正确 | vivo 真机：IME hide/show、切换 IME、mic release、简单错误恢复通过；Redmi 的 System ASR session 失败（error 9）；B1–B4 未逐项记录 |
 | partial / final transcript 正确 | vivo 真机 Voice → Text 与连续 session 通过；B1、B5 未逐项记录 |
 | Voice Trigger 不绑定 ASR vendor | 源码层满足：仅使用系统默认 `RecognitionService` |
@@ -378,7 +419,7 @@ B. 由源码推断、需实机确认的风险：
 
 ## Phase 5 — ASR Provider Architecture / PoC
 
-**状态：NOT STARTED — 待 Phase 4B（4B.3b、Local A/B checkpoint 与 Managed Cloud + Self-hosted checkpoint）完成**
+**状态：主要实现已在 Phase 4C / 当前 Android 持续开发线完成；Provider 对比、真实服务和产品验收仍进行中**
 
 根据 Phase 4 vivo/Redmi 真机结果，最小 Portable ASR PoC 已作为 Phase 4B 先行（见上）。Phase 4B 各 checkpoint 之后，再在 D027 的 `VoiceBackend` 边界上按 D033 分类扩展 Provider，验证代表性的：
 
@@ -393,7 +434,7 @@ B. 由源码推断、需实机确认的风险：
 
 ## Phase 5-D — 词库管理方案（文档轨）
 
-**状态：PHASE 5B COMPLETE — remediation 本地及远端 CI 已通过；Android 管理器未实现**
+**状态：PHASE 5B COMPLETE；Android Dictionary Manager 已实现；设备验收和后续产品边界仍待完成**
 
 词库管理方案已落档于 [`docs/dictionary-manager-plan.md`](dictionary-manager-plan.md)。该文档对应独立的词库工作流，不能与本节 ASR Provider Phase 5 的实现状态混写，也不改变现有 Voice/ASR 路线。
 
@@ -422,7 +463,9 @@ Phase 5B 已将固定构建实现迁入 `tools/dict-builder/build.py`、
 PR #1 review remediation：四项 P2（完整 consumed-source hash、强制 verified
 toolchain manifest、Rime imports + current table parsing、独立 build audit
 artifact）已修复；远端 CI run `36602286082` 通过，PR #1 可进入正常合并
-流程。未创建 dictionary-v* tag/release；Android 管理器仍未实现。
+流程。未创建 dictionary-v* tag/release；这只表示词库构建发布线尚未创建
+`dictionary-v*` release，不表示 Android Dictionary Manager 未实现。Android 管理器
+实现及其 CI 证据见本节状态和“当前实现基线”。
 
 ## Phase 6 — Optional LLM Post-processing
 
@@ -441,14 +484,14 @@ ASR
 
 ## Phase 7 — Android Product Integration
 
-**状态：NOT STARTED**
+**状态：主要产品实现已完成批次；整体验收/冻结审计仍未完成**
 
 最终整合：
 
 - Auxiliary Filter settings；
 - Voice settings；
 - 语音识别服务设置（D034）：按 系统 / 本地 / 第三方云端 / 自建云端 四类列出已接入的具体服务，分别配置和启用多个，“当前使用”只选一个已启用服务；首次推荐保存具体选择，不保留长期 Auto 选项；云端 API Key/credential 按 Provider 独立安全存储、独立使用，普通配置与 secret storage 逻辑分离（D028/D029）；
-- Local Model Manager / Downloader：model catalog、大小/版本/License、下载/失败重试、完整性校验、原子安装、更新/删除；大型模型原则上不强制内置 APK，安装后 Local ASR 日常识别可完全离线；
+- Local Model Manager / Downloader：model catalog、大小/版本/License、下载/失败重试、完整性校验、原子安装、更新/删除已在当前 Android 线实现；大型模型原则上不强制内置 APK，安装后 Local ASR 日常识别可完全离线；长语音、性能和完整设备生命周期仍待验收；
 - optional LLM settings；
 - privacy/data-flow UI；
 - packaging/release。
@@ -487,7 +530,7 @@ paired punctuation 的 formatter-only repair 暴露出验证状态必须分层�
 
 | 仓库 | 分支与完整 SHA | 用途与证据 |
 |---|---|---|
-| `fcitx5-fusion` | `main` @ `17617d7920cc621ebf64fdfdae31c469421ac02c` | 当前总控仓库文档基线；本批从该 main 收口。 |
+| `fcitx5-fusion` | `main` @ `eb0b4e93fb99bd7de2b516e49d91a7ce812ab13f` | 当前总控仓库文档与实现状态基线；本批从该 main 收口。 |
 | `fcitx5-android` | `phase5c-dictionary-manager` @ `9163ec9630679f7bd7fdae56bf65fa50dcfba5b5` | 当前 Android 持续开发线，已包含发布后的 `b31ae5f7` 与本次文档收口；远端分支与本地一致。该工作线已在本机完成 `:app:testDebugUnitTest`、`:app:assembleDebug`、固定 debug signing 和 adb 真机安装。 |
 | `fcitx5-chinese-addons` | `master` @ `61474bd3aa9fca26d1c31df93343035697e9f265` | 当前 addons 开发线，远端 master 与本地一致；`19f06898581419d3e4d37492f33a14e841e2680e` 是该历史中的普通上游提交，不是另一个当前基线。 |
 
@@ -517,7 +560,7 @@ addons 的 `9b3448e6` 位于用于发布固定的 punctuation 分支线上，不
 4. ~~Provider Settings Foundation 设备验收~~：已关闭（vivo 全部通过；Redmi 可测部分通过，System ASR 路径因设备限制不可测）；当时（2026-09-28 关闭本项时）修订后的多服务设置/首次推荐、D035 运行时 fallback 与新 Provider 尚未实现——**此后已在 Phase 4C 中实现，现状见第 5 项**；`fb3b0c26` 的 release 构建已本地编译通过，release APK 安装与设备运行未测试。
 
 5. **ASR 服务产品化（Phase 4C，所有者 2026-09-28 指示；历史 checkpoint）**：四类服务可由普通用户配置；计划见 `docs/asr-productization-plan.md`，进度与证据见 `docs/asr-productization-worklog.md`，验收脚本见 `docs/asr-productization-acceptance.md`。下列记录以 Android `phase4-voice-poc` @ `7ed0fa78` 为历史 checkpoint，不是当前 Android development baseline；当前基线见上方“当前开发基线”：
-   - **代码已实现并推送**：多服务设置、一次性首次推荐、旧设置迁移、当前/实际使用显示；就绪信号与 D035 fallback（外部服务只回落到正式 Local；System 从不作为回落目标；当前 A/B/C 都不是正式模型，所以实际不回落）；Keystore 凭据库；豆包/Qwen/腾讯 BYOK；sherpa-onnx、FunASR 2-pass、Fun-ASR-Nano、OpenAI-compatible 自建实例；Model Manager 为 A/B/C 提供下载（D037 2026-09-28 修订：本项目为未发布的个人测试项目；A 仅测试构建可下载，**公开发布许可仍未解决**；B 的许可依据与 34–39 s 长语音问题在 UI 中可见；C 为实验性候选）；评审修复（FunASR 首包顺序、采集错误不回落、错误脱敏、下载取消竞态、导出前同步清除旧错误偏好）；Windows 文件替换与 zip 条目名（`7af0cc16`）；Model Manager 操作对话框（`3116a7b8`）；下载期间设置页闪烁修复与每个本地模型单独启用（`7ed0fa78`，D038）。
+   - **代码已实现并推送**：多服务设置、一次性首次推荐、旧设置迁移、当前/实际使用显示；就绪信号与 D035 fallback（外部服务只回落到正式 Local；System 从不作为回落目标）；Keystore 凭据库；豆包/Qwen/腾讯 BYOK；sherpa-onnx、FunASR 2-pass、Fun-ASR-Nano、OpenAI-compatible 自建实例；Model Manager 与当前三模型下载；评审修复（FunASR 首包顺序、采集错误不回落、错误脱敏、下载取消竞态、导出前同步清除旧错误偏好）；Windows 文件替换与 zip 条目名（`7af0cc16`）；Model Manager 操作对话框（`3116a7b8`）；下载期间设置页闪烁修复与每个本地模型单独启用（`7ed0fa78`，D038）。本段其余 A/B/C 研究模型限制保留为历史记录，当前模型集与发布口径由 D050/当前实现基线规定。
    - **CI 通过**：最新 run `36380142431`（`7ed0fa78`）——单元测试、arm64 debug APK、release 变体 Kotlin 编译、仪器测试编译均成功；未打包/签名/安装 release APK。本机：sherpa-onnx 与 FunASR 2-pass、OpenAI-compatible 与上游服务器互通；Qwen/腾讯/Nano 仅协议仿真；A/B/C 真实上游下载与 SHA-256 在本机 JVM 验证。
    - **设备摘要结果（所有者报告，2026-09-28，`7ed0fa78`，vivo X100 Pro 与 Redmi K90 Pro Max 相同）**：升级后豆包 API Key 保留、A/B/C 下载期间无闪烁（`6007c8ca` 的闪烁 FAIL 已由此修复，两台通过）、A/B/C 独立启用/选择、切换当前服务均 PASS；本地识别可用——A 中文好、英文差，B、C 中英文均可，延迟主观可接受。此前 vivo 上服务选择与豆包 BYOK 识别 PASS（`7af0cc16`）。这是摘要级证据，不等于详细验收用例 PASS；**未选定正式/默认 Local 模型**。
    - **待验收（未执行）**：断网确认、录音时长、实测延迟/RTF/PSS、长语音、取消/继续、中断续传、校验失败、删除、旧设置精确迁移（验收脚本 §1–§2 的详细项）；B/C 同内容离线对比（§2.5，下一步）；Qwen/腾讯真实云端（需所有者凭据，§3）；自建服务器上的设备测试与 Nano（需 GPU，§4）；fallback（§5）。这些结果留空，不得记为 PASS。

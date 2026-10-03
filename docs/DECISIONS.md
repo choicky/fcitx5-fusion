@@ -367,7 +367,10 @@ A/B 均复用 D027 的 Voice flow、Fcitx-owned `AudioCapture` 与 Local ASR 边
 
 ## D033 — ASR Provider 分类扩展为 System / Local / Managed Cloud / Self-hosted；所有 Provider 共用同一 Voice flow
 
-**状态：Accepted（2026-09-27，Local ASR 实现审阅后的架构/产品 checkpoint；纯规划，未实现）**
+**状态：Accepted（2026-09-27；实现已在当前 Android 产品线落地，Provider 对比和真实服务验收仍进行中）**
+
+本决定最初是规划 checkpoint；后续实现状态不得回写为当时已完成。当前实现基线为
+`fcitx5-android` `phase5c-dictionary-manager` @ `9163ec96`。
 
 ```text
 ASR Provider
@@ -398,24 +401,29 @@ Mic / Long-press Space → VoiceInputFlow → Configured ASR Provider → Raw Tr
 - System 由 `SystemAsrBackend` 承载；Local、Managed Cloud、Self-hosted 均经 D027 的 Fcitx-owned Audio Capture（Direct 路径）驱动。
 - OpenAI-compatible 是协议适配，不等于 Self-hosted（沿用 D028）。
 
-**Managed Cloud 对比候选（计划，未选定）**
+**Managed Cloud 对比候选（适配器已实现；真实服务对比未完成）**
 
 - Cloud A：Doubao Seed-ASR 2.0 — 已有 Direct backend，4B.3a 双机 PASS，作为基线；
 - Cloud B：Alibaba Qwen ASR 系列 — checkpoint 时依据当时官方产品线核实适合流式/输入法的模型；若存在多个相关变体，不提前冻结单一模型名；
 - Cloud C：Tencent Realtime ASR；
 - iFlytek 保留为未来候选，当前不实现。
 
-Managed Cloud checkpoint 至少比较：中文识别质量、中英混合、首个 partial 延迟、partial 修订行为、stop→final 延迟、弱网/失败行为、计费模式、认证/BYOK 复杂度、隐私/数据处理影响、客户端实现边界。Cloud B/C 尚无任何 PoC；不选定胜者。
+Managed Cloud checkpoint 至少比较：中文识别质量、中英混合、首个 partial 延迟、partial 修订行为、stop→final 延迟、弱网/失败行为、计费模式、认证/BYOK 复杂度、隐私/数据处理影响、客户端实现边界。Doubao 有历史双机 Direct E2E；Qwen/Tencent 已有客户端/协议适配器和 JVM 测试，但真实 endpoint/设备对比尚未完成，不选定胜者。
 
-**Self-hosted 研究候选（计划，未实现）**
+**Self-hosted 研究候选（适配器已实现；真实服务/设备验收仍待完成）**
 
 - S1：FunASR 2-pass / Paraformer；S2：Fun-ASR-Nano Server；S3：sherpa-onnx Server。
 
-Self-hosted checkpoint 须依据当时上游源码/文档核实：实际 streaming/offline 行为、partial/final 语义、适用时的第二遍修正、协议/API、CPU/GPU 需求、延迟/吞吐预期、模型与 runtime 许可及再分发/商用状态、Android 客户端最小修改边界，以及是否值得建立共同的 `SelfHostedAsrBackend`/协议边界。当前不实现任何 Self-hosted backend，不设计插件框架。
+Self-hosted checkpoint 须依据当时上游源码/文档核实：实际 streaming/offline 行为、partial/final 语义、适用时的第二遍修正、协议/API、CPU/GPU 需求、延迟/吞吐预期、模型与 runtime 许可及再分发/商用状态、Android 客户端最小修改边界，以及是否值得建立共同的 `SelfHostedAsrBackend`/协议边界。当前已实现 FunASR 2-pass、Fun-ASR-Nano Server、sherpa-onnx Server 和 OpenAI-compatible 适配路径；仍不设计插件框架，真实自托管服务的设备、性能、隐私和长语音验收仍是后续 checkpoint。
 
 ## D034 — 语音识别服务设置与首次推荐
 
-**状态：Accepted（2026-09-27）；2026-09-28 产品规划修订：首次推荐选择具体服务，取消长期 Auto 选项；以下设置/授权/解析基础及设备验收记录仍对应旧版实现，修订后的产品 UI 尚未实现；D035 运行时 fallback 未实现。**
+**状态：Accepted（2026-09-27）；2026-09-28 修订的具体服务选择、首次推荐、Voice Settings 与迁移已在当前 Android 产品线实现；设备/真实服务验收仍分层进行。**
+
+历史实现与验收记录仍按当时的 `818dc671` / `fb3b0c26` 保留，不表示修订后的实现缺失。当前实现基线为
+`phase5c-dictionary-manager` @ `9163ec96`，主要代码位于 `VoiceSettingsFragment`,
+`VoiceSettingsRows`, `AsrSelection` 和 `VoiceSelectionStore`；当前模型集和顺序由 D050
+部分替代旧记录。
 
 历史实现与验收（`fcitx5-android` `818dc671` + `fb3b0c26`，CI `36329322686` / `36330310566` PASS）：设备验收 CLOSED（2026-09-28）：vivo X100 Pro 全部通过，Redmi K90 Pro Max 可测部分通过、依赖 System ASR 的用例因设备 System ASR 不可用而不可测，无新观察到的 blocker；release 构建本地编译通过（2026-09-28，项目所有者在 Windows 上对 `fb3b0c26` 执行 arm64 `.\gradlew.bat :app:assembleRelease`：BUILD SUCCESSFUL，6m 22s，272 tasks：264 executed、8 up-to-date）；release APK 的安装与设备运行行为未测试。
 
@@ -445,12 +453,18 @@ Self-hosted checkpoint 须依据当时上游源码/文档核实：实际 streami
   3. 否则提示当前没有可用的识别服务，并给出配置入口：安装 Local 模型、配置 Managed Cloud、配置 Self-hosted。
 - 首次推荐**不得**静默选择 BYOK Managed Cloud 或用户配置的 Self-hosted endpoint；这两类只在用户显式配置、启用并选为当前服务时使用。首次选定后不因可用性变化重复运行推荐规则或静默改写“当前使用”；启动/早期故障按 D035 处理。
 - **System ASR 授权**：System ASR 与 Local ASR 在隐私上不等价（见 D035）。使用 System ASR 需要用户**事先一次性授权**。启用条目不应绕过披露；是否启用与是否授权应分别表达。该服务由 Android/设备系统服务提供；语音数据如何处理取决于该系统服务，可能涉及远程处理。用户显式选择“系统”作为当前服务时同样须完成披露；具体 UI 文案未冻结。
-- 未冻结：首次使用引导是否推荐/下载 Local 模型，待正式 Local ASR 发布候选确定后再决定；“健康”的具体判定；System 可用性判定沿用 D026/D030（存在 RecognitionService ≠ session 可用）。
-- 本决策取代此前“默认**设置**为 Auto”的产品方向；现有 `fb3b0c26` 的 Auto 设置是已验收的历史实现，不应被误写为修订后的已实现功能。Local A/B 均未选定正式模型（D036）。
+- 历史上未冻结的事项包括首次使用引导、Local 模型推荐资格、“健康”的具体判定和 System 可用性判定；当前实现已落地一次性具体服务推荐和 D050 三模型顺序，仍沿用 D026/D030 的“存在 RecognitionService ≠ session 可用”边界。
+- 本决策取代此前“默认**设置**为 Auto”的产品方向；现有 `fb3b0c26` 的 Auto 设置是已验收的历史实现。当前具体服务选择/推荐实现已由 `phase5c-dictionary-manager` 的后续提交 supersede；Local A/B 未选定正式模型的历史结论仍由 D036/D050 约束。
 
 ## D035 — 自动 fallback：默认开启，不得未经授权扩大语音数据接收方
 
-**状态：Accepted（2026-09-27）；2026-09-28 修订：System ASR 不参与自动 fallback；未实现**
+**状态：Accepted（2026-09-27）；2026-09-28 修订：System ASR 不参与自动 fallback；D035 已实现，设备级 fallback 验收仍未完成**
+
+当前实现位于 `AsrSelection.fallbackTarget` 与 `VoiceInputFlow`：仅当前选定的
+Managed Cloud/Self-hosted 服务在会话建立前的技术失败时，回落到已启用、已安装、
+`production` 且 runtime-ready 的 Local 模型；System、研究模型和外部到外部切换均排除。
+`VoiceInputFlowTest`、`AsrSelectionTest` 覆盖该逻辑。旧的“未实现”表述仅适用于本决定
+2026-09-28 修订时点，现已 superseded。
 
 **核心隐私规则**：未经用户事先明确授权，自动 fallback 不得扩大可能接收用户语音数据的参与方/处理方集合。
 
@@ -538,7 +552,7 @@ System ASR 的一次性事先授权（D034）允许其作为当前服务使用�
 
 ## D039 — 词库管理采用可复现分层发布边界
 
-**状态：Accepted（2026-09-29，Phase 5 词库方案落档）；实现未开始**
+**状态：Accepted（2026-09-29，Phase 5 词库方案落档）；构建发布线已完成，Android Dictionary Manager 已实现，设备/产品验收仍待完成**
 
 词库继续由 LibIME 负责运行时解码、候选、排序和用户学习；项目不重新实现拼音解码器或平行学习状态。词库管理分为官方基线、经审计的第三方/合并发布包和独立的用户学习层，词库更新不得上传或依赖用户输入历史。
 
@@ -546,7 +560,12 @@ System ASR 的一次性事先授权（D034）允许其作为当前服务使用�
 
 `origin/tools/wanxiang-libime-build` 上的 `8a4f1de`、`91135f8`、`1eed3bd`～`0294bd3` 及相关 workflow 仅证明研究/PoC 路径，尚未合入 `main`，不构成当前已有 workflow、业务代码或发布 artifact。任何候选进入 APK 或公开下载前，还必须通过来源 pin、许可证/再分发和双设备体验验证；未满足者只能标记为 research-only。
 
-后续 Android 管理器若实现，必须使用临时文件、hash 校验、原子安装、失败清理和旧版本保留，以免更新失败破坏现有词库。该决定不批准本批次修改业务代码、workflow 或既有 PoC。
+Android Dictionary Manager 已在 `fcitx5-android` 当前产品线实现：
+`DictionaryManagerUi`、`DictionaryPresentation` 和 `PinyinDictionaryFragment` 保留
+既有导入/下载/删除路径，并增加分组列表、条件详情和删除确认。实现提交为 `84b7f571`
+及 `583a525a`，CI `36906187024` 通过；仍须使用临时文件、hash 校验、原子安装、
+失败清理和旧版本保留，且 Android 真机的导航、导入、下载、删除、无障碍和
+Pinyin/Shuangpin 回归尚未全部完成。
 
 ## D040 — Phase 5B 只发布许可证和发音语义均已通过的固定候选
 
