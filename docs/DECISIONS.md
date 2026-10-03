@@ -419,7 +419,7 @@ Self-hosted checkpoint 须依据当时上游源码/文档核实：实际 streami
 
 ## D034 — 语音识别服务设置与首次推荐
 
-**状态：Accepted（2026-09-27）；2026-09-28 产品规划修订：首次推荐选择具体服务，取消长期 Auto 选项；以下设置/授权/解析基础及设备验收记录仍对应旧版实现，修订后的产品 UI 尚未实现；D035 运行时 fallback 未实现。**
+**状态：Accepted（2026-09-27）；2026-09-28 产品规划修订：首次推荐选择具体服务，取消长期 Auto 选项；以下设置/授权/解析基础及设备验收记录仍对应旧版实现。当前实现事实与 D035/D050 及 Android 源码为准；本条中的“D035 未实现”仅保留为历史快照。**
 
 **Toolbar visibility note：PARTIALLY SUPERSEDED by D046。** D034 的 Provider recommendation、authorization、current-service 与 fallback 语义仍然有效；但 Toolbar Mic 的 configured visibility/readiness 语义已由 D046 取代。Provider resolution 仍控制 Voice 是否以及如何实际启动，不再定义用户持久的 Toolbar Mic configured visibility。**不要把本段历史实现中的旧 Toolbar visibility 规则作为当前行为实现；请以 D046 为准。**
 
@@ -456,7 +456,7 @@ Self-hosted checkpoint 须依据当时上游源码/文档核实：实际 streami
 
 ## D035 — 自动 fallback：默认开启，不得未经授权扩大语音数据接收方
 
-**状态：Accepted（2026-09-27）；2026-09-28 修订：System ASR 不参与自动 fallback；未实现**
+**状态：Accepted（2026-09-27）；2026-09-28 修订：System ASR 不参与自动 fallback；已实现，逐项设备验证仍不完整**
 
 **核心隐私规则**：未经用户事先明确授权，自动 fallback 不得扩大可能接收用户语音数据的参与方/处理方集合。
 
@@ -488,6 +488,14 @@ System ASR 的一次性事先授权（D034）允许其作为当前服务使用�
 **V1 不实现**：会话中途跨 Provider 的 PCM replay/迁移；因识别质量看起来差而自动换 Provider 重识别；双 Provider 同时识别；把已采集音频静默重放给其他第三方。会话中途失败报告识别失败/允许重试，而不迁移会话。
 
 - fallback 发生时须可观测（D018），具体提示 UI 未冻结；关闭 fallback 的设置位置未冻结。
+
+当前源码实现位于 Android `b31ae5f71d34d863a1aa5fcad6490a0f03135eb9`：
+`AsrSelection.fallbackTarget()` 只为已选 external service 选择已启用、已安装、
+`production` 且 runtime-ready 的 Local 模型；`VoiceInputComponent.start()` 将该目标
+传给 `VoiceInputFlow.launch()`；`VoiceInputFlow.tryFallback()` 仅在
+`VoiceError.Service`、session 尚未 `onSessionEstablished` 且会话仍有效时切换一次，
+不重放已采集 PCM。现有 JVM tests 覆盖选择/流程语义；本次正式发布未执行完整真机失败
+路径验收，因此“代码已实现”不等于“设备验证已闭环”。
 
 ## D036 — 关闭 Local ASR A/B checkpoint：A、B 均不选为正式/默认 Local ASR
 
@@ -877,9 +885,9 @@ debug/release 均包含同一 Local runtime/native library 和现有 Model Manag
 
 **发布下载口径（2026-10-02，所有者确认的项目发布口径，不等同于独立法律审计）：** APK 发布包含应用内 Model Manager；用户可从固定的上游来源按需下载 FunASR Nano 与两个 X-ASR。项目不托管、不镜像、不将权重内置 APK。两个 X-ASR 的上游声明 Apache-2.0；Nano 保留 Apache-2.0 声明、FunASR 模型协议 v1.1 证据及署名/模型名称要求。精确 archive LICENSE/NOTICE、转换来源等缺口继续记录于 `docs/THIRD_PARTY_LICENSES.md`，是模型证据待补项，不笼统写成阻止 APK 发布的结论。
 
-发布收口证据：debug run `36983652048` 成功；Android
-`82b7fcf44ec916b54de1d9295d14f93ac9372a7c` 以 `v0.1.3-moqi.5` 经 Release run
-`36984661240` 发布。正式 APK SHA-256 为
-`5e51f7895efd876a6f5d565fd7c95346449866af65628772ebd31f0423fb6d38`，Release 页面为
-https://github.com/choicky/fcitx5-android/releases/tag/v0.1.3-moqi.5 。这只记录 CI/发布
+发布收口证据：debug run `37044897307` 成功；Android
+`b31ae5f71d34d863a1aa5fcad6490a0f03135eb9` 以 `v0.1.3.7` 经 Release run
+`37045975799` 发布。正式 APK SHA-256 为
+`3b951a6dd1bb427fb558b5eef6043e6c94a2e3a68248b787370ec3d880571566`，Release 页面为
+https://github.com/choicky/fcitx5-android/releases/tag/v0.1.3.7 。这只记录 CI/发布
 证据，不把 owner-reported 实机使用或未执行的逐项验收改写为 PASS。

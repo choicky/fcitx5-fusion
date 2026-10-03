@@ -630,13 +630,17 @@ Android 架构稳定后再评估 Windows、Linux、macOS、iOS，并保持 Trigg
 
 ## 当前下一步
 
-### 当前权威状态（2026-10-02）
+### 当前权威状态（2026-10-03，post-release checkpoint）
 
 - Local ASR 当前支持 FunASR Nano、X-ASR 离线 INT8、X-ASR 960 ms 流式 INT8；旧 Zipformer 不恢复，也不做兼容迁移。
 - UI、推荐和 D035 候选顺序统一为 X-ASR 离线 → X-ASR 流式 → Nano；资格、触发、持久化、production、installed、enabled、runtime-ready 与许可状态继续分层。
 - debug/release 均支持应用内从固定上游按需下载上述模型，权重不内置 APK；archive NOTICE、转换来源等证据仍待补齐，不表述为独立法律审计 PASS。
 - Dictionary、Voice/ASR 和 Toolbar 已有实现批次；剩余真机回归、长语音/下载控制与 Toolbar 冻结审计按各自 checkpoint 继续，不把未测项目记为 PASS。
 - 下一步入口：Toolbar/Voice Settings 真机回归与缺陷收口、Local 下载/长语音/许可证据收口、Managed Cloud/Self-hosted checkpoint；LLM 仍为后续事项。
+- 正式发布基线已更新为 Android `b31ae5f71d34d863a1aa5fcad6490a0f03135eb9`、
+  chinese-addons `9b3448e6b3889e4281ea39e334c7e5714f8a8b12`、tag `v0.1.3.7`；
+  debug run `37044897307`、release run `37045975799` 均成功。该发布证据不替代
+  Release APK 真机 smoke、Local 模型安装后识别、完整 D035 失败路径和 Provider 设备验收。
 
 **Dictionary / Voice UI V2 自动验证 checkpoint（D049，2026-10-02）**：Android
 `phase5c-dictionary-manager` 已完成受限的 presentation/navigation 批次：Dictionary
@@ -707,11 +711,12 @@ X-ASR 流式 D035 顺序；推荐与 D035 的资格和触发规则仍独立。sh
 的 LICENSE/NOTICE 证据缺口仍按 `THIRD_PARTY_LICENSES.md` 标记，不得写成许可审计 PASS。
 debug/release CI 与正式发布条件为：debug GitHub CI 成功后，再由 GitHub CI 构建正式版；
 本轮不以新增真机验收为发布条件；实际 run、tag、commit 和 Release URL 已在下方发布收口段补录。
-**D050 发布收口（2026-10-02）**：debug run `36983652048` 成功；Android commit
-`82b7fcf44ec916b54de1d9295d14f93ac9372a7c` 以 tag `v0.1.3-moqi.5` 通过 Release run
-`36984661240` 发布。Release 页面为
-https://github.com/choicky/fcitx5-android/releases/tag/v0.1.3-moqi.5 ，正式 APK
-SHA-256 为 `5e51f7895efd876a6f5d565fd7c95346449866af65628772ebd31f0423fb6d38`。
+**D050 发布收口（2026-10-02，历史发布证据已由当前发布基线补充）**：本决定的三模型
+收敛仍有效；当前正式发布基线见本节 2026-10-03 checkpoint 条目：Android
+`b31ae5f71d34d863a1aa5fcad6490a0f03135eb9`、tag `v0.1.3.7`、debug run
+`37044897307`、release run `37045975799`，Release 页面为
+https://github.com/choicky/fcitx5-android/releases/tag/v0.1.3.7 ，正式 APK SHA-256
+为 `3b951a6dd1bb427fb558b5eef6043e6c94a2e3a68248b787370ec3d880571566`。
 本证据证明构建、签名、包名/码表及发布流程，不替代未完成的真机逐项验收；长语音和
 LLM 后处理仍为后续事项。
 
