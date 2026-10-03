@@ -1,11 +1,11 @@
 # ASR 服务产品化 — 恢复交接（Phase 4C）
 
-用于在新会话中无需重新规划即可继续。状态与证据以 `asr-productization-plan.md` §2 与 `asr-productization-worklog.md` 为准。
+这是 Phase 4C 的历史恢复交接记录，不是当前开发基线。用于在需要追溯该批次时恢复上下文；状态与证据以 `asr-productization-plan.md` §2 与 `asr-productization-worklog.md` 为准。当前三仓库开发基线见 `docs/ROADMAP.md` 的“当前开发基线”段。
 
 ## 1. 仓库与分支
 
-- Android：`choicky/fcitx5-android` 分支 `phase4-voice-poc`（本批从 `fb3b0c26` 开始；最新 HEAD 见工作日志最后一条）。不合并 `main`、不发布 APK。Candidate B 历史基线 `a8a0e1b3` 不变。
-- Planning：`choicky/fcitx5-moqi` 分支 `main`。
+- Android 历史工作线：`choicky/fcitx5-android` 分支 `phase4-voice-poc`（本批从 `fb3b0c26` 开始；最新 HEAD 见工作日志最后一条）。不合并 `main`、不发布 APK。Candidate B 历史基线 `a8a0e1b3` 不变；不得将本历史线当作当前 Android checkout。
+- Planning：`choicky/fcitx5-fusion` 分支 `main`（旧仓库名 `choicky/fcitx5-moqi` 仅作为历史名称保留）。
 
 ## 2. 本批 Android 提交（按顺序）
 

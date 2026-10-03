@@ -481,6 +481,24 @@ paired punctuation 的 formatter-only repair 暴露出验证状态必须分层�
 - Dictionary、Voice/ASR 和 Toolbar 已有实现批次；剩余真机回归、长语音/下载控制与 Toolbar 冻结审计按各自 checkpoint 继续，不把未测项目记为 PASS。
 - 下一步入口：Toolbar/Voice Settings 真机回归与缺陷收口、Local 下载/长语音/许可证据收口、Managed Cloud/Self-hosted checkpoint；LLM 仍为后续事项。
 
+### 当前开发基线（2026-10-03）
+
+以下是后续 AI/开发者继续开发时使用的三仓库协作基线。它描述当前持续开发线，**不要求也不暗示**从历史 Phase checkpoint 或 Release pin 回退 checkout：
+
+| 仓库 | 分支与完整 SHA | 用途与证据 |
+|---|---|---|
+| `fcitx5-fusion` | `main` @ `17617d7920cc621ebf64fdfdae31c469421ac02c` | 当前总控仓库文档基线；本批从该 main 收口。 |
+| `fcitx5-android` | `phase5c-dictionary-manager` @ `9163ec9630679f7bd7fdae56bf65fa50dcfba5b5` | 当前 Android 持续开发线，已包含发布后的 `b31ae5f7` 与本次文档收口；远端分支与本地一致。该工作线已在本机完成 `:app:testDebugUnitTest`、`:app:assembleDebug`、固定 debug signing 和 adb 真机安装。 |
+| `fcitx5-chinese-addons` | `master` @ `61474bd3aa9fca26d1c31df93343035697e9f265` | 当前 addons 开发线，远端 master 与本地一致；`19f06898581419d3e4d37492f33a14e841e2680e` 是该历史中的普通上游提交，不是另一个当前基线。 |
+
+性质必须分开记录：
+
+- **Current development baseline**：上表三仓库的 branch + SHA。后续开发从对应当前开发线继续；不得仅因某个工作树当前 checkout 在某个 SHA，就把它升级为跨仓库权威事实。
+- **Release reproducibility baseline**：已发布 `v0.1.3-fusion.6` 的 Android `e48896accb8c6f85ccee6006cfb689c1419ec227`（tag）+ addons `9b3448e6b3889e4281ea39e334c7e5714f8a8b12`（release workflow 固定 pin）。这组 SHA 只用于复现该 Release，不是当前开发 HEAD；release evidence 仍保留在下节及 `docs/repository-rename.md`。
+- **Historical phase checkpoint**：Android `phase4-voice-poc` 的 `7ed0fa780bb367b4602c432e830a3006b8717b9c` 只表示 Phase 4C 当时的实现/验收 checkpoint。它已被后续 Android 连续提交超越，不要求当前 checkout 回退；相关验收记录保持历史性质。
+
+addons 的 `9b3448e6` 位于用于发布固定的 punctuation 分支线上，不能因它晚于 `61474bd3` 就替代当前 `master` 开发基线。以上判定同时依据分支/远端状态、提交祖先关系、现有 release evidence 和后续连续开发历史；不是依据单次 checkout 猜测。
+
 ### 发布记录（2026-10-02）
 
 - 已发布 [`v0.1.3-fusion.6`](https://github.com/choicky/fcitx5-android/releases/tag/v0.1.3-fusion.6)：Android commit `e48896accb8c6f85ccee6006cfb689c1419ec227`，addons commit `9b3448e6b3889e4281ea39e334c7e5714f8a8b12`，发布 CI run [`37037562844`](https://github.com/choicky/fcitx5-android/actions/runs/37037562844)；对应 debug CI run [`37036451307`](https://github.com/choicky/fcitx5-android/actions/runs/37036451307) 也成功。
@@ -498,7 +516,7 @@ paired punctuation 的 formatter-only repair 暴露出验证状态必须分层�
 3. **Managed Cloud + Self-hosted checkpoint**（D033；文档研究已先行完成，PoC 待定，见 `docs/network-asr-checkpoint.md`）；与之独立的 Local 线：**识别/验证 Local ASR 正式发布候选**（D036）；
 4. ~~Provider Settings Foundation 设备验收~~：已关闭（vivo 全部通过；Redmi 可测部分通过，System ASR 路径因设备限制不可测）；当时（2026-09-28 关闭本项时）修订后的多服务设置/首次推荐、D035 运行时 fallback 与新 Provider 尚未实现——**此后已在 Phase 4C 中实现，现状见第 5 项**；`fb3b0c26` 的 release 构建已本地编译通过，release APK 安装与设备运行未测试。
 
-5. **ASR 服务产品化（Phase 4C，所有者 2026-09-28 指示）**：四类服务可由普通用户配置；计划见 `docs/asr-productization-plan.md`，进度与证据见 `docs/asr-productization-worklog.md`，验收脚本见 `docs/asr-productization-acceptance.md`。当前状态分三层（Android `phase4-voice-poc` @ `7ed0fa78`）：
+5. **ASR 服务产品化（Phase 4C，所有者 2026-09-28 指示；历史 checkpoint）**：四类服务可由普通用户配置；计划见 `docs/asr-productization-plan.md`，进度与证据见 `docs/asr-productization-worklog.md`，验收脚本见 `docs/asr-productization-acceptance.md`。下列记录以 Android `phase4-voice-poc` @ `7ed0fa78` 为历史 checkpoint，不是当前 Android development baseline；当前基线见上方“当前开发基线”：
    - **代码已实现并推送**：多服务设置、一次性首次推荐、旧设置迁移、当前/实际使用显示；就绪信号与 D035 fallback（外部服务只回落到正式 Local；System 从不作为回落目标；当前 A/B/C 都不是正式模型，所以实际不回落）；Keystore 凭据库；豆包/Qwen/腾讯 BYOK；sherpa-onnx、FunASR 2-pass、Fun-ASR-Nano、OpenAI-compatible 自建实例；Model Manager 为 A/B/C 提供下载（D037 2026-09-28 修订：本项目为未发布的个人测试项目；A 仅测试构建可下载，**公开发布许可仍未解决**；B 的许可依据与 34–39 s 长语音问题在 UI 中可见；C 为实验性候选）；评审修复（FunASR 首包顺序、采集错误不回落、错误脱敏、下载取消竞态、导出前同步清除旧错误偏好）；Windows 文件替换与 zip 条目名（`7af0cc16`）；Model Manager 操作对话框（`3116a7b8`）；下载期间设置页闪烁修复与每个本地模型单独启用（`7ed0fa78`，D038）。
    - **CI 通过**：最新 run `36380142431`（`7ed0fa78`）——单元测试、arm64 debug APK、release 变体 Kotlin 编译、仪器测试编译均成功；未打包/签名/安装 release APK。本机：sherpa-onnx 与 FunASR 2-pass、OpenAI-compatible 与上游服务器互通；Qwen/腾讯/Nano 仅协议仿真；A/B/C 真实上游下载与 SHA-256 在本机 JVM 验证。
    - **设备摘要结果（所有者报告，2026-09-28，`7ed0fa78`，vivo X100 Pro 与 Redmi K90 Pro Max 相同）**：升级后豆包 API Key 保留、A/B/C 下载期间无闪烁（`6007c8ca` 的闪烁 FAIL 已由此修复，两台通过）、A/B/C 独立启用/选择、切换当前服务均 PASS；本地识别可用——A 中文好、英文差，B、C 中英文均可，延迟主观可接受。此前 vivo 上服务选择与豆包 BYOK 识别 PASS（`7af0cc16`）。这是摘要级证据，不等于详细验收用例 PASS；**未选定正式/默认 Local 模型**。
