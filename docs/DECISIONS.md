@@ -600,10 +600,10 @@ debug/release 均支持应用内从固定上游按需下载三款模型，权重
 
 ## D051 — 成对标点固定为 19 组并复用上游机制
 
-**状态：Accepted（2026-10-03；目标行为已决定，table mapping 已应用，runtime validation pending）**
+**状态：Accepted（2026-10-03；目标行为已决定；46-row 实验已回滚，当前 Paired Punctuation work: PAUSED；runtime validation pending）**
 
 Fusion 的成对标点目标固定为 19 组，完整 authoritative list 见 docs/REQUIREMENTS.md §5.1。选择依据是此前检查的 Doubao APK 确认 18 组，再加上检查的 WeChat pair data 中存在的 ‹›；WeChat 中其他装饰性/表情导向扩展（例如 ʚɞ、⊱⊰、༺༻）不自动采用。超出这 19 组必须另行作出明确决定。
 
-实现已复用现有 Fcitx5 Chinese Addons paired-punctuation mechanism，选定 mapping 已应用于 `fcitx5-chinese-addons/modules/punctuation/punc.mb.zh_CN`。现有表格使用第三列/AltMapping 表达配对；已有 first-column double-quote → AltMapping curly double-quote、first-column apostrophe → AltMapping curly apostrophe 等形式。本决定不引入 structured candidate API、Pinyin/Table paired-punctuation plumbing、新 punctuation state machine、LibIME、Fcitx core 或 Android candidate protocol 改动；此前 abandoned structured-candidate implementation 已回滚。
+实现方向复用现有 Fcitx5 Chinese Addons paired-punctuation mechanism；此前选定 mapping 曾应用于 `fcitx5-chinese-addons/modules/punctuation/punc.mb.zh_CN`，随后随 Commit B rollback 恢复为官方 upstream 41-row baseline。现有表格使用第三列/AltMapping 表达配对；已有 first-column double-quote → AltMapping curly double-quote、first-column apostrophe → AltMapping curly apostrophe 等形式。本决定不引入 structured candidate API、Pinyin/Table paired-punctuation plumbing、新 punctuation state machine、LibIME、Fcitx core 或 Android candidate protocol 改动；此前 abandoned structured-candidate implementation 已回滚。46-row 内容、Commit B 和 runtime-path audit 均作为历史证据保留，不表示当前实现。
 
-第一列是 trigger key，部分 trigger key 有多个 mapping；本次已按选定的 46 行表内容完成 table mapping。当前仍为 **runtime validation pending**：本决定不把尚未完成的编译、运行时、Pinyin/Shuangpin E2E 或 Android 真机验证写成已通过。
+第一列是 trigger key，部分 trigger key 有多个 mapping；46-row 表的精确 mapping 已停止并回滚，当前表恢复 upstream baseline。当前仍为 **runtime validation pending**，且本项工作为 **PAUSED**：本决定不把尚未完成的编译、运行时、Pinyin/Shuangpin E2E 或 Android 真机验证写成已通过；后续实现须重新开启任务并完成 runtime PoC。
