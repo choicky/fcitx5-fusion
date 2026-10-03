@@ -891,3 +891,13 @@ debug/release 均包含同一 Local runtime/native library 和现有 Model Manag
 `3b951a6dd1bb427fb558b5eef6043e6c94a2e3a68248b787370ec3d880571566`，Release 页面为
 https://github.com/choicky/fcitx5-android/releases/tag/v0.1.3.7 。这只记录 CI/发布
 证据，不把 owner-reported 实机使用或未执行的逐项验收改写为 PASS。
+
+## D052 — punc.mb.zh_CN machine-verified row-count correction
+
+**状态：Accepted（2026-10-03；process/evidence correction，no behavioral delta）**
+
+直接从目标 Git object 复核 `modules/punctuation/punc.mb.zh_CN`：upstream/baseline `61474bd3aa9fca26d1c31df93343035697e9f265` 为 **41 physical rows**、39 个 two-token rows、2 个 three-token rows，SHA-256 为 `6c120e2e0db8a97c0334901c41b8667475779c4a26b95316492d8b3a42a4d91f`；Commit B / release pin `9b3448e6b3889e4281ea39e334c7e5714f8a8b12` 为 **46 physical rows**、29 个 two-token rows、17 个 three-token rows，SHA-256 为 `eeecf4440b4d5e37140758663e7dafcc48114c690cffc138322337b8585a2471`。
+
+两者的直接 `git diff --numstat` 为 `15 insertions / 10 deletions`，即 `41 + 15 - 10 = 46`。v0.1.3.7 实际消费的 release pin 与 Commit B byte-identical。此前任何把“release/current file has 41 physical rows”或把 46 解释为仅 logical/accounting count 的表述均已被此事实校正 supersede；41 属于 upstream/baseline，46 属于 Commit B/release。产品目标仍为 19 个 paired-punctuation groups；该产品计数不等于 table row count。
+
+本决定不修改 release、pin、table、产品代码或 runtime 行为；只固化可机械复核的事实口径。

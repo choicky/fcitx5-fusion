@@ -4,6 +4,14 @@
 
 ## 事实来源与设计核对
 
+### Machine-Verifiable Facts
+
+凡可由机器直接验证的事实，必须从目标 artifact、Git object、CI run 或实际源码直接验证；不得用历史报告、文档摘要、记忆或语义推断替代实际验证。
+
+典型事实包括：文件内容/行数从目标 Git object 或实际文件读取；变更文件与 hunks 从 `git diff` 读取；提交祖先关系用 `git merge-base` / `git rev-list` 验证；release pin 从已提交 workflow 与实际 checkout SHA 验证；文件身份用 blob/hash/`cmp` 验证；依赖版本从实际 build/source lock 验证；APK 内容从实际 APK 检查；CI 状态从实际 run/job 结果检查；源码 symbol/API 存在性从目标 SHA 的精确搜索检查。
+
+若 machine evidence 与文档或历史报告冲突：machine evidence 优先；停止依赖该事实的实现；报告冲突；修正文档或标记 superseded；不得为旧结论发明解释使其继续成立。多个独立机械事实存在可计算关系时，必须进行 sanity check（例如 `41 baseline rows + 15 insertions - 10 deletions = 46 release rows`）。
+
 - 开始设计或实现前，先阅读相关需求、技术决策、路线图、研究记录，以及所涉及上游仓库的最新源码、公开接口和现有测试。
 - 判断当前预期行为时，按以下权威顺序读取：
   1. `REQUIREMENTS.md` 中当前有效的需求；
