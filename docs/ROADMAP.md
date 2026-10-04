@@ -525,6 +525,14 @@ paired punctuation 的 formatter-only repair 暴露出验证状态必须分层�
 - 下一步入口：Toolbar/Voice Settings 真机回归与缺陷收口、Local 下载/长语音/许可证据收口、Managed Cloud/Self-hosted checkpoint；LLM 仍为后续事项。
 - MoQi 上游贡献不在当前下一步：PR #300 已关闭并保留 `contribution/moqi-upstream-v2` 作为验证参考；不要为上游接受度继续重设计 MoQi 表格下载或发布流程。
 
+### Strategy 4 上游贡献边界（2026-10-04）
+
+ASR 上游工作采用已接受的增量结构：PR 1 为 Core + Android System ASR +
+lightweight Provider Registry；PR 2 为 Local ASR + Local Model Manager；PR 3
+及以后为 Managed Cloud / Self-hosted provider。此前 Full / No-Local /
+Local-focused 比较仅是调查记录；Full extraction 保留为参考证据，不是 PR 1
+边界。该决定不减少 Fusion 产品对全部 provider 类型的支持范围。
+
 ### 当前开发基线（2026-10-03）
 
 以下是后续 AI/开发者继续开发时使用的三仓库协作基线。它描述当前持续开发线，**不要求也不暗示**从历史 Phase checkpoint 或 Release pin 回退 checkout：

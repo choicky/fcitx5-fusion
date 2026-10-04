@@ -648,3 +648,26 @@ MoQi 是本项目保留的专用 Auxiliary Filter 功能，但暂不继续向
 
 后续涉及 MoQi 的实现和发布仍按 downstream 产品线维护；若未来重新提出上游
 贡献，须先有新的明确范围和维护决策，不得把本快照或已关闭 PR 作为当前计划。
+
+## D053 — ASR 上游贡献采用 Strategy 4 的增量边界
+
+**状态：Accepted（2026-10-04）**
+
+ASR 上游贡献不提交 Full / No-Local / Local-focused 三个互斥候选，而采用可
+叠加的 Strategy 4：
+
+1. PR 1：通用 Voice Input core、Android System ASR，以及轻量、静态、进程内
+   Provider Registry / provider boundary；
+2. PR 2：Local ASR 与 Local Model Manager；
+3. PR 3 及以后：Managed Cloud 与 Self-hosted ASR provider。
+
+PR 1 的 provider boundary 只承担稳定 identity、availability、backend
+construction/resolution；不引入动态插件、反射发现、通用 DI、通用网络或凭据
+框架。`VoiceInputFlow` / `VoiceBackend` 继续拥有共同 session lifecycle、
+composition 和 commit；provider-specific state 由各 provider 自己拥有。
+
+此前 Full / No-Local / Local-focused 比较是边界调查，不是最终 PR 结构。现有
+Full extraction 仅作为 source、行为和兼容性证据分支保留，不作为第一个上游 PR。
+产品架构仍须支持 System、Local、Managed Cloud、Self-hosted 全部 provider；本决定
+只是 upstream contribution decomposition，不减少 fcitx5-fusion 产品范围，也不改变
+MoQi downstream-only 决定。
