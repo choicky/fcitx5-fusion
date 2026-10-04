@@ -709,9 +709,10 @@ MoQi 后缀正式切换到 Fusion Enhanced：
 与所有 `BuildConfig.APPLICATION_ID` 引用随有效包名自动移动，无需逐处手改，且彼此自洽。
 插件（`org.fcitx.fcitx5.android.plugin.*`）沿用既有无后缀 package 身份，本次不调整其 IPC 兼容模型。
 
-## D055 — Model A 为 Fusion Enhanced 正式 Voice 产品架构（本轮不实现）
+## D055 — Model A 为 Fusion Enhanced 正式 Voice 产品架构
 
-**状态：Accepted as target architecture（2026-10-04；细化并统一 D027/D033/D034/D053 的 top-level provider 语义；本轮仅固化决策，不实现）**
+**状态：Accepted as target architecture（2026-10-04；细化并统一 D027/D033/D034/D053 的 top-level provider 语义）**
+**实现状态：IMPLEMENTED（最小一致批次）/ SOURCE-LEVEL VALIDATED / DEVICE VALIDATION DEFERRED（Android commit `21f8b2ad`，分支 `contribution/fusion-enhanced-identity-naming-r8`）**
 
 Voice 触发与 provider 选择采用单一 top-level dispatch：
 
@@ -731,13 +732,42 @@ ONE configured Voice Provider  ←  VoiceSelectionStore.current 是唯一 top-le
 - **External Android Voice Input 不强行经过 `VoiceInputFlow`。**
 - Mic 与 Space 都是纯 Voice Trigger，进入同一 top-level dispatch。
 
-产品决策（固化，本轮不实现 Model A）：
+产品决策（固化；最小一致批次已在 source 层实现）：
 
 - **B 默认 Provider**：Fresh install / 清空数据后，继续遵循既定隐私与推荐原则；**不因 External Android Voice IME 存在就自动选择 External**；“一键推荐”优先合格 Local ASR（沿用 D034/D045/D050 推荐资格逐项检查）。
 - **C External 不参加一键推荐**：External Android Voice Input 只由用户主动选择，理由是它把输入控制权交给外部 IME，其 UI/隐私/数据流不由 Fusion 控制。
 - **D External 消失/不可用**：已选 External Voice IME 后该 IME 不可用时，不静默切换到其他 External/System/Local/任意 Provider；保持 configured provider 语义，触发时给出明确 unavailable 提示并引导进入 Voice Settings。若 subordinate preference 明确表达 upstream 原有 “System default external voice input” 语义，则保留 upstream 自身选择语义，不额外发明 provider fallback。
 - **E System ASR runtime failure**：本轮不为 vivo System ASR bug 修改 D035/fallback policy；先查清真正 runtime error，不用 fallback 掩盖 bug。
 - **F 实现顺序**：先在 Fusion Enhanced 产品中实现正确架构 → 本地验证 → 真机验证 → regression 验证；之后再从完整、工作的 Fusion 产品做 subtractive extraction → upstream PR1（对齐 D053），不为 PR1 显小而扭曲产品架构。
+
+### 实现记录（2026-10-04，Android commit `21f8b2ad`）
+
+按 F 顺序完成“实现 + 本地（source-level）验证”，真机验证仍 DEFERRED：
+
+- `VoiceSelection.current`（唯一 top-level truth，持久化为单串 `voice_current_service`）新增
+  `AsrServiceId.External` 作为 top-level provider 值；**刻意不加入 `entries`**，因此固定 in-IME
+  服务集、enablement 分桶、migration 与既有 selection 测试不受影响。
+- 分派：`resolveCurrentService` 对 External 返回 `AsrResolution.ExternalAndroid`（无 backend），
+  `voiceStartStep` 映射为 `VoiceStartStep.StartExternal`；`VoiceInputComponent.start()` 复用上游
+  `InputMethodUtil.findVoiceSubtype(preferredVoiceInput) → switchInputMethod(...)`，**不进入
+  `VoiceInputFlow`/`VoiceBackend`**。Mic 与 Space 仍共用同一 `start()` dispatch。
+- 可用性（§9/§10）：trigger 在 provider 已配置时保持可见；触发时若外部 IME 已消失，给明确
+  `voice_external_no_ime` 提示并进入 Voice Settings，绝不静默换 provider。
+- 推荐（§8）：`recommend()` 不产生 External；设置页不自动选择 External（决策 C 落实）。
+- D035 fallback（§11）：`fallbackTarget` 对 External 直接返回 null；且 External 从不产生
+  `Ready(service)`，fallback 路径结构上看不到 External，System 行为未被触碰。
+- `preferredVoiceInput` 保持为 External 的下属 external voice IME/subtype 选择器，空串 =
+  upstream “System default”；不作为内部 ASR provider ID（决策 D / D053）。
+- Voice Settings：current-service 选择器把 External 作为 top-level 候选（受“存在外部 voice IME”
+  probe 约束）；选中 External 后出现下属 “Preferred voice input” 行，用
+  `InputMethodUtil.listVoiceInputMethods()` + “System default” 构建。
+- source-level 验证：`testDebugUnitTest` classes=49 total=309 failures=0 errors=0 skipped=12；
+  `compileDebugKotlin`/`compileReleaseKotlin`/`assembleDebug`/`assembleRelease`/
+  `compileDebugAndroidTestKotlin`（arm64-v8a）均 BUILD SUCCESSFUL；applicationId
+  debug=`.debug`、release=`.fusionenhanced` 不变；sherpa R8 keep rule 不变；无 submodule/gitlink、
+  dictionary/MoQi/LibIME 回归 diff。
+- **DEFERRED（不得推断为通过）**：真机 External 切换、System default 解析、IME 消失显式反馈、
+  Local 三个模型运行时验收、vivo System ASR trace、Mic/Space 手势与 password 场景设备回归。
 
 ## D056 — Local ASR Release 运行时根因（R8 移除 JNI 反射字段）与修复边界
 

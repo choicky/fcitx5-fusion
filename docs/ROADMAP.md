@@ -282,7 +282,7 @@ Exit Criteria：
 A. 源码层已确认的事实（非实机结论）：
 
 1. 在该 2026-09-27 checkpoint，长按空格手势尚未实现——按当时 D013 有意推迟，不是缺陷；当前实现见上方 `SpaceVoiceTrigger` 基线；
-2. 原"切换到外部语音输入法"路径已移除：麦克风按钮不再调用 `InputMethodUtil.switchInputMethod`，`preferredVoiceInput` 设置项仍显示但不再被读取。是否保留、恢复或移除外部语音键盘行为是**未决的兼容性/行为问题**，尚无决定；
+2. 原"切换到外部语音输入法"路径已移除：麦克风按钮不再调用 `InputMethodUtil.switchInputMethod`，`preferredVoiceInput` 设置项仍显示但不再被读取。是否保留、恢复或移除外部语音键盘行为是**未决的兼容性/行为问题**，尚无决定；**〔2026-10-04 已决定并实现：见 D055 / Model A（Android commit `21f8b2ad`）——External Android Voice Input 重新作为唯一 top-level provider 之一，复用 `findVoiceSubtype→switchInputMethod`，`preferredVoiceInput` 作为其下属 IME/subtype 选择器；source-level 已验证，真机行为仍 DEFERRED〕**；
 3. 数据流审计：仅错误路径有日志；录音 start/stop/cancel、实际使用的 `RecognitionService`、raw transcript 与最终提交文本均未记录——Exit Criteria"数据流可审计"尚未满足。隐私约束：后续实现审计时须区分开发/诊断日志与 release 日志；release 日志默认不得记录完整的用户 transcript 或最终输入文本；
 4. Stopping 状态没有超时，且 Stopping 期间点击麦克风不做任何处理；
 5. 在该 checkpoint，PoC 在 `VoiceInputComponent` 内封装对 `SpeechRecognizer` 的直接调用；当时 Phase 5 的 ASR Provider abstraction 尚未实现。当前内部 `VoiceBackend`、`VoiceInputFlow` 和 Provider selection 已在上方产品基线实现；
