@@ -527,11 +527,16 @@ paired punctuation 的 formatter-only repair 暴露出验证状态必须分层�
 
 ### Strategy 4 上游贡献边界（2026-10-04）
 
-ASR 上游工作采用已接受的增量结构：PR 1 为 Core + Android System ASR +
-lightweight Provider Registry；PR 2 为 Local ASR + Local Model Manager；PR 3
-及以后为 Managed Cloud / Self-hosted provider。此前 Full / No-Local /
-Local-focused 比较仅是调查记录；Full extraction 保留为参考证据，不是 PR 1
-边界。该决定不减少 Fusion 产品对全部 provider 类型的支持范围。
+ASR 上游工作采用已接受的增量结构：PR 1 为完整 provider-independent Voice
+Input core、generic trigger/settings/provider-selection contract、Android System
+ASR 和 lightweight Provider Registry；PR 2 为 Local ASR + Local Model Manager；
+PR 3 及以后为 Managed Cloud / Self-hosted provider。Trigger 不等于 provider，
+PR 1 只有一个 canonical configured-provider truth；麦克风与长按 Space 共用同一
+Voice flow，trigger 可见性不因当前 provider 不可用而静默消失，不可用结果在
+invocation 后处理。`preferredVoiceInput` 保留 Android voice-input IME/subtype
+兼容语义，不作为内部 ASR provider ID。此前 Full / No-Local / Local-focused
+比较仅是调查记录；Full extraction 保留为参考证据，不是 PR 1 边界。该决定不
+减少 Fusion 产品对全部 provider 类型的支持范围。
 
 ### 当前开发基线（2026-10-03）
 

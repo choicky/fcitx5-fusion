@@ -656,7 +656,8 @@ MoQi 是本项目保留的专用 Auxiliary Filter 功能，但暂不继续向
 ASR 上游贡献不提交 Full / No-Local / Local-focused 三个互斥候选，而采用可
 叠加的 Strategy 4：
 
-1. PR 1：通用 Voice Input core、Android System ASR，以及轻量、静态、进程内
+1. PR 1：完整的 provider-independent Voice Input core、generic trigger/settings/
+   provider-selection contract、Android System ASR，以及轻量、静态、进程内
    Provider Registry / provider boundary；
 2. PR 2：Local ASR 与 Local Model Manager；
 3. PR 3 及以后：Managed Cloud 与 Self-hosted ASR provider。
@@ -664,7 +665,12 @@ ASR 上游贡献不提交 Full / No-Local / Local-focused 三个互斥候选，�
 PR 1 的 provider boundary 只承担稳定 identity、availability、backend
 construction/resolution；不引入动态插件、反射发现、通用 DI、通用网络或凭据
 框架。`VoiceInputFlow` / `VoiceBackend` 继续拥有共同 session lifecycle、
-composition 和 commit；provider-specific state 由各 provider 自己拥有。
+composition 和 commit；provider-specific state 由各 provider 自己拥有。Trigger
+不等于 provider；PR 1 建立一个 canonical configured-provider truth，并让麦克风
+和长按 Space 共用同一 Voice flow。trigger 的配置/可见性不等同于 provider
+availability；provider 不可用时在 invocation 后给出明确结果并可回到 Voice 设置。
+旧 `preferredVoiceInput` 仍是 Android voice-input IME/subtype 的兼容偏好，不复用
+其 String namespace 作为内部 ASR provider ID。
 
 此前 Full / No-Local / Local-focused 比较是边界调查，不是最终 PR 结构。现有
 Full extraction 仅作为 source、行为和兼容性证据分支保留，不作为第一个上游 PR。
