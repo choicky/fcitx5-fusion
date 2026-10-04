@@ -130,6 +130,8 @@ ASR 只负责 Audio → Raw Transcript。LLM/Text Post Processor 独立、可关
 
 必须能够确定录音开始/停止、ASR Provider、endpoint、上传数据、Raw Transcript、是否进入 LLM、LLM endpoint 和最终提交文本。
 
+实现记录（2026-10-04，Android commit `5f97e23d`；不改变本决定的意图）：F1 落地了本条的**控制/数据流**部分——`VoiceAudit` 在 `VoiceInputComponent` 观察既有行为，记录 start/stop/cancel、实际选中的 provider 及其 backend 标签、音频接收方（on-device / managed cloud / self-hosted，`ext` 表示音频离开设备）、语言、D035 fallback 是否武装与是否发生、以及终止方式（committed / error class / cancel）到本地 no-backup 审计文件；External Android 只记 handoff。内容级项（Raw Transcript、最终提交文本、endpoint URL 与实例 ID、服务端 error detail）按隐私约束**刻意不记录**，`BuildConfig.DEBUG` 不构成记录内容的授权。因此本条的 transcript/endpoint 口径尚未闭合：若将来需要内容级捕获，必须另开显式 opt-in 设计，不得默认写入。SOURCE-LEVEL 已验证，真机验证 DEFERRED。
+
 ## D019 — 总仓库与上游 fork 分离
 
 **状态：Accepted**
