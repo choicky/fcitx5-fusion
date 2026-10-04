@@ -1,5 +1,10 @@
 # 总控仓库改名记录
 
+> **2026-10-04 修订提示**：本记录第 8–9 行“applicationId/包名保持不变、`.moqi` 包名不追溯修改”
+> 的立场，已被 `docs/DECISIONS.md` **D054** 部分 supersede——release effective applicationId 由
+> `org.fcitx.fcitx5.android.moqi` 切换为 `org.fcitx.fcitx5.android.fusionenhanced`，且不承担旧安装迁移。
+> 本文件其余内容作为 2026-10-02 改名当日的历史记录保留，不作追溯改写。
+
 - 日期：2026-10-02。
 - 旧名：`choicky/fcitx5-moqi`；新名：`choicky/fcitx5-fusion`。
 - GitHub repository ID：`R_kgDOUpnr7Q`（REST numeric ID `1385819117`）。

@@ -187,7 +187,9 @@ pin（commit / SHA256 / URL）集中在 `modules/pinyinhelper/moqima-gb18030.cma
 
 ## D025 — 自构建 Android 发布线：独立包名后缀、自有固定签名密钥、tag 触发发布
 
-**状态：Accepted**
+**状态：Accepted；2026-10-04 由 D054 修订包名后缀一项**（release 后缀由 `.moqi` 改为
+`.fusionenhanced`）。本决策的固定签名密钥、tag 触发发布、`.debug` 测试后缀、APK 校验
+机制与独立包名共存的原则不变；`.moqi` 的具体取值作为历史发布线保留。
 
 项目需要一条可长期使用的 Android 分发线（不依赖上游官方包，也不与之冲突）。决定：
 
@@ -677,3 +679,85 @@ Full extraction 仅作为 source、行为和兼容性证据分支保留，不作
 产品架构仍须支持 System、Local、Managed Cloud、Self-hosted 全部 provider；本决定
 只是 upstream contribution decomposition，不减少 fcitx5-fusion 产品范围，也不改变
 MoQi downstream-only 决定。
+
+## D054 — Android applicationId 收敛为 Fusion Enhanced，不承担旧安装迁移
+
+**状态：Accepted（2026-10-04；修订 D025 的 release 包名后缀；部分 supersede `docs/repository-rename.md` 的“包名/applicationId 保持不变”立场）**
+
+产品正式身份统一为 **Fcitx5 Fusion Enhanced**。Android 安装身份（applicationId）由旧
+MoQi 后缀正式切换到 Fusion Enhanced：
+
+- release effective applicationId：`org.fcitx.fcitx5.android.moqi` → **`org.fcitx.fcitx5.android.fusionenhanced`**；
+  实现方式为 `app/build.gradle.kts` release 变体 `applicationIdSuffix` `.moqi` → `.fusionenhanced`（base `org.fcitx.fcitx5.android` 与 `namespace` 不变）。
+- debug 测试后缀保持 `.debug`，不属于本次切换对象。
+- 用户可见 Release APK 文件名使用带连字符的 branding：`org.fcitx.fcitx5.android.fusion-enhanced-<version>-<abi>-release.apk`
+  （branding 连字符 `fusion-enhanced` 与 applicationId 无连字符 `fusionenhanced` 有意不同，不是笔误）。
+- Version 仍来自单一权威算法 `git describe --tags --long --always`；ABI 来自实际构建产物，不新建第二套 version。
+
+**明确决定：不承担旧安装/偏好迁移。** 目前产品仅项目所有者本人使用，因此：
+
+- 不做 `.moqi` → `.fusionenhanced` 的数据/preference/shared-preferences/数据库迁移；
+- 不做旧 upstream preference migration；不设计双 package 共存升级机制；
+- Android 将 `org.fcitx.fcitx5.android.moqi` 与 `org.fcitx.fcitx5.android.fusionenhanced` 视为不同 App，需要全新安装，这是**接受的结果**。
+- 同一条新的 `.fusionenhanced` 发布线之间仍按 D025 用固定签名密钥覆盖升级。
+
+范围边界：仅改 Android 安装身份。`MoQi` Auxiliary Filter 功能名、码表、config keys、
+`feature/moqi-filter` addon 分支、workflow 文件名以及历史 commit/Release/证据（含
+`docs/x-asr-model-integration.md` 的 v0.1.3.7 记录与 `repository-rename.md`）**不追溯改写**，
+也不因 branding 而全局替换 “moqi”。manifest 内 `${applicationId}` 占位符
+（custom permissions、`provider` / `cropper.fileprovider` / `androidx-startup` authorities、plugin MANIFEST action）
+与所有 `BuildConfig.APPLICATION_ID` 引用随有效包名自动移动，无需逐处手改，且彼此自洽。
+插件（`org.fcitx.fcitx5.android.plugin.*`）沿用既有无后缀 package 身份，本次不调整其 IPC 兼容模型。
+
+## D055 — Model A 为 Fusion Enhanced 正式 Voice 产品架构（本轮不实现）
+
+**状态：Accepted as target architecture（2026-10-04；细化并统一 D027/D033/D034/D053 的 top-level provider 语义；本轮仅固化决策，不实现）**
+
+Voice 触发与 provider 选择采用单一 top-level dispatch：
+
+```
+Voice Trigger (Mic / Long-press Space)
+        ↓
+ONE configured Voice Provider  ←  VoiceSelectionStore.current 是唯一 top-level provider truth
+        ├─ External Android Voice Input   (preferredVoiceInput：仅其下属 external voice IME/subtype 配置)
+        └─ In-IME ASR (System ASR / Local / Managed / Self-hosted) → VoiceBackend → VoiceInputFlow
+```
+
+职责边界：
+
+- `VoiceSelectionStore.current` = 唯一 top-level configured provider truth。
+- `preferredVoiceInput` = External Android 下属配置，只表示 external Android Voice IME/subtype，不作为内部 ASR provider ID（沿用 D053）。
+- `VoiceInputFlow` 只负责 in-IME ASR 的 session/lifecycle/composition/final commit/cleanup。
+- **External Android Voice Input 不强行经过 `VoiceInputFlow`。**
+- Mic 与 Space 都是纯 Voice Trigger，进入同一 top-level dispatch。
+
+产品决策（固化，本轮不实现 Model A）：
+
+- **B 默认 Provider**：Fresh install / 清空数据后，继续遵循既定隐私与推荐原则；**不因 External Android Voice IME 存在就自动选择 External**；“一键推荐”优先合格 Local ASR（沿用 D034/D045/D050 推荐资格逐项检查）。
+- **C External 不参加一键推荐**：External Android Voice Input 只由用户主动选择，理由是它把输入控制权交给外部 IME，其 UI/隐私/数据流不由 Fusion 控制。
+- **D External 消失/不可用**：已选 External Voice IME 后该 IME 不可用时，不静默切换到其他 External/System/Local/任意 Provider；保持 configured provider 语义，触发时给出明确 unavailable 提示并引导进入 Voice Settings。若 subordinate preference 明确表达 upstream 原有 “System default external voice input” 语义，则保留 upstream 自身选择语义，不额外发明 provider fallback。
+- **E System ASR runtime failure**：本轮不为 vivo System ASR bug 修改 D035/fallback policy；先查清真正 runtime error，不用 fallback 掩盖 bug。
+- **F 实现顺序**：先在 Fusion Enhanced 产品中实现正确架构 → 本地验证 → 真机验证 → regression 验证；之后再从完整、工作的 Fusion 产品做 subtractive extraction → upstream PR1（对齐 D053），不为 PR1 显小而扭曲产品架构。
+
+## D056 — Local ASR Release 运行时根因（R8 移除 JNI 反射字段）与修复边界
+
+**状态：Root cause VERIFIED；fix structurally validated；device validation PENDING（2026-10-04）**
+
+现象：Release APK 中三个 Local ASR（X-ASR Offline / X-ASR Streaming 960ms / FunASR Nano）
+共同抛出 `RuntimeException: Failed to get field ID for maxActivePaths`；Debug/Test APK 不复现。
+
+根因（源码 + 二进制证据）：Debug/Test 与 Release 共用
+`com.k2fsa.sherpa.onnx:sherpa-onnx:1.13.8@aar`，仅 Release 经 R8/minify。该 AAR consumer
+proguard 规则为空（`proguard.txt` = 0 字节）；native JNI 按 Kotlin 字段源名读取
+`OfflineRecognizerConfig.maxActivePaths` / `OnlineRecognizerConfig.maxActivePaths`
+（各 ABI 的 `libsherpa-onnx-jni.so` 内嵌 `Failed to get field ID for maxActivePaths` 字符串），
+而这两个字段在 Kotlin 侧仅经 getter/setter 访问，被 Release 的 R8 shrink 移除。
+
+修复：`app/proguard-rules.pro` 增加最小边界
+`-keepclassmembers class com.k2fsa.sherpa.onnx.** { <fields>; }`，只保留该单一第三方 JNI 库的字段
+（不关 R8/minify、不 keep 全应用、不扩到无关包、不加无关 native keep 规则）。经审阅为可靠最小边界，
+不再为“优化”改写；更窄的按类/按字段清单会因 sherpa 镜像众多 config 字段而不“同样可靠”。
+
+状态：源码根因 VERIFIED；修复的结构性验证 = 重建 Release optimized DEX 中两个 `maxActivePaths` 字段仍在；
+**真机 Local ASR 尚未 VERIFIED**，未做设备测试前不得写 “runtime fixed”。见 `/tmp` 报告与验证步骤。
+System ASR 在 vivo 上 “flicker→idle” 仍 **DEVICE TRACE REQUIRED**（UNRESOLVED），本轮不改 SystemAsrBackend。
