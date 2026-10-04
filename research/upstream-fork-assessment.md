@@ -26,7 +26,7 @@
 - `choicky/fcitx5-android` fork：`.github/workflows/moqi-test-apk.yml`、`.github/workflows/release-apk.yml`、`.github/moqi-release-notes.md`、`app/build.gradle.kts` 的 `.moqi` / `.debug` 包名后缀
 - 签名密钥与仓库 secrets；发布 `v0.1.3-moqi.1`（正式线）、`v0.1.3-moqi-test.1`（调试线）
 
-结论：早期“仅发行用途、约 3 文件差异”结论已被当前 Android 产品代码范围 supersede。当前应按功能边界评估：通用 Auxiliary Filter/上游兼容改动可独立研究贡献；MoQi 码表与 selection-frontier 语义留在 addon fork；Voice/ASR、Local Model Manager、词库管理和 Toolbar 的 Android 产品改动分别评估上游可接受边界；发布 workflow、包名后缀和签名配置仍属于本项目发行线。不创建上游 PR，不预设上游接受。
+结论：早期“仅发行用途、约 3 文件差异”结论已被当前 Android 产品代码范围 supersede。当前应按功能边界评估：通用 Auxiliary Filter/上游兼容改动可独立研究贡献；但 MoQi 码表与 selection-frontier 语义现阶段保持在 addon fork，不再继续上游 PR。PR #300 已关闭；`contribution/moqi-upstream-v2` @ `ad4398c1252e4ad508b99e4300a4c3a1a7f1a59a` 保留为干净验证参考。该决定不改变 Unified Auxiliary Filter 产品架构或 MoQi 实现。Voice/ASR、Local Model Manager、词库管理和 Toolbar 的 Android 产品改动分别评估上游可接受边界；发布 workflow、包名后缀和签名配置仍属于本项目发行线。
 
 ## D. 可删除 / 不应长期维护
 

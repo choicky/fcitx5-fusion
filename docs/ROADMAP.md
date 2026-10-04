@@ -51,7 +51,7 @@
 - [x] Stroke regression；
 - [x] 验证 generic Android config exposure（进程内契约 + Android 实机）。
 
-实现已提交到 `choicky/fcitx5-chinese-addons` 的 `feature/moqi-filter` 分支；本段为 Phase 3 历史快照，`f903176f8ffe970bd9e4baf3d974d6b3828c85c5` 是当时记录的 tip，对应 PR #1。源码已包含上述已勾选能力及 Pinyin/Shuangpin 自动化测试。
+实现已提交到 `choicky/fcitx5-chinese-addons` 的 `feature/moqi-filter` 分支；本段为 Phase 3 历史快照，`f903176f8ffe970bd9e4baf3d974d6b3828c85c5` 是当时记录的 tip，对应 PR #1。源码已包含上述已勾选能力及 Pinyin/Shuangpin 自动化测试。后续提取快照 `contribution/moqi-upstream-v2` @ `ad4398c1252e4ad508b99e4300a4c3a1a7f1a59a` 仅作验证参考；其对应的 `fcitx5-chinese-addons#300` 已于 2026-10-04 关闭，MoQi 当前不再计划上游贡献。
 
 CI（run `36121191299`，tip `f903176`）三个 job 全部通过：clang-format、Build and test (gcc)、Build and test (clang)；ctest 9/9 全部通过，其中 `testpinyinhelper` 用固定码表验证墨奇反查，`testpinyin` 覆盖 Stroke / MoQi / Disabled、partial selection、继续输入与 config 契约。
 
@@ -161,7 +161,7 @@ Phase 3 未定义独立的 "Exit Criteria" 小节（ROADMAP 中只有 Phase 2 �
 
 - 实机证据为**项目所有者人工回报**，无截图/logcat，不可自动复核；仅覆盖 arm64-v8a 正式包。
 - "用户学习、性能与稳定性"未系统测试（Phase 3 范围项之一）。
-- 上游贡献尚未实际提交（只完成评估与分类）。
+- MoQi 上游贡献已撤回：PR #300 已关闭；Unified Auxiliary Filter 与 MoQi downstream 产品线继续保留。
 - `.debug` 预发布线与正式线不互通（设计如此，对外说明需保留）。
 - 一次性探针分支 `probe/shuangpin-cursor-boundary`（`8ea2ec0`）仍在远端，未合并、不影响 PR #1，待另行清理。
 
@@ -523,6 +523,7 @@ paired punctuation 的 formatter-only repair 暴露出验证状态必须分层�
 - debug/release 均支持应用内从固定上游按需下载上述模型，权重不内置 APK；archive NOTICE、转换来源等证据仍待补齐，不表述为独立法律审计 PASS。
 - Dictionary、Voice/ASR 和 Toolbar 已有实现批次；剩余真机回归、长语音/下载控制与 Toolbar 冻结审计按各自 checkpoint 继续，不把未测项目记为 PASS。
 - 下一步入口：Toolbar/Voice Settings 真机回归与缺陷收口、Local 下载/长语音/许可证据收口、Managed Cloud/Self-hosted checkpoint；LLM 仍为后续事项。
+- MoQi 上游贡献不在当前下一步：PR #300 已关闭并保留 `contribution/moqi-upstream-v2` 作为验证参考；不要为上游接受度继续重设计 MoQi 表格下载或发布流程。
 
 ### 当前开发基线（2026-10-03）
 

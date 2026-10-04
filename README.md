@@ -80,6 +80,12 @@ Phase 3 已完成；Phase 4 的 Voice/ASR 产品化、Phase 5 的词库管理和
 项目优先复用上游能力并缩小长期 fork 面。
 
 - 总控仓库：[`choicky/fcitx5-fusion`](https://github.com/choicky/fcitx5-fusion)（原名 `choicky/fcitx5-moqi`，已保留原仓库身份与历史）
-- Phase 2 fork：`choicky/fcitx5-chinese-addons`
+- Phase 2 fork：`choicky/fcitx5-chinese-addons`；MoQi Auxiliary Filter 当前为
+  downstream-only，不再计划上游 PR。历史上游提案 PR #300 已关闭；干净参考快照
+  `contribution/moqi-upstream-v2` @ `ad4398c1252e4ad508b99e4300a4c3a1a7f1a59a`
+  保留，不删除。
 - 当前不 fork LibIME
 - `choicky/fcitx5-android`：当前 fork 已承载 Voice/ASR、Local Model Manager、词库管理、Toolbar 及发布 workflow/包名/签名配置等产品代码；早期“仅发行用途、约 3 文件差异”的判断只适用于早期墨奇集成，已由当前 fork 评估记录替代。未来按功能边界评估向上游贡献，不预设上游接受。
+
+MoQi 的 downstream-only 决定不撤回 Unified Auxiliary Filter 架构，也不恢复
+Stroke/MoQi 平行 handler；现有 Disabled / Stroke / MoQi 产品行为继续维护。

@@ -626,3 +626,25 @@ Fusion 的成对标点目标固定为 19 组，完整 authoritative list 见 doc
 实现方向复用现有 Fcitx5 Chinese Addons paired-punctuation mechanism；此前选定 mapping 曾应用于 `fcitx5-chinese-addons/modules/punctuation/punc.mb.zh_CN`，随后随 Commit B rollback 恢复为官方 upstream 41-row baseline。现有表格使用第三列/AltMapping 表达配对；已有 first-column double-quote → AltMapping curly double-quote、first-column apostrophe → AltMapping curly apostrophe 等形式。本决定不引入 structured candidate API、Pinyin/Table paired-punctuation plumbing、新 punctuation state machine、LibIME、Fcitx core 或 Android candidate protocol 改动；此前 abandoned structured-candidate implementation 已回滚。46-row 内容、Commit B 和 runtime-path audit 均作为历史证据保留，不表示当前实现。
 
 第一列是 trigger key，部分 trigger key 有多个 mapping；46-row 表的精确 mapping 已停止并回滚，当前表恢复 upstream baseline。当前仍为 **runtime validation pending**，且本项工作为 **PAUSED**：本决定不把尚未完成的编译、运行时、Pinyin/Shuangpin E2E 或 Android 真机验证写成已通过；后续实现须重新开启任务并完成 runtime PoC。
+
+## D052 — MoQi 保持 downstream-only，撤回 Auxiliary Filter 上游 PR
+
+**状态：Accepted（2026-10-04；PR #300 已关闭）**
+
+MoQi 是本项目保留的专用 Auxiliary Filter 功能，但暂不继续向
+`fcitx5-chinese-addons` 上游提交。原因是其用户范围较窄，并且依赖外部 MoQi
+码表、构建和再分发边界；这些维护成本目前不适合由上游承担。
+
+- `fcitx/fcitx5-chinese-addons#300`（head
+  `choicky/fcitx5-chinese-addons:contribution/moqi-upstream`，head
+  `4c1a93d28bf1fec474c58f8fd2a88a90fc24ef48`）已关闭；该分支不删除。
+- `contribution/moqi-upstream-v2` @
+  `ad4398c1252e4ad508b99e4300a4c3a1a7f1a59a` 保留为 validated clean
+  extraction/reference snapshot，不作为当前上游贡献线。
+- Unified Auxiliary Filter 架构、Disabled / Stroke / MoQi 状态、现有 MoQi
+  trigger、selection-frontier、partial-selection、composition 保留和继续输入
+  语义均不改变；本决定不恢复平行 Stroke/MoQi handler。
+- 不继续为上游接受度单独重设计 MoQi 码表下载、表格分发或相关发布流程。
+
+后续涉及 MoQi 的实现和发布仍按 downstream 产品线维护；若未来重新提出上游
+贡献，须先有新的明确范围和维护决策，不得把本快照或已关闭 PR 作为当前计划。
