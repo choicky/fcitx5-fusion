@@ -203,6 +203,8 @@ pin（commit / SHA256 / URL）集中在 `modules/pinyinhelper/moqima-gb18030.cma
 
 已验证的对照事实：CI runner 上临时生成的 debug 密钥每次构建都不同（同一条分支三次构建的 `META-INF/CERT.RSA` 哈希互不相同），因此早期 pre-release 之间无法覆盖安装；本条决策正是为消除该问题。
 
+Debug CI 签名的补充事实（2026-10-04 设备排查中从实际 APK 验签确认）：自 fork 提交 `c8dd4c0d`（2026-09-30）起，`Test APK` workflow 通过 `DEBUG_SIGN_KEY_*` secrets 用固定的 “MoQi Debug CI” 密钥签署 debug APK；secrets 缺失时回退 AGP 默认 Android Debug 密钥。由此 debug 安装包存在两个签名岛（Android Debug 与 MoQi Debug CI）：跨岛 `-r` 覆盖安装会被拒（`INSTALL_FAILED_UPDATE_INCOMPATIBLE`），切换只能卸载重装并丢失应用数据（学习词库、Voice 设置、`no_backup` 审计）。同包名的设备 A/B 回归必须按签名岛选择可 `-r` 的阶梯，或先按数据丢失预案卸载。release 线不受影响（仍用 D025 的固定 `SIGN_KEY_*`）。
+
 风险与约束：签名密钥一旦丢失，就无法再发布可覆盖升级的版本（用户必须卸载重装），因此密钥必须在仓库 secrets 之外另行备份；密钥与口令不得进入任何 git 仓库。
 
 ## D026 — 正式 Voice 不得依赖单一 OEM/System RecognitionService
@@ -820,3 +822,9 @@ proguard 规则为空（`proguard.txt` = 0 字节）；native JNI 按 Kotlin 字
 状态：源码根因 VERIFIED；修复的结构性验证 = 重建 Release optimized DEX 中两个 `maxActivePaths` 字段仍在；
 **真机 Local ASR 尚未 VERIFIED**，未做设备测试前不得写 “runtime fixed”。见 `/tmp` 报告与验证步骤。
 System ASR 在 vivo 上 “flicker→idle” 仍 **DEVICE TRACE REQUIRED**（UNRESOLVED），本轮不改 SystemAsrBackend。
+
+2026-10-04 于分支 tip（应用码 `9a31512c` / HEAD `99373594`）复审维持上述结论：三份独立证据一致 ——
+R8 `configuration.txt` 含该 keep 规则；`classes.dex` 中 `Offline/OnlineRecognizerConfig.maxActivePaths`
+均以源名存在；`usage.txt` 收缩账目中 sherpa 移除项全部为方法级（`maxActivePaths` 0 次出现，字段未动）。
+当次 Release 候选为未签名产物（包名 `org.fcitx.fcitx5.android.fusionenhanced`），真机验收需先按 D025
+的 `SIGN_KEY_*` 签名安装。最终状态 = RELEASE STATIC/BUILD VERIFIED + DEVICE RUNTIME PENDING。
