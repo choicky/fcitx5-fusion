@@ -771,6 +771,33 @@ ONE configured Voice Provider  ←  VoiceSelectionStore.current 是唯一 top-le
 - **DEFERRED（不得推断为通过）**：真机 External 切换、System default 解析、IME 消失显式反馈、
   Local 三个模型运行时验收、vivo System ASR trace、Mic/Space 手势与 password 场景设备回归。
 
+### UI Supersession 记录（2026-10-04，Android commit `e4e2c47e`）
+
+本记录 supersede 上方实现记录中两条 UI 决策，Model A 架构本身（top-level dispatch、
+`current` 唯一 truth、External 不进 flow、D035 不变）不受影响：
+
+- **旧**：current-service 选择器把 External 作为 top-level 候选“受存在外部 voice IME 的
+  probe 约束”（`externalAndroidAvailable = listVoiceInputMethods().isNotEmpty()`）。
+  **新**：External 是无条件列出的 top-level configured provider。配置可见性不依赖运行时
+  IME 发现；Configured / Enabled / Selectable / Available / RuntimeUsable 保持分离，
+  “发现不到具体 IME”只在触发边界处理（既有 `voice_external_no_ime` 提示 + 进入 Voice
+  Settings，决策 D 原文不变）。不允许用 probe 把 provider 从配置 UI 抹除。
+- **旧**：选中 External 后在 Voice Settings 内出现下属 “Preferred voice input” 行（重复实现
+  的 IME 发现 picker）。**新**：`preferredVoiceInput` 回到 upstream 原位置与相对顺序
+  （Settings → Virtual Keyboard，`keepLettersUppercase` 与 `expandKeypressArea` 之间），
+  复用上游 `voiceInputPreference` + `ManagedPreferenceUi.VoiceInputList`（含 “System
+  default” 与 `_not_available_` summary）。状态归属与 UI 位置分离：该值仍是 External 的
+  下属配置（D053 语义不变），但不因 “current==External” 才显示，也不因此搬进 Voice 设置。
+  Voice Settings 中的下属行与其 helper 已删除。
+- 该行不设 `enableUiOn` gate：upstream 原 gate 依赖的 `showVoiceInputButton` 已在
+  `17250b3d` 被 ToolbarAction 状态取代，恢复动态置灰需要新的跨 category plumbing，超出
+  最小闭包；故按 normal upstream visibility 语义常显。
+- 验证（source-level）：`testDebugUnitTest` total=323 failures=0 errors=0；
+  `compileDebugKotlin`/`compileReleaseKotlin`/`compileDebugAndroidTestKotlin` BUILD
+  SUCCESSFUL；`git diff --check` clean。Model A 测试改为断言新不变量（External 在发现为
+  空时仍列出；in-IME 候选规则不变）。
+- **DEVICE VALIDATION 仍 DEFERRED**：无 vivo 设备，本节不改变任何设备结论。
+
 ## D056 — Local ASR Release 运行时根因（R8 移除 JNI 反射字段）与修复边界
 
 **状态：Root cause VERIFIED；fix structurally validated；device validation PENDING（2026-10-04）**
