@@ -177,6 +177,10 @@ Phase 3 未定义独立的 "Exit Criteria" 小节（ROADMAP 中只有 Phase 2 �
 > 顶层范围与功能状态矩阵以该文件为唯一权威；Android 产品线为 `contribution/fusion-enhanced-identity-naming-r8`
 > @ `2ba3a999`（不再是 `phase5c-dictionary-manager` @ `9163ec96`，后者仅作历史贡献线保留）。以下逐条是实现/CI
 > **历史证据索引**（区分“代码已实现”与“设备/真实服务/发布证据已验证”），其当前状态判定看 `first-release-baseline.md` 真值表。
+>
+> **D062 RC 验证 checkpoint（2026-10-05）：** 冻结基线的有界 Release-Candidate 验证已完成，结果
+> **AUTOMATION RC: GO / FINAL RELEASE: PENDING DEVICE ACCEPTANCE**；证据与剩余门槛见
+> `docs/first-release-rc-validation.md`（设备清单 `/tmp/fcitx5-d062-device-acceptance-checklist.md`）。
 
 当前实现证据（历史索引）：
 
