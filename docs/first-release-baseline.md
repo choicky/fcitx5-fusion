@@ -38,6 +38,7 @@
 | Area | First release | IMPL | VERIF | BLK | Authority |
 |---|---|---|---|---|---|
 | MoQi Auxiliary Filter | YES | IMPLEMENTED（`9b3448e6` 统一辅助筛选 Disabled/Stroke/MoQi；downstream-only） | SOURCE/TEST VERIFIED；设备有界回归=VALIDATION DEBT | NONE | D052；§3 |
+| Paired Punctuation（D051 扩展，§6 耦合，非第五家族） | YES（D061 接受，随发布 pin `9b3448e6` 一并发布） | IMPLEMENTED（pin 提交内 `punc.mb.zh_CN` 46 行 = upstream 41 行基线 + 成对扩展；不声称超出既有证据的编译/运行时/真机验证） | 有界 runtime 回归待在 RC 验证 = VALIDATION DEBT | NONE（除非 RC 产出具体回归证据） | D051；D061；§6 |
 | Dictionary Manager | YES | IMPLEMENTED（`84b7f571`+`583a525a`） | SOURCE/TEST VERIFIED（`DictionaryPresentationTest`、androidTest `DictionaryManagerLayoutTest`、CI `36906187024`）；完整设备导航=VALIDATION DEBT | NONE | D049 |
 | Toolbar | YES | IMPLEMENTED（`172ac602`+`5af093c4`，inline edit） | SOURCE/TEST VERIFIED（`ToolbarActionTest`）；触摸/拖放/窄屏/字体/无障碍/teardown=VALIDATION DEBT | NONE | D047/D048 |
 | Voice core（provider 单一真源 / flow / session / Mic+Space 触发） | YES | IMPLEMENTED | DEVICE VERIFIED（vivo X100 Pro；见 voice-closure-checkpoint §3） | NONE | D055；voice-closure-checkpoint |
@@ -82,13 +83,20 @@ ONE Configured Voice Provider
 - **F1 / D018：** 内容级审计（raw transcript / 最终提交文本）有意未做，**不**授权未来 agent 借此隐含加入 transcript 日志；新增 transcript 内容日志需**单独显式**隐私/设计决定。
 - **§13 MoQi：** Pinyin/Shuangpin → LibIME candidates → Unified Auxiliary Filter（Disabled / Stroke / MoQi）。Trigger 表达用户意图，不等于 MoQi；配置实现选择 Disabled/Stroke/MoQi；共享辅助筛选生命周期/state/handler；Stroke 与 MoQi 谓词分别保持语义；MoQi V1 命中选择前沿后的首个 Hanzi，**不**继承 Stroke 的“词组任意字符”匹配；partial-selection / composition 保留 / 继续输入 / 二次筛选为不变量；**无 LibIME fork**。上游抽取态 = PR #300 已关闭、`contribution/moqi-upstream-v2` 仅作验证参考（D052）；产品实现态 = downstream-only，经发布 pin `9b3448e6` 构建。
 
-## 6. 需 RC 任务显式裁定的范围耦合（非阻断，非源矛盾）
+## 6. 范围耦合（D060 留给 RC 裁定 → **D061 已裁定：接受；非阻断，非源矛盾**）
 
-发布 pin `9b3448e6` 同时携带 (a) MoQi Auxiliary Filter（首发家族）与 (b) **44 行成对标点扩展映射**
-（`modules/punctuation/punc.mb.zh_CN` 由 upstream 39 行扩至 44 行）。(b) 属 D051（Paired Punctuation，
-当前标 **PAUSED / runtime validation pending**，非四大家族之一）。二者被同一个 reproducible addon pin 绑定：
-发布该 pin 即一并发布该标点扩展。**这不是源矛盾**（pin 是真实可构建提交，且已随 `v0.1.3-fusion.6` 发布过），
-但 RC 任务须**有意识地接受**“首发包含 D051 标点扩展”，或另行授权重新固定 addons pin。D060 不裁定、不改 pin。
+发布 pin `9b3448e6` 同时携带 (a) MoQi Auxiliary Filter（首发家族）与 (b) **成对标点扩展映射**
+（`modules/punctuation/punc.mb.zh_CN`：pin 提交由 upstream 41 行基线扩至 46 行；D060 原文“39 行扩至
+44 行”为行数笔误，D061 按 pin 提交实际内容更正）。(b) 属 D051（Paired Punctuation，非四大家族之一）。
+二者被同一个 reproducible addon pin 绑定：发布该 pin 即一并发布该标点扩展。**这不是源矛盾**
+（pin 是真实可构建提交，且已随 `v0.1.3-fusion.6` 发布过）。
+
+**D061（2026-10-05）裁定：首个 Fusion Enhanced 发布有意接受当前 pin，包含 D051 标点扩展；不为排除
+D051 而重新固定 pin。** 分支 tip `47401b0` 已将表恢复为 41 行 upstream baseline，但 detached pin `9b3448e6`
+的构建内容不受影响。D051 旧的“PAUSED / runtime validation pending”表述只适用于已回滚的
+structured-candidate 实验线，不再意味着 D051 被排除在首发之外；其有界 runtime 回归登记为首发
+**VALIDATION DEBT**，由 RC 验证任务执行。仅当 RC 产出具体回归证据时，才可升级为 RELEASE BLOCKER
+并触发单独的 fix/re-pin 决定。pin 维持 `9b3448e6` 不变。
 
 ## 7. 分类与重开规则（操作性；权威定义见 AGENTS.md）
 

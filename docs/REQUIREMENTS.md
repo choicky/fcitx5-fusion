@@ -157,6 +157,8 @@ Auxiliary Filter:
 
 实现方向仍复用现有上游 paired-punctuation mechanism；此前选定的 46-row mapping 实验已回滚，`fcitx5-chinese-addons/modules/punctuation/punc.mb.zh_CN` 当前恢复为官方 upstream 41-row baseline。不得因此引入 structured candidate API、Pinyin/Table paired-punctuation plumbing、新 punctuation state machine、LibIME/Fcitx core/Android candidate protocol 修改。此前的 abandoned structured-candidate implementation 已回滚。当前状态为 **Paired Punctuation work: PAUSED; experimental table rolled back; runtime validation pending**：19 组目标决定和历史研究证据保留，后续实现须重新开启任务并完成 source/runtime PoC；不得据此宣称编译、运行时、Pinyin/Shuangpin E2E 或 Android 真机验证通过。
 
+**首发范围（D061，2026-10-05）：** 上述 PAUSED/rolled-back 口径仅描述 structured-candidate 实验线与开发分支现状；**addons 发布 pin `9b3448e6` 携带 46-row 成对标点扩展，首个 Fusion Enhanced 发布有意接受并随该 pin 一并发布，D051 首发 scope 状态为 INCLUDED / VALIDATION DEBT，而非被排除**。有界 runtime 回归由 RC 验证任务执行；仅当产出具体回归证据才构成 RELEASE BLOCKER。current-state 权威见 D061 与 `first-release-baseline.md` §2/§6。
+
 ## 6. 词库与语言模型
 
 - 词库质量优先。

@@ -633,6 +633,8 @@ Fusion 的成对标点目标固定为 19 组，完整 authoritative list 见 doc
 
 第一列是 trigger key，部分 trigger key 有多个 mapping；46-row 表的精确 mapping 已停止并回滚，当前表恢复 upstream baseline。当前仍为 **runtime validation pending**，且本项工作为 **PAUSED**：本决定不把尚未完成的编译、运行时、Pinyin/Shuangpin E2E 或 Android 真机验证写成已通过；后续实现须重新开启任务并完成 runtime PoC。
 
+**首发范围已由 D061（2026-10-05）更新：** addons 发布 pin `9b3448e6`（detached）携带 46-row 成对标点扩展（分支 tip `47401b0` 之后的恢复不影响该 pin 的构建内容），首个 Fusion Enhanced 发布**有意接受**并随 pin 一并发布，不为排除 D051 而 re-pin。上文 PAUSED / experimental table rolled back 只描述 structured-candidate 实验线与开发分支现状，**不再**意味着 D051 被排除在首发之外；其有界 runtime 回归为首发 VALIDATION DEBT（非 RELEASE BLOCKER），待 RC 验证。current-state 权威见 D061 与 `first-release-baseline.md` §2/§6。
+
 ## D052 — MoQi 保持 downstream-only，撤回 Auxiliary Filter 上游 PR
 
 **状态：Accepted（2026-10-04；PR #300 已关闭）**
@@ -1060,3 +1062,28 @@ LLM / 文本后处理 = NOT IMPLEMENTED / FUTURE，非首发家族。D059 reopen
 
 下一步是有界 Release-Candidate 验证（`first-release-baseline.md` §2 VALIDATION DEBT 清单 + §6 范围耦合裁定），
 不在本任务启动。本任务不建 tag / GitHub Release / workflow / PR / merge，不改签名或 provider 行为。
+
+## D061 — 首发接受 D051 成对标点扩展（§6 范围耦合裁定收口）
+
+**状态：Accepted（2026-10-05）。** 纯权威/范围收口，零产品行为改动。仅裁定 `first-release-baseline.md` §6
+（D060）显式留给 RC 的范围耦合；不重开 D060 其余冻结边界（Voice 架构、D056–D059、D035、F1、Model
+Manager、Self-hosted、LLM、Dictionary Manager、Toolbar、MoQi 架构均不变）。
+
+- **SOURCE FACT（2026-10-05 现场核验）：** 发布 pin `9b3448e6b3889e4281ea39e334c7e5714f8a8b12`
+  （`choicky/fcitx5-chinese-addons` 分支 `fix/punctuation-candidate-pairs`）同时携带 (a) MoQi Auxiliary
+  Filter（`modules/pinyinhelper/{moqi.cpp,moqi.h,moqima-gb18030.cmake}` + `third_party/moqima-tables.LICENSE`）
+  与 (b) D051 成对标点扩展：`modules/punctuation/punc.mb.zh_CN` 在该 pin 内由 upstream 41 行基线扩至
+  **46 行**（净增 5 行：〈〉、〖〗、〔〕、«»、‹›；并为此前只有开符的 `<`《、`[`【/「/』/❲/［、
+  `{` 等 trigger 行补齐闭符）。`release-apk.yml` 与 `moqi-test-apk.yml` 的
+  `env.ADDON_COMMIT` 均断言该 SHA（`checkout --detach`）。D060 §6 原文“由 upstream 39 行扩至 44 行”
+  为行数笔误，以本条更正；耦合结论不受影响。分支 tip `47401b0`（punctuation: restore upstream zh_CN
+  profile）晚于该 pin，但不改变 detached pin 的构建内容。
+- **决定：首个 Fusion Enhanced 正式发布会保留当前 addons pin `9b3448e6`，有意包含 D051 成对标点扩展；
+  不仅为排除 D051 而 re-pin。** 只有当有界 RC 验证产出具体回归证据时，才允许另行作出 fix/re-pin 决定。
+- **状态口径：** Paired Punctuation / D051 = **INCLUDED IN FIRST RELEASE；IMPLEMENTED（随 pin）；有界
+  runtime 回归 = VALIDATION DEBT；RELEASE BLOCKER = NONE（除非 RC 发现具体回归）**。D051 不因此成为
+  第五个顶层产品家族；19 组 authoritative target set（D051 / REQUIREMENTS.md §5.1）与“不得静默扩展”
+  约束不变。
+- 旧 D051 “PAUSED / experimental table rolled back / runtime validation pending”措辞仅描述 structured-candidate
+  实验线与开发分支现状，不再被解读为“D051 被排除在首发之外”。
+- 本决定不声称任何尚未实际发生的编译、运行时、Pinyin/Shuangpin E2E 或 Android 真机验证。
