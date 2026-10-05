@@ -138,3 +138,27 @@ owner 已对 §6 产物 X（RC.1，`148457a4…8dee`）执行 D062 设备验收�
   `/tmp/fcitx5-d066-rc2-retest-checklist.md` 8 项执行——其中标点项**仅验证随包 `punc.mb.zh_CN` == upstream
   41 行基线**（资产行数/摘要比对），**不**测试 D051 实验行为；③ 验收 PASS 后才允许 publish 该 draft。
 - 本任务未建 tag / Release / PR、未触发签名构建、未读取或改动任何私有签名材料（D058/D064 身份冻结不变）。
+
+## 8. D067：RC.2 Signed Acceptance 产物生产 checkpoint（2026-10-05）
+
+**D067: RC.2 SIGNED ACCEPTANCE ARTIFACT PRODUCED · FINAL RELEASE: PENDING OWNER DEVICE ACCEPTANCE**
+（本节仅记录生产事实；不构成验收结论。）
+
+- **输入（D066 权威）：** 产品源 `contribution/fusion-enhanced-identity-naming-r8` @ `f2a64da1`；发布 pin
+  `47401b04…`；signed-RC workflow 状态 = `contribution/signed-rc-workflow` @ `5f50c64c`（相对 D063 基线
+  `45000477` 仅 pin 行 delta）。Preflight 8 项全过后才触发；未重开任何 CLOSED/D066 裁定。
+- **生产：** annotated tag `v0.1.3.8-rc.2` → `f2a64da1`（唯一新建 tag）；tag-push 竞态 run `37326023497`
+  在资产产生前取消（cancelled，无发布泄漏）；dispatch run **`37326115233`** conclusion=success，日志含
+  `HEAD is now at f2a64da1`、`addon commit checked out: 47401b04…`、`:app:minifyReleaseWithR8`、
+  `D058 release signer fingerprint verified`、`staging draft release`。
+- **精确产物（下载资产本体独立复验，未重建）：** `…fusion-enhanced-v0.1.3.8-rc.2-0-gf2a64da1-arm64-v8a-release.apk`，
+  67,728,186 B，**`ACCEPTANCE_APK_SHA256 = 93a42897f0d053436f113f32ca88aac539eb0f18e8034f6f130309356e8deb9b`**
+  （本地 sha256 == GitHub digest == CI 记录）；apksigner v1+v2 PASS、证书 == D058 canonical；package
+  `org.fcitx.fcitx5.android.fusionenhanced`、versionName `v0.1.3.8-rc.2-0-gf2a64da1`、versionCode 112、
+  仅 arm64-v8a、无 debug 条目；随包 `punc.mb.zh_CN` = **41 行**、sha256 `6c120e2e…d91f` 逐字节 == upstream
+  基线；MoQi 码表 `66deab4a…7923` == pin 断言；D056 sherpa JNI/R8 keep 在 minified dex 成立。
+- **暂存：** GitHub Release `v0.1.3.8-rc.2`（id `403830061`）= **DRAFT**；**DO NOT REBUILD / RESIGN /
+  REPLACE / PUBLISH**，直至 owner 依 `/tmp/fcitx5-d066-rc2-retest-checklist.md` 完成 8 项设备验收；
+  验收不变量 `device-tested == published == ACCEPTANCE_APK_SHA256` 自本产物起适用。
+- **RC.1：** 维持 REJECTED，draft/资产未触碰（id `403658765`，digest `148457a4…` 不变）。
+- 未修改任何仓库源文件；未读取或改动私有签名材料；**FINAL RELEASE：PENDING OWNER DEVICE ACCEPTANCE**。
