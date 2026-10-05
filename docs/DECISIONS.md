@@ -635,6 +635,8 @@ Fusion 的成对标点目标固定为 19 组，完整 authoritative list 见 doc
 
 **首发范围已由 D061（2026-10-05）更新：** addons 发布 pin `9b3448e6`（detached）携带 46-row 成对标点扩展（分支 tip `47401b0` 之后的恢复不影响该 pin 的构建内容），首个 Fusion Enhanced 发布**有意接受**并随 pin 一并发布，不为排除 D051 而 re-pin。上文 PAUSED / experimental table rolled back 只描述 structured-candidate 实验线与开发分支现状，**不再**意味着 D051 被排除在首发之外；其有界 runtime 回归为首发 VALIDATION DEBT（非 RELEASE BLOCKER），待 RC 验证。current-state 权威见 D061 与 `first-release-baseline.md` §2/§6。
 
+**首发范围已由 D066（2026-10-05）更正（supersede 上一段的 D061 裁定）：** D062 设备验收（RC.1 产物）中两项 D051 成对标点行为 FAIL 被裁定为 **INVALID FIRST-RELEASE SCOPE**——失败的验证目标本不属于首发承诺，`punc.mb.zh_CN` 在首发产物中必须为官方 upstream 原表。发布 pin 已由 `9b3448e6`（46-row 实验表）更正为 `47401b04`（其 `punc.mb.zh_CN` 与 upstream 41-row 基线逐字节一致）；首个 Fusion Enhanced 发布**排除** D051 标点扩展。D051 维持本条主文口径：**实验、PAUSED、非第五个顶层产品家族**；恢复须另行决定并完成 runtime PoC。上段 D061 更新文字保留为历史证据，不再作为 current-state 权威；current-state 权威见 D066 与更正后的 `first-release-baseline.md` §0/§2/§6。
+
 ## D052 — MoQi 保持 downstream-only，撤回 Auxiliary Filter 上游 PR
 
 **状态：Accepted（2026-10-04；PR #300 已关闭）**
@@ -1065,9 +1067,14 @@ LLM / 文本后处理 = NOT IMPLEMENTED / FUTURE，非首发家族。D059 reopen
 
 ## D061 — 首发接受 D051 成对标点扩展（§6 范围耦合裁定收口）
 
-**状态：Accepted（2026-10-05）。** 纯权威/范围收口，零产品行为改动。仅裁定 `first-release-baseline.md` §6
+**状态：Accepted（2026-10-05；核心裁定“保留 pin `9b3448e6`、首发有意包含 D051”已由 D066 同日 supersede）。** 纯权威/范围收口，零产品行为改动。仅裁定 `first-release-baseline.md` §6
 （D060）显式留给 RC 的范围耦合；不重开 D060 其余冻结边界（Voice 架构、D056–D059、D035、F1、Model
 Manager、Self-hosted、LLM、Dictionary Manager、Toolbar、MoQi 架构均不变）。
+
+> **SUPERSESSION（D066，2026-10-05）：** D062 设备验收在 RC.1 产物上观察到两项 D051 成对标点 FAIL，
+> 裁定为 INVALID FIRST-RELEASE SCOPE；本条“不为排除 D051 而 re-pin”的裁定被推翻——发布 pin 已更正为
+> `47401b04681615024e4cf87c4797005b26e202ff`，首发**排除** D051 标点扩展。本条 SOURCE FACT 中的耦合事实
+> （`9b3448e6` 同时携带 MoQi 与 46-row 实验表）与行数更正（41→46）仍为真，全文保留为历史证据。
 
 - **SOURCE FACT（2026-10-05 现场核验）：** 发布 pin `9b3448e6b3889e4281ea39e334c7e5714f8a8b12`
   （`choicky/fcitx5-chinese-addons` 分支 `fix/punctuation-candidate-pairs`）同时携带 (a) MoQi Auxiliary
@@ -1210,3 +1217,66 @@ Manager、Self-hosted、LLM、Dictionary Manager、Toolbar、MoQi 架构均不�
 - CI Debug 运行时验证已于收口阶段完成（run `37301397541` @ `69734a4d`，success；决定性证据为该 run
   artifact 的 `apksigner` 实测证书，而非 workflow 配置本身）。D064 就此 CLOSED；仅当命中上述五项
   reopen conditions 时重开。
+
+## D066 — 首发基线更正：D051 移出首发、发布 pin 重固定 `47401b04`、RC.1 驳回与 Toolbar 首显修复
+
+**状态：Accepted（2026-10-05）。** 本条显式 supersede D061 的核心裁定（“首发保留 pin `9b3448e6`、有意包含
+D051 成对标点扩展”）；D061 全文保留为历史证据，不删除。D060 其余冻结边界（Voice 架构、D056–D059、D035、
+F1、Model Manager、Self-hosted、LLM、Dictionary Manager、Toolbar 家族地位、MoQi 架构）均不变。本任务不创建
+RC.2、不建 tag / GitHub Release / PR、不触发签名构建；未读取、打印、移动、重生成或修改任何私有签名材料
+（D058 / D064 身份冻结不变）。
+
+- **DEVICE FACT（owner 对 RC.1 产物执行 D062 设备验收，2026-10-05）：** MoQi / Dictionary Manager / X-ASR /
+  Toolbar 功能族 PASS；两项 FAIL 均为 D051 成对标点行为。**裁定：该两项 FAIL = INVALID FIRST-RELEASE
+  SCOPE**——失败的验证目标本不属于首发承诺（成对标点扩展实验为 PAUSED，首发产物中 `punc.mb.zh_CN` 必须为
+  官方 upstream 原表），不是对已承诺首发行为的回归；对应处置 = 恢复 upstream 基线（re-pin），而非修复 D051。
+  同次验收另报告一个真实首发回归：全新安装首次呈现 Keyboard 时 Toolbar 停在空条（见下 Toolbar 条目）。
+- **家族口径（不变+更正）：** 首发四大家族仍为 **Dictionary Manager、ASR/Voice、Toolbar、MoQi Auxiliary
+  Filter**；D051 Paired Punctuation = 实验（structured-candidate 线已回滚；46-row mapping 实验），状态
+  **PAUSED**，**移出首发、非第五家族**。19 组 authoritative target set（D051 / REQUIREMENTS.md §5.1）与
+  “不得静默扩展”约束不变。
+- **SOURCE FACT（发布 pin 更正，2026-10-05 现场对 fork 仓库复核）：** 发布 pin 由 `9b3448e6`（携带 46-row
+  实验表，blob `eeecf444…`）更正为 **`47401b04681615024e4cf87c4797005b26e202ff`**（`choicky/fcitx5-chinese-addons`
+  分支 `fix/punctuation-candidate-pairs` tip = origin tip，`9b3448e6` 的直接子提交，
+  "punctuation: restore upstream zh_CN profile"）。该 pin 内 `modules/punctuation/punc.mb.zh_CN` = **41 行**，
+  SHA-256 `6c120e2e0db8a97c0334901c41b8667475779c4a26b95316492d8b3a42a4d91f`，与 upstream 基线
+  （`61474bd3` 侧原表，对照件 `/tmp/fcitx5-d066-upstream-punc.zh_CN`）**逐字节一致**；MoQi Auxiliary Filter
+  文件（`modules/pinyinhelper/{moqi.cpp,moqi.h,moqima-gb18030.cmake}` + `third_party/moqima-tables.LICENSE`）
+  与码表断言 `MOQI_TABLE_SHA256 66deab4a…e792` 不受影响（`47401b04` 完整包含 `9b3448e6` 树内容后仅回退标点表）。
+  LibIME gitlink、签名身份、applicationId、开发 gitlink `19f06898` 均不变。
+- **PRODUCT FACT（Android 侧，已推送、HEAD==origin、worktree clean）：** pin 更正提交
+  `ce6b27e4`（`contribution/fusion-enhanced-identity-naming-r8`）、`531e80b9`
+  （`contribution/debug-signing-identity`）、`5f50c64c`（`contribution/signed-rc-workflow`），message
+  “ci: repin addons to 47401b04, the upstream punctuation baseline”，内容 = `release-apk.yml` /
+  `test-apk.yml` `env.ADDON_COMMIT` 及 `.github/moqi-release-notes.md` anchor 同步；`docs/voice-phase4-acceptance.md`
+  中的旧 pin 文字保留为历史证据。
+- **PRODUCT FACT（Toolbar 首显回归，源码级 root cause 已核验后修复）：** 症状 = 全新安装后首次呈现输入法时
+  idle bar 停在空条，需 collapse→expand 或 hide→show 才恢复。根因（逐项 AOSP/源码核验，过程记录
+  `/tmp/fcitx5-d066-toolbar-root-cause.md`）：fork 的 `IdleUi` 构造页为 `State.Empty`/emptyBar（AOSP
+  ViewAnimator 首加子可见语义），而逻辑默认是展开（`KawaiiBarComponent.isToolbarCollapsed == false`，D048
+  有意改的默认）；两态仅靠 `FcitxInputMethodService` 一次性 fire-and-forget 的 `inputView?.startInput(...)`
+  调合，且 `ButtonsBarUi` 的宽度门 + 严格 width-change 监听使错过首次调合无法就地恢复。upstream 免疫的原因是
+  `expandToolbarByDefault` 默认 false 使构造页与逻辑默认天然一致；本 fork 的该分歧即缺陷本体。修复 = 让构造页
+  与逻辑默认对齐：`IdleUi.kt` 两处（`currentState = State.Toolbar`、animator `displayedChild = 1`），提交
+  **`f2a64da1` "fix(toolbar): start the idle bar on the expanded page"**（`ce6b27e4` 的直接子提交，仅落于
+  feature 产品线分支）。修复保留全部既有 Toolbar 行为：折叠/展开、Tools、Hide、自定义、排序、editor 事务、
+  runtime projection、Mic-Voice、Space Voice、重建、持久化。未新增任何测试专用生产钩子。
+- **VALIDATION：** `ToolbarActionTest` 23/23 PASS（`/tmp/fcitx5-d066-toolbar-tests.log`）；
+  `:app:testDebugUnitTest` 全量 + `:app:compileDebugKotlin` + `:app:compileDebugAndroidTestKotlin`
+  BUILD SUCCESSFUL、0 FAILED（`/tmp/fcitx5-d066-full-jvm.log`）；各变更 `git diff --check` 干净。**诚实边界：**
+  本环境无设备/模拟器，首屏呈现属 UI 生命周期行为，JVM 测试不对其作证——**首次呈现的权威验证 = RC.2 设备清单
+  第 1–2 项**（`/tmp/fcitx5-d066-rc2-retest-checklist.md`）。
+- **RELEASE-ARTIFACT FACT：** **RC.1（annotated tag `v0.1.3.8-rc.1` → `2ba3a999`，GitHub Release draft，
+  资产 `…v0.1.3.8-rc.1-0-g2ba3a999-arm64-v8a-release.apk`，`ACCEPTANCE_APK_SHA256 = 148457a406d8c35ea780b
+  5bb07c2f62738e4ce526f8ad68ccfddaff2f2018dee`，67,728,288 B）= REJECTED。** 该 draft 与其资产**不得发布、
+  不得修改**；任何修复必须以**新 RC / 新 SHA-256** 承载，D063/D065 的“精确产物晋升、
+  `device-tested == published == ACCEPTANCE_APK_SHA256`、禁止重建”不变量自 RC.2 产物重新适用。D065 生产记录
+  （run `37304432367` 等）保留为历史证据。
+- **状态口径汇总：** Dictionary Manager / Toolbar / Voice 各族状态不变（VALIDATION DEBT 口径不变）；Paired
+  Punctuation / D051 = **EXCLUDED FROM FIRST RELEASE（D066）；实验 PAUSED；非第五家族**；Toolbar 首显 = 已修复
+  （`f2a64da1`），设备权威验证 = RC.2。**NEXT = 以更正后产品线（pin `47401b04` + `f2a64da1`）经 D063 机制生产
+  RC.2 Signed 产物，并按 8 项清单设备复测；其中标点项仅验证随包 `punc.mb.zh_CN` == upstream 41 行基线，
+  **不**测试 D051 实验行为。**
+- **Reopen conditions：** 仅当 (a) 未来明确决定恢复 D051 并纳入首发（需 runtime PoC + 新裁定）、(b) pin
+  `47401b04` 被证明与 upstream 标点基线或 MoQi 断言不一致、(c) RC.2 设备验收产出 Toolbar/MoQi/词库的具体回归
+  证据时，重开本条相应分项。“还能测更多”不构成重开理由（D060 §7 分类规则不变）。

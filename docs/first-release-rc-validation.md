@@ -116,3 +116,25 @@ INCLUDED / VALIDATION DEBT，非 BLOCKER（D061 规则）。**
 - **不变量：** 自本节起 **DO NOT REBUILD THIS RC**；后续设备验收与最终发布必须针对同一
   SHA-256：`device-tested == published == ACCEPTANCE_APK_SHA256`。
 - **FINAL RELEASE：仍 PENDING DEVICE ACCEPTANCE**（既有 D062 六项清单，不扩展、不重跑自动化）。
+
+## 7. D066：设备验收执行结果 = RC.1 REJECTED，基线更正与 RC.2 门槛（2026-10-05）
+
+owner 已对 §6 产物 X（RC.1，`148457a4…8dee`）执行 D062 设备验收。结果与本文件 §1/§3/§6 的冻结口径对照如下；
+§1–§6 原文保留为历史证据，current-state 权威见 DECISIONS.md D066 与更正后的 `first-release-baseline.md`。
+
+- **设备验收结果：** MoQi / Dictionary Manager / X-ASR / Toolbar 功能族 PASS；**两项 FAIL 均为 D051 成对
+  标点行为**——owner 裁定 = **INVALID FIRST-RELEASE SCOPE**（§3 的 “D051 维持 INCLUDED / VALIDATION DEBT”
+  口径随 D061 一并被 supersede：验证目标本不属于首发承诺，首发产物 `punc.mb.zh_CN` 必须为官方 upstream 原表）。
+  同次验收报告一个真实首发回归：**全新安装首次呈现时 Toolbar 停在空条**（需 collapse→expand 或 hide→show
+  恢复）。
+- **RC.1 = REJECTED：** 其 GitHub Release draft 与资产**不得发布、不得修改**；D063 “精确产物晋升”不变量针对
+  **新的 RC.2 产物**重新适用（`device-tested == published == ACCEPTANCE_APK_SHA256`，禁止重建）。
+- **基线更正（D066，均已推送、HEAD==origin）：** 发布 pin `9b3448e6`→**`47401b04`**（标点表逐字节恢复
+  upstream 41 行基线，MoQi 完整保留）：三分支 pin commits `ce6b27e4` / `531e80b9` / `5f50c64c`；Toolbar 首显
+  修复 `f2a64da1`（源码级 root cause 核验后最小修复，`/tmp/fcitx5-d066-toolbar-root-cause.md`）。D051 恢复
+  “实验 / PAUSED / 非第五家族”口径并**移出首发**。
+- **RC.2 门槛：** ① 以产品线 `contribution/fusion-enhanced-identity-naming-r8` @ `f2a64da1`（pin `47401b04`）
+  经 D063 Signed RC 机制产出新 tag + 新 draft + 新 `ACCEPTANCE_APK_SHA256`（本任务未创建）；② 设备复测按
+  `/tmp/fcitx5-d066-rc2-retest-checklist.md` 8 项执行——其中标点项**仅验证随包 `punc.mb.zh_CN` == upstream
+  41 行基线**（资产行数/摘要比对），**不**测试 D051 实验行为；③ 验收 PASS 后才允许 publish 该 draft。
+- 本任务未建 tag / Release / PR、未触发签名构建、未读取或改动任何私有签名材料（D058/D064 身份冻结不变）。

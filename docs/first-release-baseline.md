@@ -5,17 +5,21 @@
 本文件不改产品行为；历史 checkpoint / 旧 ROADMAP 段保留为历史证据，凡与本文件冲突的
 **current-state** 表述一律以本文件为准。
 
+**D066 更正（2026-10-05）：** 本文件 §0 发布 pin、§2 真值表 Paired Punctuation 行与 §6 范围耦合裁定已按
+DECISIONS.md D066 更正——D061 的“首发接受 D051”被 supersede、发布 pin `9b3448e6`→`47401b04`、
+**RC.1 = REJECTED**（draft/资产不得发布或修改，修复以新 RC / 新 SHA-256 承载）。其余冻结边界不变。
+
 ## 0. 唯一当前产品基线（source-verified 2026-10-05）
 
 | 维度 | 权威值 | 核验方式 |
 |---|---|---|
 | 产品 | Fcitx5 Fusion Enhanced（downstream fork） | — |
 | Android applicationId | `org.fcitx.fcitx5.android` + release `.fusionenhanced` / debug `.debug` → **`org.fcitx.fcitx5.android.fusionenhanced`** | `app/build.gradle.kts:30,60,70` |
-| Android 产品线（当前权威） | `choicky/fcitx5-android` **`contribution/fusion-enhanced-identity-naming-r8`** @ `2ba3a999` | branch/HEAD + 祖先核验 |
+| Android 产品线（当前权威，D066 更正） | `choicky/fcitx5-android` **`contribution/fusion-enhanced-identity-naming-r8`** @ `f2a64da1`（= RC.1 head `2ba3a999` + pin 更正 `ce6b27e4` + Toolbar 首显修复 `f2a64da1`；RC.1 已驳回） | branch/HEAD == origin + 祖先核验 |
 | ↳ 血缘 | `2ba3a999` **包含**词库(`84b7f571`/`583a525a`)、Toolbar(`172ac602`/`5af093c4`)、Local 三模型(`1075184f`)、D056 修复(`4e14cde9`) 以及旧“字典线”tip `9163ec96`——即 `9163ec96` 是 `2ba3a999` 的**祖先** | `git merge-base --is-ancestor` = YES |
 | Controller | `choicky/fcitx5-fusion` `main` @ 本 D060 commit（父 `582d7a5`） | — |
 | addons 开发 gitlink（Android 子模块树） | `19f06898`（upstream `fcitx/fcitx5-chinese-addons` master 提交，5.1.14-5-g19f0689）——**不含 MoQi**；仅用于本地/PR 递归子模块构建 | `.gitmodules` + `git ls-tree` |
-| addons **发布固定 pin**（首发权威） | **`9b3448e6`**（`choicky/fcitx5-chinese-addons`，分支 `fix/punctuation-candidate-pairs`）：`feat(punctuation): expand paired punctuation mappings`，含 `modules/pinyinhelper/{moqi.cpp,moqi.h,moqima-gb18030.cmake}` + `third_party/moqima-tables.LICENSE` | `release-apk.yml` / `moqi-test-apk.yml` `ADDON_COMMIT` 显式 `checkout --detach`，**有意不跟随分支 gitlink**（workflow 注释：`not whatever the branch points at by then`） |
+| addons **发布固定 pin**（首发权威，D066 更正） | **`47401b04`**（`choicky/fcitx5-chinese-addons`，分支 `fix/punctuation-candidate-pairs` tip）：`punctuation: restore upstream zh_CN profile`，为 `9b3448e6` 的直接子提交：`modules/punctuation/punc.mb.zh_CN` = **41 行、与 upstream 基线逐字节一致**（`6c120e2e…d91f`）；MoQi `modules/pinyinhelper/{moqi.cpp,moqi.h,moqima-gb18030.cmake}` + `third_party/moqima-tables.LICENSE` 保留 | `release-apk.yml` / `test-apk.yml` `ADDON_COMMIT` 显式 `checkout --detach`，**有意不跟随分支 gitlink**（workflow 注释：`not whatever the branch points at by then`） |
 | LibIME | upstream `github.com/fcitx/libime` @ `ecd2379`（1.1.16-3）——**项目无 LibIME fork** | `.gitmodules` submodule URL |
 | 发布签名身份（D058） | 证书 SHA-256 `A5:15:B7:4A:C4:C3:84:51:54:E1:7C:AD:D1:3D:02:75:BE:70:01:DD:CF:2B:97:2A:4F:2F:06:1A:FD:26:89:0C`（subject `C=CN, O=choicky, CN=Fcitx5 Fusion Enhanced Release`） | 由公开 `fusion-enhanced-release.cert.pem` 现场 `openssl x509 -fingerprint -sha256` 复核一致；私钥/口令从未读取或记录 |
 
@@ -37,10 +41,10 @@
 
 | Area | First release | IMPL | VERIF | BLK | Authority |
 |---|---|---|---|---|---|
-| MoQi Auxiliary Filter | YES | IMPLEMENTED（`9b3448e6` 统一辅助筛选 Disabled/Stroke/MoQi；downstream-only） | SOURCE/TEST VERIFIED；设备有界回归=VALIDATION DEBT | NONE | D052；§3 |
-| Paired Punctuation（D051 扩展，§6 耦合，非第五家族） | YES（D061 接受，随发布 pin `9b3448e6` 一并发布） | IMPLEMENTED（pin 提交内 `punc.mb.zh_CN` 46 行 = upstream 41 行基线 + 成对扩展；不声称超出既有证据的编译/运行时/真机验证） | 有界 runtime 回归待在 RC 验证 = VALIDATION DEBT | NONE（除非 RC 产出具体回归证据） | D051；D061；§6 |
+| MoQi Auxiliary Filter | YES | IMPLEMENTED（发布 pin `47401b04`（原 `9b3448e6` 内容 + 标点回退）统一辅助筛选 Disabled/Stroke/MoQi；downstream-only） | SOURCE/TEST VERIFIED；设备有界回归=VALIDATION DEBT（RC.1 验收 MoQi PASS；因 pin 变更 RC.2 需 MoQi smoke 复测） | NONE | D052；§3；D066 |
+| Paired Punctuation（D051 扩展，§6 耦合，非第五家族） | **NO（D066 supersede D061：移出首发；实验 PAUSED）** | 发布 pin 更正为 `47401b04`，随包 `punc.mb.zh_CN` = upstream 41 行基线（逐字节一致）；不含任何成对扩展行 | D062 设备验收两项 FAIL = **INVALID FIRST-RELEASE SCOPE**（验证目标本不属首发承诺；处置 = 恢复 upstream 基线，非修复 D051） | NONE | D051；D066；§6 |
 | Dictionary Manager | YES | IMPLEMENTED（`84b7f571`+`583a525a`） | SOURCE/TEST VERIFIED（`DictionaryPresentationTest`、androidTest `DictionaryManagerLayoutTest`、CI `36906187024`）；完整设备导航=VALIDATION DEBT | NONE | D049 |
-| Toolbar | YES | IMPLEMENTED（`172ac602`+`5af093c4`，inline edit） | SOURCE/TEST VERIFIED（`ToolbarActionTest`）；触摸/拖放/窄屏/字体/无障碍/teardown=VALIDATION DEBT | NONE | D047/D048 |
+| Toolbar | YES | IMPLEMENTED（`172ac602`+`5af093c4`，inline edit）+ 首显修复 `f2a64da1`（D066：`IdleUi` 构造页对齐逻辑默认） | SOURCE/TEST VERIFIED（`ToolbarActionTest` 23/23）；全新安装首次呈现回归已源码级 root-cause + 最小修复；触摸/拖放/窄屏/字体/无障碍/teardown=VALIDATION DEBT；首显设备验证 = RC.2 清单第 1–2 项 | NONE | D047/D048；D066 |
 | Voice core（provider 单一真源 / flow / session / Mic+Space 触发） | YES | IMPLEMENTED | DEVICE VERIFIED（vivo X100 Pro；见 voice-closure-checkpoint §3） | NONE | D055；voice-closure-checkpoint |
 | External Android Voice Input | YES | IMPLEMENTED（顶层 provider；`preferredVoiceInput` 从属；走 IME-switch，不走 VoiceInputFlow） | SOURCE/TEST VERIFIED；真机 handoff=VALIDATION DEBT | NONE | D055 |
 | Android System ASR | YES | IMPLEMENTED（D057：ERROR_CLIENT(5) 可见；NO_MATCH/TIMEOUT 仍 Silent；不改默认 RecognitionService） | DEVICE VERIFIED（D057 CLOSED） | NONE | D057 |
@@ -54,6 +58,10 @@
 
 **首发阻断项（RELEASE BLOCKER）合计：无。** 所有非 NONE 待办均为 VALIDATION DEBT（设备/服务器/凭据矩阵或扩展用例），
 非“当前首发行为破损/不安全/不合规/损坏数据/不可构建”。
+
+**RC 状态（D066）：** RC.1（tag `v0.1.3.8-rc.1` @ `2ba3a999`，draft，`ACCEPTANCE_APK_SHA256 = 148457a4…8dee`）
+= **REJECTED**，其 draft/资产不得发布或修改；首发验收针对 **RC.2** 新产物（产品线 `f2a64da1` + pin `47401b04`）
+重新执行，维持 `device-tested == published == ACCEPTANCE_APK_SHA256` 不变量（D063 规则迁移至新产物）。
 
 ## 3. Voice provider 架构（冻结；source 与 D055 一致）
 
@@ -97,6 +105,16 @@ D051 而重新固定 pin。** 分支 tip `47401b0` 已将表恢复为 41 行 ups
 structured-candidate 实验线，不再意味着 D051 被排除在首发之外；其有界 runtime 回归登记为首发
 **VALIDATION DEBT**，由 RC 验证任务执行。仅当 RC 产出具体回归证据时，才可升级为 RELEASE BLOCKER
 并触发单独的 fix/re-pin 决定。pin 维持 `9b3448e6` 不变。
+
+**D066（2026-10-05）：上面的 D061 裁定被显式 supersede（上文保留为历史证据，不删除）。** D062 设备验收在
+RC.1 产物上执行的两项成对标点检查 FAIL；owner 裁定二者为 **INVALID FIRST-RELEASE SCOPE**——成对标点实验
+（D051）为 PAUSED，首发承诺中不存在“扩展标点表”这一行为，`punc.mb.zh_CN` 必须为官方 upstream 原表；FAIL
+不是对已承诺行为的回归，而是把不属首发的实验内容带进了发布产物这一范围错误。处置 = **恢复 upstream 基线**：
+发布 pin 由 `9b3448e6` 更正为其直接子提交 **`47401b04`**（"punctuation: restore upstream zh_CN profile"；
+`punc.mb.zh_CN` 41 行、SHA-256 `6c120e2e0db8a97c0334901c41b8667475779c4a26b95316492d8b3a42a4d91f` 与 upstream
+逐字节一致；MoQi 文件与码表断言 `66deab4a…` 不受影响），**首发排除 D051**，D051 回到“实验 / PAUSED /
+非第五家族”口径。RC.1 = REJECTED（见 §2 末 RC 状态），修复内容须以 RC.2 新产物与新 SHA-256 重新验收。
+本更正不重开 §5 其余冻结边界。
 
 ## 7. 分类与重开规则（操作性；权威定义见 AGENTS.md）
 
