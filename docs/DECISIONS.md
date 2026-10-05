@@ -1147,7 +1147,8 @@ Manager、Self-hosted、LLM、Dictionary Manager、Toolbar、MoQi 架构均不�
 
 ## D064 — Fusion Enhanced 统一 Debug 签名身份（Unified Debug Signing Identity）
 
-**状态：Accepted；LOCAL 已 VERIFIED；CI 运行时验证 PENDING OWNER ACTION（Secret 替换被本会话安全策略阻断，未绕过）。本任务不触及 Release/D058/D063 任何语义。**
+**状态：Accepted；CLOSED（2026-10-05）— LOCAL 与 CI 均已用真实 APK `apksigner` 实测，不变量
+`LOCAL_DEBUG_CERT == CI_DEBUG_CERT == Fusion Enhanced Debug` 成立。本决定不触及 Release/D058/D063 任何语义。**
 
 - **决定：** 建立**一个新的、永久的** Fusion Enhanced Debug 签名身份，同时用于本地与 GitHub CI 的
   Debug/Test 构建，目标不变量 `LOCAL_DEBUG_CERT == CI_DEBUG_CERT == Fusion Enhanced Debug`。
@@ -1174,10 +1175,21 @@ Manager、Self-hosted、LLM、Dictionary Manager、Toolbar、MoQi 架构均不�
     BUILD SUCCESSFUL；产物 `org.fcitx.fcitx5.android-v0.1.3.7-14-g5260dbc4-arm64-v8a-debug.apk`
     （已签名命名形态），SHA-256 `83d0430836cd8880c8d0974b867af256a37aafc1215e8d25a2bbbeb06da7c561`；
     `apksigner verify --print-certs` 实测 DN 与证书 SHA-256 均等于上述 D064 身份 → **LOCAL_DEBUG_CERT = VERIFIED**。
-  - CI：SOURCE-CONFIGURED；**RUNTIME-PENDING OWNER ACTION**。本会话平台安全策略禁止读写 GitHub repository
-    Secrets（`gh secret list/set` 均被拦截），按 Phase D 要求停止于 secret 替换之前。
-    因此当前正式口径：`LOCAL_DEBUG_CERT == CI_DEBUG_CERT = NOT YET RUNTIME VERIFIED`。
-- **Owner 侧收口步骤（不要把任何值粘贴到聊天）：**
+  - CI：**VERIFIED（运行时实测，收口阶段完成）**。Owner 已替换三个 `DEBUG_SIGN_KEY_*` Secrets（本 agent
+    会话全程未读取、打印或以任何方式获取 Secret 值）。随后在未 merge 分支
+    `contribution/debug-signing-identity` @ `69734a4d` 上以 `workflow_dispatch` 触发
+    `moqi-test-apk.yml`（run `37301397541`，conclusion=success），其中
+    “Verify the fixed debug APK signature” 步骤 PASS（该步骤内建断言即 D064 指纹与包名
+    `org.fcitx.fcitx5.android.debug`）。下载该 run 的 artifact
+    `fcitx5-android-fusion-enhanced-v0.1.3.7-15-g69734a4d-arm64-v8a-test`（APK
+    `org.fcitx.fcitx5.android.debug-v0.1.3.7-15-g69734a4d-arm64-v8a-debug.apk`，文件
+    SHA-256 `f348dc89efcfc4a2d877d749137151ceda61fa59370f9cf43ca68ef808481813`）后独立执行
+    `apksigner verify --print-certs`，实测 DN `C=CN, O=choicky, CN=Fcitx5 Fusion Enhanced Debug`、
+    证书 SHA-256 `dc497182c5486634fd68e571b878a33ecea68bdad205c3d61aed09b98392a56a`，与 D064 权威
+    身份及本地实测证书逐字符相等 → **CI_DEBUG_CERT = VERIFIED**，
+    `LOCAL_DEBUG_CERT == CI_DEBUG_CERT = YES`。（此前口径：SOURCE-CONFIGURED / RUNTIME-PENDING，
+    因本会话安全策略拦截 `gh secret` 而停止于 owner 动作之前，未绕过。）
+- **Owner 侧收口步骤（2026-10-05 均已完成；任何密钥值未进入聊天、日志、diff 或仓库）：**
   1. GitHub → `choicky/fcitx5-android` → Settings → Secrets and variables → Actions → 更新三个仓库
      Secret（值在 owner 本机生成/复制）：
      `DEBUG_SIGN_KEY_ALIAS` = `fusion-enhanced-debug`；
@@ -1195,4 +1207,6 @@ Manager、Self-hosted、LLM、Dictionary Manager、Toolbar、MoQi 架构均不�
 - **Reopen conditions（仅此五项重开 D064）：** ① Debug 签名身份被有意轮转；② Debug 签名机制发生实质变化；
   ③ Android 签名要求变化；④ 具体安全证据要求换钥；⑤ 源码改动破坏本地/CI 一致性。
   **单个 agent 会话无法访问本地 Debug 私钥不构成重开理由。**
-- 本决定不声称 CI Debug 运行时验证已完成；该证据在 owner 完成 secret 替换并跑通 `moqi-test-apk.yml` 之前保持 PENDING。
+- CI Debug 运行时验证已于收口阶段完成（run `37301397541` @ `69734a4d`，success；决定性证据为该 run
+  artifact 的 `apksigner` 实测证书，而非 workflow 配置本身）。D064 就此 CLOSED；仅当命中上述五项
+  reopen conditions 时重开。
