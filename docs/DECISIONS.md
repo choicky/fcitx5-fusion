@@ -821,10 +821,36 @@ proguard 规则为空（`proguard.txt` = 0 字节）；native JNI 按 Kotlin 字
 
 状态：源码根因 VERIFIED；修复的结构性验证 = 重建 Release optimized DEX 中两个 `maxActivePaths` 字段仍在；
 **真机 Local ASR 尚未 VERIFIED**，未做设备测试前不得写 “runtime fixed”。见 `/tmp` 报告与验证步骤。
-System ASR 在 vivo 上 “flicker→idle” 仍 **DEVICE TRACE REQUIRED**（UNRESOLVED），本轮不改 SystemAsrBackend。
+System ASR 在 vivo 上 “flicker→idle” 已由后续设备 A/B 定位（激活的 RecognitionService=vivo Copilot 时
+ERROR_CLIENT(5)，切 Google 服务同一二进制即 GOOD；非 Fcitx 回归），处置见 D057；本条仍不改 SystemAsrBackend 架构。
 
 2026-10-04 于分支 tip（应用码 `9a31512c` / HEAD `99373594`）复审维持上述结论：三份独立证据一致 ——
 R8 `configuration.txt` 含该 keep 规则；`classes.dex` 中 `Offline/OnlineRecognizerConfig.maxActivePaths`
 均以源名存在；`usage.txt` 收缩账目中 sherpa 移除项全部为方法级（`maxActivePaths` 0 次出现，字段未动）。
 当次 Release 候选为未签名产物（包名 `org.fcitx.fcitx5.android.fusionenhanced`），真机验收需先按 D025
 的 `SIGN_KEY_*` 签名安装。最终状态 = RELEASE STATIC/BUILD VERIFIED + DEVICE RUNTIME PENDING。
+
+## D057 — Android System ASR 运行时失败必须可见可诊断（vivo A/B 实证后的边界）
+
+**状态：Accepted（源码/测试 VERIFIED；设备 UX 观察 PENDING）。**
+
+设备实证（vivo X100 Pro，同一条历史-good L0 二进制 `fb3b0c26`，无任何 Fcitx 代码改动）：
+系统 `voice_recognition_service = com.vivo.ai.copilot/.framework.wakeup.CopilotRecognitionService`
+时 SpeechRecognizer 报 `ERROR_CLIENT (5)` → BAD；临时把系统 RecognitionService 切到 Google 的
+RecognitionService → 同一二进制 GOOD。结论：**未证明存在 Fcitx 源码回归**；Android System ASR 的
+可发现性/可用性 ≠ RuntimeUsable，RuntimeUsable 取决于当前激活的 RecognitionService。Redmi 历史
+失败是不同根因（Xiaomi RecognitionService 权限 / error 9），不得与本案混同。
+
+决定（最小语义修正，提交 `b73dbcff`）：
+- `SystemAsrBackend` 错误映射中 `ERROR_CLIENT` 不再并入 `Silent`，改走既有 `VoiceError.System(code)`，
+  沿既有链路弹出携带数字诊断码（5）的用户提示并写入 F1 审计（`class=system code=5`，仅元数据）；
+- 合法静默结果保持不变：`ERROR_NO_MATCH`、`ERROR_SPEECH_TIMEOUT` 仍为 `Silent`；
+  `ERROR_INSUFFICIENT_PERMISSIONS` 仍走权限流程；其余系统码维持既有 `System(code)` 行为；
+- 用户文案只说“Android 系统语音识别失败（错误 %1$d）”，提示检查系统语音识别设置或在“语音输入”
+  设置中改用其他语音服务；不得向普通用户展示实现术语，数字码保留在提示与诊断中。
+
+边界（红线）：Fcitx **不得**静默改写 `Settings.Secure.VOICE_RECOGNITION_SERVICE`，**不得**实现
+vivo/Xiaomi/Google 等 ROM 特定的 RecognitionService 选择器或条件分支；不得为触发 D035 把 System 错误
+伪装成 `VoiceError.Service`（fallback 资格不变：仅建立会话前的 Service 错误可回退一次）；不得改动
+SpeechRecognizer 创建、intent、音频所有权与 provider 解析。本案是“可见性与可诊断性”修复，不是
+vivo 变通方案；provider 仍由用户决定（Model A / D055 不变）。
