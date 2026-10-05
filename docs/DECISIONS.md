@@ -802,26 +802,27 @@ ONE configured Voice Provider  ←  VoiceSelectionStore.current 是唯一 top-le
   空时仍列出；in-IME 候选规则不变）。
 - **DEVICE VALIDATION 仍 DEFERRED**：无 vivo 设备，本节不改变任何设备结论。
 
-## D056 — Local ASR Release 运行时根因（R8 移除 JNI 反射字段）与修复边界
+## D056 — Local ASR Release 运行时根因（R8 移除 JNI 构造函数）与修复边界
 
-**状态：Root cause VERIFIED；fix structurally validated；device validation PENDING（2026-10-04）**
+**状态：CLOSED / VERIFIED（2026-10-05）。** 根因 VERIFIED、修复 STATIC/BUILD VERIFIED、真机 DEVICE VERIFIED
+（vivo X100 Pro,三 Local 引擎逐一复测 + Space 长按回归全绿,见下方设备验收结果）。
 
-现象：Release APK 中三个 Local ASR（X-ASR Offline / X-ASR Streaming 960ms / FunASR Nano）
+原始现象（历史,保留）：Release APK 中三个 Local ASR（X-ASR Offline / X-ASR Streaming 960ms / FunASR Nano）
 共同抛出 `RuntimeException: Failed to get field ID for maxActivePaths`；Debug/Test APK 不复现。
 
-根因（源码 + 二进制证据）：Debug/Test 与 Release 共用
+初版根因（历史,保留）：Debug/Test 与 Release 共用
 `com.k2fsa.sherpa.onnx:sherpa-onnx:1.13.8@aar`，仅 Release 经 R8/minify。该 AAR consumer
 proguard 规则为空（`proguard.txt` = 0 字节）；native JNI 按 Kotlin 字段源名读取
 `OfflineRecognizerConfig.maxActivePaths` / `OnlineRecognizerConfig.maxActivePaths`
 （各 ABI 的 `libsherpa-onnx-jni.so` 内嵌 `Failed to get field ID for maxActivePaths` 字符串），
 而这两个字段在 Kotlin 侧仅经 getter/setter 访问，被 Release 的 R8 shrink 移除。
 
-修复：`app/proguard-rules.pro` 增加最小边界
+初版修复（历史保留,后由本条 2026-10-05 修订放宽并 supersede 其边界）：`app/proguard-rules.pro` 增加最小边界
 `-keepclassmembers class com.k2fsa.sherpa.onnx.** { <fields>; }`，只保留该单一第三方 JNI 库的字段
-（不关 R8/minify、不 keep 全应用、不扩到无关包、不加无关 native keep 规则）。经审阅为可靠最小边界，
-不再为“优化”改写；更窄的按类/按字段清单会因 sherpa 镜像众多 config 字段而不“同样可靠”。
+（不关 R8/minify、不 keep 全应用、不扩到无关包、不加无关 native keep 规则）。当时经审阅为可靠最小边界；
+更窄的按类/按字段清单会因 sherpa 镜像众多 config 字段而不“同样可靠”。（该字段-only 边界事后被设备证伪,见下。）
 
-状态：源码根因 VERIFIED；修复的结构性验证 = 重建 Release optimized DEX 中两个 `maxActivePaths` 字段仍在；
+状态（当时）：源码根因 VERIFIED；初版修复的结构性验证 = 重建 Release optimized DEX 中两个 `maxActivePaths` 字段仍在；
 **真机 Local ASR 尚未 VERIFIED**，未做设备测试前不得写 “runtime fixed”。见 `/tmp` 报告与验证步骤。
 System ASR 在 vivo 上 “flicker→idle” 已由后续设备 A/B 定位（激活的 RecognitionService=vivo Copilot 时
 ERROR_CLIENT(5)，切 Google 服务同一二进制即 GOOD；非 Fcitx 回归），处置见 D057；本条仍不改 SystemAsrBackend 架构。
@@ -849,9 +850,23 @@ Kotlin 侧从不 `new`（仅 `getResult(stream).text` 取 getter），故 `-keep
 `configuration.txt` 含新 keep；`classes.dex` 中 `OfflineRecognizerResult.<init>` 以崩溃现场同一描述符仍在，
 `OnlineRecognizerResult.<init>(...)` 与 `maxActivePaths` 亦在，`usage.txt` 无 `OfflineRecognizerResult` 移除项；
 `libsherpa-onnx-jni.so`/`libonnxruntime.so` 等 native 库仍打包。历史证据不改写：此前“字段仍在”结论在其判据下成立，
-但其不足以覆盖 JNI 构造函数面。**状态 = 根因 VERIFIED + 修复 STATIC/BUILD VERIFIED + DEVICE RUNTIME PENDING**
-（新签名 APK 待 vivo X100 Pro 三引擎逐一复测 + Space 长按回归，见 `/tmp/fcitx5-d056-sherpa-jni-r8-device-test-plan.md`；
-任一引擎仍崩则保持 OPEN 采集新日志，不关闭 D056）。
+但其不足以覆盖 JNI 构造函数面。
+
+设备验收（2026-10-05，vivo X100 Pro,安装修复后签名 release/minified APK;
+APK SHA-256 `2729120390d387e74caf0e4c8899582d0ad279b8dc7e9b9913819739e9db4054`）;
+签名者证书 SHA-256 = D058 canonical `A5:15:B7:4A:...:89:0C`）。**全部必测项通过**：
+- X-ASR Offline INT8：Mic 首会话 PASS；紧随的第二次会话 PASS。
+- X-ASR 960ms Streaming INT8（OnlineRecognizerResult 路径）：首会话 PASS；第二次会话 PASS。
+- FunASR Nano（崩溃现场引擎）：首会话 PASS；第二次会话 PASS。
+- 共享触发回归：Space 长按 Local ASR 会话 PASS。
+- Managed ASR smoke（如 Doubao）：PASS。
+每个 Local 测试均为端到端：Listening → 真实语音 → 识别 → 非空且合理 transcript → commit → Idle/可复用;
+logcat 无 `NoSuchMethodError`、无 `Failed to get field ID`、无 `AndroidRuntime` FATAL。
+
+**状态 = 根因 VERIFIED + 修复 STATIC/BUILD VERIFIED + DEVICE VERIFIED → CLOSED。**
+
+工程教训：Release JNI 集成必须以运行时验证收口,源码级/静态成员核对不足以覆盖 native 按名字/签名
+访问、而 R8 无法从 Java/Kotlin 调用图推断的 ABI；不得据此关闭 R8/minify。
 
 ## D057 — Android System ASR 运行时失败必须可见可诊断（vivo A/B 实证后的边界）
 
@@ -924,8 +939,9 @@ vivo 变通方案；provider 仍由用户决定（Model A / D055 不变）。
 密钥保全（延续 D025 风险条款）：私钥与口令永不进入任何 git 仓库、`/tmp`、终端输出或 CI 日志；
 主副本存于开发机仓库外私有路径（`~/.signing/`，目录 700 / 文件 600），口令以 0600 文件与
 GitHub secrets 两份存在；D025 旧密钥文件不改动、不删除，按其存档位置（OracleKR3
-`...\default-workspace\signing\`，Phase-3 归档记载）保持原样。当前环境无第二块独立持久卷，
-Fusion Enhanced 密钥的**设备外独立备份 = PENDING USER ACTION**，不属于本决策可自动完成项。
+`...\default-workspace\signing\`，Phase-3 归档记载）保持原样。（2026-10-05 更新：用户已确认完成
+Fusion Enhanced 密钥的**设备外独立备份 = USER-CONFIRMED COMPLETE**；该结论为用户自证,本 checkpoint
+未独立查验私钥/口令内容,亦不得据此暴露或检查任何私有材料。）
 
 约束：**未来所有 Fusion Enhanced 正式 Release 必须保持该签名身份**（覆盖升级连续性的前提），
 除非另行设计并批准正式的 Android 签名密钥轮换程序；`.moqi` 与 `.fusionenhanced` 是两个不同

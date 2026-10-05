@@ -518,6 +518,10 @@ paired punctuation 的 formatter-only repair 暴露出验证状态必须分层�
 ## 当前下一步
 
 ### 当前权威状态（2026-10-02）
+- （2026-10-05 修订，见 `docs/voice-closure-checkpoint.md`）D056 **CLOSED**：release/minified Local ASR 的
+  sherpa-onnx JNI ABI（`-keep class com.k2fsa.sherpa.onnx.** { *; }`，Android `4e14cde9`）已在 vivo X100 Pro
+  三引擎端到端复测 + Space 长按回归全部 PASS;D058 密钥设备外独立备份 = USER-CONFIRMED COMPLETE。
+  Voice 子系统不构成首发阻断项;真实剩余为长语音/性能/许可证据与云端/自建设备矩阵等**证据/回归项**，非源缺陷。
 - Local ASR 当前支持 FunASR Nano、X-ASR 离线 INT8、X-ASR 960 ms 流式 INT8；旧 Zipformer 不恢复，也不做兼容迁移。
 - UI、推荐和 D035 候选顺序统一为 X-ASR 离线 → X-ASR 流式 → Nano；资格、触发、持久化、production、installed、enabled、runtime-ready 与许可状态继续分层。
 - debug/release 均支持应用内从固定上游按需下载上述模型，权重不内置 APK；archive NOTICE、转换来源等证据仍待补齐，不表述为独立法律审计 PASS。
