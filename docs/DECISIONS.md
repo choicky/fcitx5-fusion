@@ -704,6 +704,8 @@ MoQi 后缀正式切换到 Fusion Enhanced：
 - 不做旧 upstream preference migration；不设计双 package 共存升级机制；
 - Android 将 `org.fcitx.fcitx5.android.moqi` 与 `org.fcitx.fcitx5.android.fusionenhanced` 视为不同 App，需要全新安装，这是**接受的结果**。
 - 同一条新的 `.fusionenhanced` 发布线之间仍按 D025 用固定签名密钥覆盖升级。
+  （2026-10-05 修订：该归属由 D058 supersede——`.fusionenhanced` 线使用其新建立的固定签名身份，
+  不再沿用 D025/`CN=MoQi Release`；D025 仅继续作为历史 `.moqi` 发布线的权威签名决定。）
 
 范围边界：仅改 Android 安装身份。`MoQi` Auxiliary Filter 功能名、码表、config keys、
 `feature/moqi-filter` addon 分支、workflow 文件名以及历史 commit/Release/证据（含
@@ -827,8 +829,9 @@ ERROR_CLIENT(5)，切 Google 服务同一二进制即 GOOD；非 Fcitx 回归）
 2026-10-04 于分支 tip（应用码 `9a31512c` / HEAD `99373594`）复审维持上述结论：三份独立证据一致 ——
 R8 `configuration.txt` 含该 keep 规则；`classes.dex` 中 `Offline/OnlineRecognizerConfig.maxActivePaths`
 均以源名存在；`usage.txt` 收缩账目中 sherpa 移除项全部为方法级（`maxActivePaths` 0 次出现，字段未动）。
-当次 Release 候选为未签名产物（包名 `org.fcitx.fcitx5.android.fusionenhanced`），真机验收需先按 D025
-的 `SIGN_KEY_*` 签名安装。最终状态 = RELEASE STATIC/BUILD VERIFIED + DEVICE RUNTIME PENDING。
+当次 Release 候选为未签名产物（包名 `org.fcitx.fcitx5.android.fusionenhanced`），真机验收需先以签名身份签名安装。
+（2026-10-05 修订：本句原写“按 D025 的 `SIGN_KEY_*` 签名”，该签名前置已由 D058 supersede——fusionenhanced
+候选使用 D058 新固定身份，`SIGN_KEY_*` 消费机制不变。）最终状态 = RELEASE STATIC/BUILD VERIFIED + DEVICE RUNTIME PENDING。
 
 ## D057 — Android System ASR 运行时失败必须可见可诊断（vivo A/B 实证后的边界）
 
@@ -865,3 +868,45 @@ vivo/Xiaomi/Google 等 ROM 特定的 RecognitionService 选择器或条件分支
 伪装成 `VoiceError.Service`（fallback 资格不变：仅建立会话前的 Service 错误可回退一次）；不得改动
 SpeechRecognizer 创建、intent、音频所有权与 provider 解析。本案是“可见性与可诊断性”修复，不是
 vivo 变通方案；provider 仍由用户决定（Model A / D055 不变）。
+
+## D058 — Fcitx5 Fusion Enhanced 建立独立永久发布签名身份（supersede D054/D056 的 D025 签名归属）
+
+**状态：Accepted（2026-10-05）。** 本决策不改写历史事实：D025 对其权威范围（历史 `.moqi`
+发布线）继续有效；被 supersede 的仅是 D054 末条与 D056 增补中“`.fusionenhanced` 线沿用 D025
+签名密钥”这一归属。
+
+背景与前提（均有实证）：
+- D025 密钥对应已发布产品线 `org.fcitx.fcitx5.android.moqi`，证书 `CN=MoQi Release`，
+  证书 SHA-256 `c90122d652b624fae7040a7869efc1d6cd1506d2803d58b19ff4599d2abbada7`
+  （最早 v0.1.3-moqi.1 @ `f16be460` 与最新 v0.1.3.7 @ `b31ae5f7` 公开 APK 验签一致）；
+- 用户确认、仓库证据一致：`org.fcitx.fcitx5.android.fusionenhanced` 在 D054（`402ca654`）
+  收敛包名之后从未正式发布于任何 GitHub Release（全部 8 个既有 Release 的 APK 均为 `.moqi` 包）。
+
+决定：Fcitx5 Fusion Enhanced 在首个正式发布之前建立**新的永久发布签名身份**，不继承 D025：
+
+- PKCS#12：`fusion-enhanced-release.p12`，alias `fusion-enhanced-release`；
+- 证书 DN：`C=CN, O=choicky, CN=Fcitx5 Fusion Enhanced Release`（自签）；
+- 密钥/签名算法：RSA 4096 / SHA256withRSA；有效期 2026-10-05 → 2056-09-27（30 年，长期身份）；
+  serial `5ee054c6c10a529c`；
+- **canonical Fusion Enhanced 发布签名者指纹（证书 SHA-256）**：
+  `A5:15:B7:4A:C4:C3:84:51:54:E1:7C:AD:D1:3D:02:75:BE:70:01:DD:CF:2B:97:2A:4F:2F:06:1A:FD:26:89:0C`
+  （keytool 与 openssl 双路一致）；
+- 一切 `.fusionenhanced` 产物的签名验证以该指纹为准，不符即 HARD STOP。
+
+实现边界：完全复用既有 `SIGN_KEY_*` 机制（`ProjectExtensions.kt` 的 `SIGN_KEY_FILE` /
+`SIGN_KEY_BASE64` / `SIGN_KEY_PWD` / `SIGN_KEY_ALIAS` 接口与 `release-apk.yml`），不引入任何
+新签名框架、不改 AGP signingConfig 代码路径。GitHub Actions `choicky/fcitx5-android` 的
+`SIGN_KEY_BASE64` / `SIGN_KEY_PWD` / `SIGN_KEY_ALIAS` 已于 2026-10-05T03:49Z 更新为新身份
+（值经 stdin 管道写入，从未进入终端输出/git/文档）；`DEBUG_SIGN_KEY_*` 未触碰。
+由此 GitHub 侧 MoQi 旧密钥副本被覆盖且不可找回（Actions secrets 只写不可读）；`.moqi` 历史线
+如需再发布，须从 D025 离线存档重新导入 `SIGN_KEY_*` 并先核对旧指纹。
+
+密钥保全（延续 D025 风险条款）：私钥与口令永不进入任何 git 仓库、`/tmp`、终端输出或 CI 日志；
+主副本存于开发机仓库外私有路径（`~/.signing/`，目录 700 / 文件 600），口令以 0600 文件与
+GitHub secrets 两份存在；D025 旧密钥文件不改动、不删除，按其存档位置（OracleKR3
+`...\default-workspace\signing\`，Phase-3 归档记载）保持原样。当前环境无第二块独立持久卷，
+Fusion Enhanced 密钥的**设备外独立备份 = PENDING USER ACTION**，不属于本决策可自动完成项。
+
+约束：**未来所有 Fusion Enhanced 正式 Release 必须保持该签名身份**（覆盖升级连续性的前提），
+除非另行设计并批准正式的 Android 签名密钥轮换程序；`.moqi` 与 `.fusionenhanced` 是两个不同
+App（D054），二者签名身份自此永久分离。
