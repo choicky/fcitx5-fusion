@@ -193,6 +193,13 @@ Phase 3 未定义独立的 "Exit Criteria" 小节（ROADMAP 中只有 Phase 2 �
 > `LOCAL_DEBUG_CERT == CI_DEBUG_CERT = YES`（`moqi-test-apk.yml` run `37301397541` @
 > `69734a4d`，success；Android 分支 `contribution/debug-signing-identity` 未 merge）。
 > 详见 `DECISIONS.md` D064。
+>
+> **D065 首个 D058 Signed RC 生产 checkpoint（2026-10-05）：** 经 D063 机制以
+> `workflow_dispatch(tag=v0.1.3.8-rc.1, draft=true)` 产出首个真实签名 RC（run `37304432367`，
+> success；tag → 冻结产品 `2ba3a999`）。产物 X SHA-256 `148457a4…18dee` 已冻结为
+> `ACCEPTANCE_APK_SHA256`，D058 签名器 apksigner 实测 VERIFIED，Release 保持 DRAFT；
+> **DO NOT REBUILD**。FINAL RELEASE 仍 **PENDING DEVICE ACCEPTANCE**（D062 六项清单原样待执行）。
+> 详见 `docs/first-release-rc-validation.md` §6。
 
 当前实现证据（历史索引）：
 

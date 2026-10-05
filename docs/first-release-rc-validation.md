@@ -86,3 +86,33 @@ INCLUDED / VALIDATION DEBT，非 BLOCKER（D061 规则）。**
   ②设备清单 `/tmp/fcitx5-d062-device-acceptance-checklist.md`（6 项最小集）。
 - **FINAL RELEASE: PENDING DEVICE ACCEPTANCE。** 未重开任何 CLOSED 证据（D056/D057/D059/F1/D035/
   MoQi 架构等），未执行任何产品源码修改。
+
+## 6. D065 Signed RC 生产与精确产物冻结（2026-10-05）
+
+本任务在生产 §4 所述门槛：经 D063 冻结机制产出**首个真实 D058 签名 RC** 并冻结为验收产物 X。
+结果：SIGNED RC PRODUCED — FINAL RELEASE PENDING DEVICE ACCEPTANCE。
+
+- **路径：** `LOCAL_SIGNING = UNAVAILABLE_IN_CURRENT_SESSION`（沿用 D063 结论，未重复探测本地
+  D058 凭证）→ CI fallback。workflow 定义 = `contribution/signed-rc-workflow` @ `45000477`
+  （dispatch ref），产品内容 = 新 annotated tag **`v0.1.3.8-rc.1` → `2ba3a999`**（checkout ref）；
+  两者分离执行是 D063 设计语义：workflow yml 不是构建输入，产物即纯冻结产品线内容。
+- **Run：** `release-apk.yml` run **37304432367**（workflow_dispatch, tag=v0.1.3.8-rc.1,
+  draft=true），conclusion=success；addon pin `9b3448e6`、MoQi 码表 `66deab4a…e792`、包名
+  `org.fcitx.fcitx5.android.fusionenhanced`、D058 指纹硬断言全部 PASS（步骤级 success，非配置推断）。
+- **产物 X（已下载独立复验，未重建）：**
+  `org.fcitx.fcitx5.android.fusion-enhanced-v0.1.3.8-rc.1-0-g2ba3a999-arm64-v8a-release.apk`，
+  67,728,288 B，`ACCEPTANCE_APK_SHA256 = 148457a406d8c35ea780b5bb07c2f62738e4ce526f8ad68ccfddaff2f2018dee`
+  （本地 sha256sum 与 GitHub asset digest 一致）；apksigner 实测 DN
+  `CN=Fcitx5 Fusion Enhanced Release, O=choicky, C=CN`、证书 SHA-256
+  `a515b74a…890c` == D058 canonical → **D058_SIGNER = VERIFIED**；native-code 仅 arm64-v8a、
+  无 debuggable 条目、CI 日志含 `:app:minifyReleaseWithR8`（release/minified 形态）。
+- **暂存：** GitHub Release `v0.1.3.8-rc.1` = **DRAFT**（`isDraft=true`、`publishedAt=null`）。
+  设备验收通过后唯一合法转正动作 = publish 该 draft（同资产字节，禁止重建；见 D063 规则 2/3）。
+- **程序事实（如实记录）：** 推送 `v*` tag 同时触发了 tag-push 发布路径 run `37304408675`，
+  已在任何 release 资产产生前取消（`conclusion=cancelled`，事后确认无发布泄漏）；该竞态为
+  既有 `on: push: tags: v*` 语义的已知后果，本任务未改动 workflow。release notes 中
+  `fcitx5-android: 45000477` 一行为 `$GITHUB_SHA`（dispatch ref）的已知表面性偏差——产物真实
+  产品来源由 tag checkout + `versionName v0.1.3.8-rc.1-0-g2ba3a999` + 各断言共同背书。
+- **不变量：** 自本节起 **DO NOT REBUILD THIS RC**；后续设备验收与最终发布必须针对同一
+  SHA-256：`device-tested == published == ACCEPTANCE_APK_SHA256`。
+- **FINAL RELEASE：仍 PENDING DEVICE ACCEPTANCE**（既有 D062 六项清单，不扩展、不重跑自动化）。
