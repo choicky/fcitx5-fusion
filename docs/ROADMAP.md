@@ -173,9 +173,12 @@ Phase 3 未定义独立的 "Exit Criteria" 小节（ROADMAP 中只有 Phase 2 �
 
 ### 当前实现基线（跨仓库）
 
-当前实现应以 `fcitx5-android` 的 `phase5c-dictionary-manager` @
-`9163ec9630679f7bd7fdae56bf65fa50dcfba5b5` 为 Android 产品线基线；本地
-Android 工作树的旧 `master` checkout 不是当前功能基线。对应实现证据包括：
+> **current-state 权威已迁至 D060 / `docs/first-release-baseline.md`。** 首个 Fusion Enhanced 发布的当前产品基线、
+> 顶层范围与功能状态矩阵以该文件为唯一权威；Android 产品线为 `contribution/fusion-enhanced-identity-naming-r8`
+> @ `2ba3a999`（不再是 `phase5c-dictionary-manager` @ `9163ec96`，后者仅作历史贡献线保留）。以下逐条是实现/CI
+> **历史证据索引**（区分“代码已实现”与“设备/真实服务/发布证据已验证”），其当前状态判定看 `first-release-baseline.md` 真值表。
+
+当前实现证据（历史索引）：
 
 - Dictionary Manager：`DictionaryManagerUi`、`DictionaryPresentation`、
   `PinyinDictionaryFragment`，实现提交 `84b7f571`，导航修正提交
@@ -543,19 +546,21 @@ invocation 后处理。`preferredVoiceInput` 保留 Android voice-input IME/subt
 比较仅是调查记录；Full extraction 保留为参考证据，不是 PR 1 边界。该决定不
 减少 Fusion 产品对全部 provider 类型的支持范围。
 
-### 当前开发基线（2026-10-03）
+### 当前开发基线（2026-10-03）— current-state 已被 D060 取代
+
+> **当前权威基线见 `docs/first-release-baseline.md`（D060）：** Android 产品线 `contribution/fusion-enhanced-identity-naming-r8` @ `2ba3a999`；addons 发布 pin `9b3448e6`（开发 gitlink `19f06898`）；LibIME upstream 无 fork；D058 签名身份。下表是 2026-10-03 的**历史**三仓库快照，保留供追溯，不再作为 current-state。
 
 以下是后续 AI/开发者继续开发时使用的三仓库协作基线。它描述当前持续开发线，**不要求也不暗示**从历史 Phase checkpoint 或 Release pin 回退 checkout：
 
 | 仓库 | 分支与完整 SHA | 用途与证据 |
 |---|---|---|
-| `fcitx5-fusion` | `main` @ `eb0b4e93fb99bd7de2b516e49d91a7ce812ab13f` | 当前总控仓库文档与实现状态基线；本批从该 main 收口。 |
-| `fcitx5-android` | `phase5c-dictionary-manager` @ `9163ec9630679f7bd7fdae56bf65fa50dcfba5b5` | 当前 Android 持续开发线，已包含发布后的 `b31ae5f7` 与本次文档收口；远端分支与本地一致。该工作线已在本机完成 `:app:testDebugUnitTest`、`:app:assembleDebug`、固定 debug signing 和 adb 真机安装。 |
-| `fcitx5-chinese-addons` | `master` @ `61474bd3aa9fca26d1c31df93343035697e9f265` | 当前 addons 开发线，远端 master 与本地一致；`19f06898581419d3e4d37492f33a14e841e2680e` 是该历史中的普通上游提交，不是另一个当前基线。 |
+| `fcitx5-fusion` | `main` @ `eb0b4e93fb99bd7de2b516e49d91a7ce812ab13f` | 历史总控文档快照；current-state 由 D060 取代。 |
+| `fcitx5-android` | `phase5c-dictionary-manager` @ `9163ec9630679f7bd7fdae56bf65fa50dcfba5b5` | 历史贡献线 tip；**已被 `contribution/fusion-enhanced-identity-naming-r8` @ `2ba3a999` 包含（是其祖先）**，非当前产品基线。 |
+| `fcitx5-chinese-addons` | `master` @ `61474bd3aa9fca26d1c31df93343035697e9f265` | addons 开发 upstream 快照；`19f06898` 是其历史中的普通上游提交（=Android 开发 gitlink），**不含 MoQi**；MoQi 来自发布 pin `9b3448e6`（`fix/punctuation-candidate-pairs`）。 |
 
 性质必须分开记录：
 
-- **Current development baseline**：上表三仓库的 branch + SHA。后续开发从对应当前开发线继续；不得仅因某个工作树当前 checkout 在某个 SHA，就把它升级为跨仓库权威事实。
+- **Current development baseline**：唯一值为 `first-release-baseline.md`（D060）冻结的 Android `contribution/fusion-enhanced-identity-naming-r8` @ `2ba3a999`；不得仅因某个工作树当前 checkout 在某个 SHA，就把它升级为跨仓库权威事实。
 - **Release reproducibility baseline**：已发布 `v0.1.3-fusion.6` 的 Android `e48896accb8c6f85ccee6006cfb689c1419ec227`（tag）+ addons `9b3448e6b3889e4281ea39e334c7e5714f8a8b12`（release workflow 固定 pin）。这组 SHA 只用于复现该 Release，不是当前开发 HEAD；release evidence 仍保留在下节及 `docs/repository-rename.md`。
 - **Historical phase checkpoint**：Android `phase4-voice-poc` 的 `7ed0fa780bb367b4602c432e830a3006b8717b9c` 只表示 Phase 4C 当时的实现/验收 checkpoint。它已被后续 Android 连续提交超越，不要求当前 checkout 回退；相关验收记录保持历史性质。
 

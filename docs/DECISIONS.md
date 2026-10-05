@@ -1013,3 +1013,50 @@ release 构建已实际提供（`downloadOffered` 从未依赖 `distributionAppr
 
 逐模型许可证据细节（作者声明、archive 缺 LICENSE/NOTICE、导出/训练来源缺口、pinned id/hash）继续以
 `docs/THIRD_PARTY_LICENSES.md` 为准；本条只裁定四项权利与 UI 发布资格，二者不互相覆盖。
+
+## D060 — 首发稳定基线与权威冻结（First Release Stable Baseline & Authority Freeze）
+
+**状态：Accepted（2026-10-05）。** 纯文档/权威收口，**零产品行为改动**。目的：在首个正式 Fusion Enhanced
+发布之前，把“最新源码 + 既有已验证证据”收敛成**一个当前产品基线 / 一个首发范围 / 一个功能状态矩阵**，
+并显式 supersede 陈旧 current-state 记录，杜绝 D059 所暴露的失效模式（陈旧字段导致已决问题被反复重查）。
+
+### 权威落点（single source of truth）
+
+- 当前基线、四大家族范围、**首发真值表**、Local/Voice/System/D035/F1/Model-Manager/MoQi 冻结边界、
+  范围耦合与分类规则：**`docs/first-release-baseline.md`**（唯一矩阵，其余文档只指针引用，不复制）。
+- 操作/权威/重开规则：**AGENTS.md**（新增 CLOSED EVIDENCE RULE 与 VALIDATION-DEBT vs RELEASE-BLOCKER 分类）。
+
+### 冻结的当前产品基线（source-verified）
+
+- 产品线：`choicky/fcitx5-android` `contribution/fusion-enhanced-identity-naming-r8` @ `2ba3a999`
+  （applicationId `org.fcitx.fcitx5.android.fusionenhanced`）。该线是**权威超集**：经祖先核验包含
+  词库、Toolbar、Local 三模型、D056 修复与旧“字典线”tip `9163ec96`。
+- addons：开发 gitlink `19f06898`（upstream，无 MoQi）；**发布固定 pin `9b3448e6`**（分支
+  `fix/punctuation-candidate-pairs`，含 MoQi Auxiliary Filter，经 `release-apk.yml` 有意不跟随分支）。
+- LibIME：upstream `fcitx/libime`，**项目无 LibIME fork**。
+- 签名身份：D058 canonical 证书指纹（公开证书现场复核一致），私钥/口令永不记录。
+
+### 显式 supersede 的 current-state 记录（历史保留，不作当前真值）
+
+1. `ROADMAP.md` “### 当前实现基线（跨仓库）” 以 `phase5c-dictionary-manager @ 9163ec96` 为 Android 基线
+   —— 由本 D060 / `first-release-baseline.md` 取代为 `contribution/fusion-enhanced-identity-naming-r8 @ 2ba3a999`。
+2. `ROADMAP.md` “### 当前开发基线（2026-10-03）” 表（fusion `eb0b4e93` / android `phase5c-dictionary-manager @
+   9163ec96` / addons `master 61474bd3`）—— 三行 current-state 均由本 D060 取代；旧 SHA 保留为历史。
+3. `voice-closure-checkpoint.md` §4 “基线口径差” 观测 —— 由本 D060 收口。
+4. D055 增补中 “真机行为仍 DEFERRED” 的 External Android Voice：作为 VALIDATION DEBT 记入真值表，不再当未实现。
+
+“Current development baseline / Release reproducibility baseline / Historical phase checkpoint” 三分性质继续有效，
+但**当前开发基线**唯一值即上表产品线。Release reproducibility（`v0.1.3-fusion.6` = Android tag `e48896ac` +
+addons pin `9b3448e6`）仅用于复现该历史 Release，不是当前 HEAD。
+
+### 冻结结论
+
+四大家族（MoQi / Voice / Toolbar / Dictionary Manager）均 IMPLEMENTED 且已在首发范围；所有未完成项均为
+VALIDATION DEBT（设备/服务器/凭据矩阵或扩展用例），**无一达到 RELEASE BLOCKER 的具体证据门槛**。
+LLM / 文本后处理 = NOT IMPLEMENTED / FUTURE，非首发家族。D059 reopen、D056 教训、D057/D018/F1 边界、
+§13 MoQi 语义、D035 语义均按既有条目冻结，不重开。
+
+**FIRST FUSION ENHANCED RELEASE BASELINE: FROZEN**
+
+下一步是有界 Release-Candidate 验证（`first-release-baseline.md` §2 VALIDATION DEBT 清单 + §6 范围耦合裁定），
+不在本任务启动。本任务不建 tag / GitHub Release / workflow / PR / merge，不改签名或 provider 行为。

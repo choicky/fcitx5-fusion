@@ -5,11 +5,29 @@
 ## 事实来源与设计核对
 
 - 开始设计或实现前，先阅读相关需求、技术决策、路线图、研究记录，以及所涉及上游仓库的最新源码、公开接口和现有测试。
-- 判断当前预期行为时，按以下权威顺序读取：`REQUIREMENTS.md` 当前有效需求、`DECISIONS.md` 中最新且未被 superseded 的 Accepted decision、`ROADMAP.md` 当前 Phase/checkpoint，最后才参考历史记录。
+- 判断当前预期行为时，按以下权威顺序读取：`REQUIREMENTS.md` 当前有效需求、`DECISIONS.md` 中最新且未被 superseded 的 Accepted decision、`ROADMAP.md` 当前 Phase/checkpoint，最后才参考历史记录。首个 Fusion Enhanced 发布的**当前产品基线 / 范围 / 功能状态矩阵以 `docs/first-release-baseline.md`（D060）为唯一 current-state 权威**；它与其指针取代任何旧的“当前实现/开发基线”表述。
 - 不得把 `SUPERSEDED`、`PARTIALLY SUPERSEDED`、`HISTORICAL` 或 `DEPRECATED` 条目实现为当前行为；仅部分 supersede 旧决定时，旧决定原位置必须标明仍有效和不再规范的部分。看似 ACTIVE 的冲突不得自行推断。
 - 设计假设必须以当前源码和可复现证据验证；不要仅凭文档、历史结论、记忆或接口名称推断行为。
 - 若已接受的设计与最新源码、公开 API 或实际测试结果冲突，立即停止相关实现。记录并报告冲突位置、源码版本或提交、相关调用链、测试结果及影响范围，等待设计被明确修订后再继续。
 - 不得把推测、仅有代码但未验证的行为、跳过的测试或失败的 CI 写成已完成或已验证。
+
+## 已收口证据与重开规则（CLOSED EVIDENCE RULE）
+
+- 被当前权威记录标记为 CLOSED / VERIFIED 的事项，**不得仅因** agent 找到更旧的 roadmap 条目、checkpoint、
+  字段名、commit message、TODO 或被 superseded 的 Decision 就重开或降级。历史证据保留但不覆盖当前权威。
+- 仅在出现**实质性新事实**时重开：相关产品行为/源码变化；依赖/artifact/版本变化；上游 API/许可/行为变化；
+  新设备证据与已接受结果矛盾；CI/release 回归与之矛盾；某 Decision 专有的 reopen 条件被命中；新的可靠证据直接矛盾当前权威。
+- 专项重开边界（各自为准，不重复泛化）：D059 模型分发四项权利、D056 release/JNI ABI、D057 System-ASR 边界，均以其条目内列明的 reopen 条件为准。
+
+## 状态分类：VALIDATION DEBT vs RELEASE BLOCKER
+
+- **CLOSED / VERIFIED**：当前证据接受，无故不重开。
+- **RELEASE BLOCKER**：首发前必须解决——需**具体证据**表明当前首发行为破损、违反隐私/安全、数据完整性风险、
+  实际分发缺所需许可、构建/签名/产物失败、架构违反已接受需求等。
+- **VALIDATION DEBT**：已实现且无当前矛盾证据，只是额外测试仍可进行；**可推迟**。
+- **FUTURE / DEFERRED**：非首发所需。
+- “还能测更多 / 矩阵不穷尽 / 某 ROM 未测 / 缺自建服务器或真实凭据 / 长语音或扩展边界用例”**本身不构成 RELEASE BLOCKER**；
+  晋升为 blocker 必须附上述具体证据。
 
 ## 修改边界
 

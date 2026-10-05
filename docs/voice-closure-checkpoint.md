@@ -65,10 +65,11 @@
 - LLM / 文本后处理：D017 已决定与 ASR 解耦,源码零实现。
 - 4B.3c realtime preedit UX PoC：roadmap `[ ]`,未开始。
 
-**观测（不强制本批改动）：**
-- `ROADMAP.md` “当前开发基线”表仍指向 `phase5c-dictionary-manager @ 9163ec96` / `main @ eb0b4e93`,
-  与实际 Voice 产品线 `contribution/fusion-enhanced-identity-naming-r8 @ 4e14cde9` 存在**基线口径差**;
-  属跨仓库基线记录维护项,不影响 Voice 行为事实。建议后续统一,但本 checkpoint 不改基线表（越界且非文档职责所需）。
+**观测（已由 D060 收口）：**
+- `ROADMAP.md` “当前开发/实现基线”曾指向 `phase5c-dictionary-manager @ 9163ec96` / `main @ eb0b4e93`，
+  与实际 Voice 产品线 `contribution/fusion-enhanced-identity-naming-r8`（现 `2ba3a999`）存在基线口径差。
+  **D060 已把当前产品基线统一冻结到 `docs/first-release-baseline.md`**（`9163ec96` 是其祖先、被超集取代），
+  本 Voice checkpoint 不改基线表；该观测已闭环。
 
 ## 5. 首次 Fusion Enhanced 发布门禁评估
 
