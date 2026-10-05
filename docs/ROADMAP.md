@@ -181,6 +181,11 @@ Phase 3 未定义独立的 "Exit Criteria" 小节（ROADMAP 中只有 Phase 2 �
 > **D062 RC 验证 checkpoint（2026-10-05）：** 冻结基线的有界 Release-Candidate 验证已完成，结果
 > **AUTOMATION RC: GO / FINAL RELEASE: PENDING DEVICE ACCEPTANCE**；证据与剩余门槛见
 > `docs/first-release-rc-validation.md`（设备清单 `/tmp/fcitx5-d062-device-acceptance-checklist.md`）。
+>
+> **D063 签名产物策略 checkpoint（2026-10-05）：** Signed RC 生产与精确产物晋升政策已冻结
+> （`DECISIONS.md` D063）；最小 workflow 改动位于 Android 分支 `contribution/signed-rc-workflow` @
+> `45000477`（自冻结点 `2ba3a999`，未 merge、未触发；冻结产品线分支不变）。D062 §4 签名门槛就此收口，
+> 下一步为产出一次 CI Signed RC 并执行既有 6 项设备清单。
 
 当前实现证据（历史索引）：
 

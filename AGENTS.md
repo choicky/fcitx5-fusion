@@ -17,7 +17,7 @@
   字段名、commit message、TODO 或被 superseded 的 Decision 就重开或降级。历史证据保留但不覆盖当前权威。
 - 仅在出现**实质性新事实**时重开：相关产品行为/源码变化；依赖/artifact/版本变化；上游 API/许可/行为变化；
   新设备证据与已接受结果矛盾；CI/release 回归与之矛盾；某 Decision 专有的 reopen 条件被命中；新的可靠证据直接矛盾当前权威。
-- 专项重开边界（各自为准，不重复泛化）：D059 模型分发四项权利、D056 release/JNI ABI、D057 System-ASR 边界，均以其条目内列明的 reopen 条件为准。
+- 专项重开边界（各自为准，不重复泛化）：D059 模型分发四项权利、D056 release/JNI ABI、D057 System-ASR 边界、D063 签名产物与精确晋升策略，均以其条目内列明的 reopen 条件为准。
 
 ## 状态分类：VALIDATION DEBT vs RELEASE BLOCKER
 
@@ -86,3 +86,7 @@ CI 只能作为 source review、actual diff review 和可用本地验证之后�
 - 对已批准且范围明确的工作，agent 应自主完成逻辑批次：源码/文档与完整 diff review、适用验证、必要修复、commit、push 及 CI/status 检查；不因 commit 或 push 另行请求许可。
 - 仅在真实架构冲突、范围实质扩大、破坏性或高风险操作、凭据/秘密/签名/支付问题、未解决回归，或需要用户决定的架构选择时停止并报告。
 - 本地 commit 不视为交付完成（push 可用时）；不得未经明确授权 merge `main`。
+- 需要签名产物时按 D063 执行：普通 agent 会话无法安全访问本地发布凭证时记录
+  `LOCAL_SIGNING = UNAVAILABLE_IN_CURRENT_SESSION`（正常、受支持状态），直接选择 CI fallback
+  （`contribution/signed-rc-workflow` 的 dispatch+draft 路径），并以已记录 SHA-256 的同一产物做设备验收与
+  晋升；不得反复尝试读取、导出或注入私有签名材料，也不得为此削弱任何安全约束。

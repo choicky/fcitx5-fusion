@@ -1087,3 +1087,59 @@ Manager、Self-hosted、LLM、Dictionary Manager、Toolbar、MoQi 架构均不�
 - 旧 D051 “PAUSED / experimental table rolled back / runtime validation pending”措辞仅描述 structured-candidate
   实验线与开发分支现状，不再被解读为“D051 被排除在首发之外”。
 - 本决定不声称任何尚未实际发生的编译、运行时、Pinyin/Shuangpin E2E 或 Android 真机验证。
+
+## D063 — 签名产物生产与精确产物晋升策略（Signed RC Production and Exact-Artifact Promotion Policy）
+
+**状态：Accepted / FROZEN（2026-10-05）。最小 workflow 改动已实施；未建 tag / Release / 未触发任何 workflow run。**
+
+- **背景问题：** D062 §4 留下的唯一未闭合自动化门——签名产物的生产路径，与“设备验收 → 发布同一产物”的
+  晋升语义。普通 agent 会话不可安全消费本地发布凭证（D062 期间策略拦截，未绕过、未读取任何私有材料）：
+  **`LOCAL_SIGNING = UNAVAILABLE_IN_CURRENT_SESSION` 是正常、受支持状态，不是缺陷**。
+- **SOURCE FACTS — 现状发布调用链（2026-10-05 实测 `.github/workflows/release-apk.yml` @ `2ba3a999`，164 行）：**
+  A. 无 `workflow_dispatch`，唯一触发 `on: push: tags: v*`。B. 不能只构建+签名而不发布 Release。
+  C. 签名（Gradle `assembleRelease` + `SIGN_KEY_*` secrets）与发布（末步 `gh release create`）在同一 job，无分离。
+  D. 签名 APK 从不作为 Actions artifact 上传，只进入 Release。E. 发布不二次构建，但 Release 总是随
+  tag-push 的那次重建顺带产生。F. 因此“设备验收产物不重建直接晋升”现状**不可能**：任何新 tag-push 都重建，
+  发布字节可能与验收字节不一致。G. 最小改动 = 同一 workflow 增加 dispatch + draft 暂存 + D058 硬断言；
+  零改动方案不成立，也无需重设计。
+- **SOURCE FACTS — 签名身份矩阵（Phase A.1，仅公开证书信息，`apksigner verify --print-certs` 实测）：**
+
+  | 产物 | 构建位置 | 签名来源 | 证书 SHA-256 | 状态 |
+  |---|---|---|---|---|
+  | 本地 Debug/Test（当前源码，无 `DEBUG_SIGN_KEY_*`） | Local | `fromProjectEnv("debug")` 返回 null → **未签名**（产物 `-debug-unsigned.apk`，apksigner `DOES NOT VERIFY`） | none | VERIFIED |
+  | CI Debug/Test | GitHub Actions | `DEBUG_SIGN_KEY_BASE64/PWD/ALIAS` → `CN=MoQi Debug CI` | `41705bc94f4226fffae96091b7ba36f2c055b62a93df4eb9589ca996a37c7a7e`（`21f8b2ad`/`9a31512c` 两产物一致） | VERIFIED |
+  | 本地 Signed RC | Local | D058（策略性不可用） | — | NOT PRODUCED |
+  | CI Signed RC（本决定机制） | GitHub Actions | `SIGN_KEY_BASE64/PWD/ALIAS` → D058 | 期望 `A515B74AC4C3845154E17CADD13D0275BE7001DDCF2B972A4F2F061AFD26890C`（workflow 已硬断言） | NOT PRODUCED（机制已冻结，未触发） |
+
+  **LOCAL_DEBUG_CERT == CI_DEBUG_CERT？NO。** 当前本地 debug 默认根本未签名（显式 null 覆盖 AGP 默认
+  `~/.android/debug.keystore` 路径）；历史上本地 `CN=Android Debug`（`56a81b91…`）亦异于 CI `CN=MoQi Debug CI`
+  （`41705bc9…`）。实际后果：CI debug APK 与本地 debug 构建同包名时互覆安装需先 uninstall
+  （`adb install -r` → INSTALL_FAILED_UPDATE_INCOMPATIBLE）；release 线不受影响（独立 `.fusionenhanced`
+  applicationId + D058 唯一权威）。现配置**有意只保证 CI debug/test 身份稳定**，不统一本地与 CI debug 身份；
+  统一需 owner 侧注入同一 `DEBUG_SIGN_KEY_*`，本任务不修改任何签名配置或 Secrets。
+  历史谱系（非权威）：v0.1.3.7 CI release 资产签名 `CN=MoQi Release`（`c90122d6…`），属 D058 之前的旧发布身份。
+- **政策（本决定为单一权威）：**
+  1. **签名路由：** 本地 D058 签名语义上优先（owner 在持有凭证的环境直接签）；普通 agent 会话不可安全
+     消费本地凭证时走 **CI fallback**——同一 Gradle signingConfigs、同一 `SIGN_KEY_*` secrets，不构成第二签名实现。
+  2. **Signed RC：** 经 `workflow_dispatch(tag, draft=true)` 对一个既有 `v*` tag 构建**一份**签名产物，
+     以 **draft release** 暂存（draft 资产即精确产物本体），并记录其 SHA-256。
+  3. **精确产物晋升：** 设备验收只针对该 SHA-256 记录的产物执行 D062 既有 6 项清单；全部 PASS 后唯一
+     合法转正动作 = publish 该 draft（`gh release edit --draft=false` 或 UI）。**发布禁止重建**；任何重建
+     产生不同字节即使验收失效，必须重新验收。
+  4. **D058 门：** workflow 在 release 资产存在前对证书指纹做归一化硬断言（`D058_CERT_SHA256`），不符即
+     构建失败；产物侧人工 `apksigner verify --print-certs` 复核保留，mismatch = HARD STOP。
+  5. **开发路由：** 日常开发/测试保持本地优先（debug 不需要发布凭证）；CI debug 身份稳定可设备测试。
+  6. **安全不变量：** 永不读取/打印/复制/记录私钥内容、keystore/P12 内容、口令、base64 私有签名材料、
+     GitHub secret 值；不新增签名实现/身份；不改 `SIGN_KEY_*` / `DEBUG_SIGN_KEY_*` Secrets。
+- **实现边界（最小改动）：** 分支 `contribution/signed-rc-workflow`（自冻结点 `2ba3a999`，HEAD `45000477`，
+  单提交、单文件 `.github/workflows/release-apk.yml`，+41/−3）：新增 `workflow_dispatch`（inputs `tag`、
+  `draft` 默认 true）；首步校验 `v[0-9]*`；checkout ref 与 notes 改用 `RELEASE_TAG = inputs.tag || github.ref_name`；
+  notes 步新增 D058 指纹硬断言；publish 步在 dispatch+draft 时条件追加 `--draft`。零产品源码改动、零构建
+  步骤改动、零签名配置改动；**tag-push 旧路径行为保持不变**。冻结产品线分支仍指 `2ba3a999`；本分支未
+  merge、未 tag、未触发。
+- **Reopen conditions（仅此七项重开 D063）：** ① D058 签名材料/身份变化；② 出现第二签名路径或绕过
+  convention plugin 的签名逻辑；③ CI secrets/权限变化导致签名身份或产物完整性无法保证；④ 设备验收发现
+  需要改变产物的回归（已验收 SHA-256 失效）；⑤ GitHub draft release / 资产字节不变晋升语义改变；
+  ⑥ owner 明确改变发布策略（例如要求本地签名路径成为必经）；⑦ 冻结基线变化使本决定前提失效。
+  **普通 agent/session 无法访问本地凭证不是重开理由。**
+- 本决定不声称任何 Signed RC 或 CI 发布产物已实际构建/发布；产物级结论仅限上表实测行。

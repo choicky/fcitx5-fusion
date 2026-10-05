@@ -70,6 +70,13 @@ INCLUDED / VALIDATION DEBT，非 BLOCKER（D061 规则）。**
 （不符即 HARD STOP）移入正式 tag+Release 任务，作为其第一道门**（D058 既定机制：CI 侧 `SIGN_KEY_*`
 已于 D058 更新为该身份）。过程记录：`/tmp/fcitx5-d062-apksigner.log`。
 
+> **D063 收口（2026-10-05）：** 本门槛的生产与晋升路径已由 `DECISIONS.md` D063 冻结——Signed RC 经
+> `contribution/signed-rc-workflow`（`45000477`）的 `workflow_dispatch(tag, draft=true)` 产生并以 draft
+> 暂存；D058 指纹断言已前移至 workflow 内（release 资产存在前）；设备验收通过后 publish 该 draft 完成
+> **精确产物（同 SHA-256）晋升，禁止重建**。`LOCAL_SIGNING = UNAVAILABLE_IN_CURRENT_SESSION` 为正常
+> 受支持状态，选择 CI fallback 不是缺陷。签名身份矩阵（含 LOCAL_DEBUG_CERT ≠ CI_DEBUG_CERT 的实测
+> 结论）见 D063 条目。
+
 ## 5. 结论
 
 - **AUTOMATION RC：GO** —— 冻结输入一致、无未授权产品源 delta、JVM 全量通过、androidTest/release
