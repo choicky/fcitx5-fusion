@@ -1117,6 +1117,7 @@ Manager、Self-hosted、LLM、Dictionary Manager、Toolbar、MoQi 架构均不�
   （`adb install -r` → INSTALL_FAILED_UPDATE_INCOMPATIBLE）；release 线不受影响（独立 `.fusionenhanced`
   applicationId + D058 唯一权威）。现配置**有意只保证 CI debug/test 身份稳定**，不统一本地与 CI debug 身份；
   统一需 owner 侧注入同一 `DEBUG_SIGN_KEY_*`，本任务不修改任何签名配置或 Secrets。
+  **（快照注记：本行结论已由同日 D064 的统一 Debug 身份迁移取代；本条目保留为 2026-10-05 D063 时点事实。）**
   历史谱系（非权威）：v0.1.3.7 CI release 资产签名 `CN=MoQi Release`（`c90122d6…`），属 D058 之前的旧发布身份。
 - **政策（本决定为单一权威）：**
   1. **签名路由：** 本地 D058 签名语义上优先（owner 在持有凭证的环境直接签）；普通 agent 会话不可安全
@@ -1143,3 +1144,55 @@ Manager、Self-hosted、LLM、Dictionary Manager、Toolbar、MoQi 架构均不�
   ⑥ owner 明确改变发布策略（例如要求本地签名路径成为必经）；⑦ 冻结基线变化使本决定前提失效。
   **普通 agent/session 无法访问本地凭证不是重开理由。**
 - 本决定不声称任何 Signed RC 或 CI 发布产物已实际构建/发布；产物级结论仅限上表实测行。
+
+## D064 — Fusion Enhanced 统一 Debug 签名身份（Unified Debug Signing Identity）
+
+**状态：Accepted；LOCAL 已 VERIFIED；CI 运行时验证 PENDING OWNER ACTION（Secret 替换被本会话安全策略阻断，未绕过）。本任务不触及 Release/D058/D063 任何语义。**
+
+- **决定：** 建立**一个新的、永久的** Fusion Enhanced Debug 签名身份，同时用于本地与 GitHub CI 的
+  Debug/Test 构建，目标不变量 `LOCAL_DEBUG_CERT == CI_DEBUG_CERT == Fusion Enhanced Debug`。
+  该身份与 D058 Release 身份**完全分离**：绝不用于签 Release/Signed RC，绝不复用旧 Android Debug、
+  旧 `CN=MoQi Debug CI`（`41705bc9…`）、旧 `CN=MoQi Release`（`c90122d6…`）或 D058 任何材料。
+- **D064 Debug 身份权威（仅公开信息）：**
+  - alias `fusion-enhanced-debug`；keystore 文件名 `fusion-enhanced-debug.p12`（PKCS12，RSA-2048，
+    SHA256withRSA，有效期 30 年，存于 owner 私有目录，仓库外）。
+  - DN：`CN=Fcitx5 Fusion Enhanced Debug, O=choicky, C=CN`
+  - 证书 SHA-256：**`DC:49:71:82:C5:48:66:34:FD:68:E5:71:B8:78:A3:3E:CE:A6:8B:DA:D2:05:C3:D6:1A:ED:09:B9:83:92:A5:6A`**
+- **机制（Android 分支 `contribution/debug-signing-identity`，基于冻结点 `2ba3a999`，提交 `5260dbc4` +
+  `69734a4d`，未 merge）：** 泛化既有 signing helper（`ProjectExtensions.signingKey`，release/debug 共用，
+  不建平行实现）：
+  - 本地：`DEBUG_SIGN_KEY_FILE`（优先）/ `DEBUG_SIGN_KEY_PWD_FILE` / `DEBUG_SIGN_KEY_ALIAS` —— 全部为
+    文件路径或别名，**口令与密钥内容不经过命令行、shell 历史或属性文件**。
+  - CI：保持 `DEBUG_SIGN_KEY_BASE64` / `DEBUG_SIGN_KEY_PWD` / `DEBUG_SIGN_KEY_ALIAS`（同一 helper 的
+    BASE64 分支，不构成第二签名实现）。
+  - Release 侧 `SIGN_KEY_FILE/SIGN_KEY_BASE64/SIGN_KEY_PWD/SIGN_KEY_ALIAS` 行为与值**未变**；
+    `release-apk.yml` 与 D063 语义未变。
+  - `moqi-test-apk.yml` 的固定 debug 签名断言常量由旧 `41705BC9…` 改为 D064 指纹（`69734a4d` 定稿；
+    `5260dbc4` 曾记录一个随即废弃的探针指纹，密钥已重建）。
+- **证据：**
+  - 本地真实产品路径构建 `:app:assembleDebug`（addon pin `9b3448e6` detached，`BUILD_ABI=arm64-v8a`）→
+    BUILD SUCCESSFUL；产物 `org.fcitx.fcitx5.android-v0.1.3.7-14-g5260dbc4-arm64-v8a-debug.apk`
+    （已签名命名形态），SHA-256 `83d0430836cd8880c8d0974b867af256a37aafc1215e8d25a2bbbeb06da7c561`；
+    `apksigner verify --print-certs` 实测 DN 与证书 SHA-256 均等于上述 D064 身份 → **LOCAL_DEBUG_CERT = VERIFIED**。
+  - CI：SOURCE-CONFIGURED；**RUNTIME-PENDING OWNER ACTION**。本会话平台安全策略禁止读写 GitHub repository
+    Secrets（`gh secret list/set` 均被拦截），按 Phase D 要求停止于 secret 替换之前。
+    因此当前正式口径：`LOCAL_DEBUG_CERT == CI_DEBUG_CERT = NOT YET RUNTIME VERIFIED`。
+- **Owner 侧收口步骤（不要把任何值粘贴到聊天）：**
+  1. GitHub → `choicky/fcitx5-android` → Settings → Secrets and variables → Actions → 更新三个仓库
+     Secret（值在 owner 本机生成/复制）：
+     `DEBUG_SIGN_KEY_ALIAS` = `fusion-enhanced-debug`；
+     `DEBUG_SIGN_KEY_PWD` = 本机 `cat ~/.signing/fusion-enhanced-debug.pwd` 的内容；
+     `DEBUG_SIGN_KEY_BASE64` = 本机 `base64 -w0 ~/.signing/fusion-enhanced-debug.p12` 的输出。
+  2. `gh workflow run moqi-test-apk.yml --repo choicky/fcitx5-android --ref contribution/debug-signing-identity`
+     （或 owner 认可后由后续 agent 触发）。
+  3. 确认 “Verify the fixed debug APK signature” 步骤通过（其内建断言即 D064 指纹），下载 artifact 执行
+     `apksigner verify --print-certs`，与本地指纹逐字符相等 → 方可宣告 `LOCAL_DEBUG_CERT == CI_DEBUG_CERT = YES`。
+- **迁移（一次性）：** 已安装的 `.debug` 包若由旧 Android Debug 或 `CN=MoQi Debug CI` 签名，无法被新证书
+  原地升级；首次迁移需 uninstall 旧 `.debug` 包再安装新产物，此后本地↔CI Debug/Test 产物可
+  `adb install -r` 互覆（受常规 version/versionCode 规则约束）。**只影响 Debug/Test 包**；
+  `org.fcitx.fcitx5.android.fusionenhanced` 与 D058 Release 升级连续性不受任何影响。
+- **轮转政策：** Debug 身份轮转属例外而非常规；轮换须作成新决定并同步 workflow 断言常量与 owner 记录。
+- **Reopen conditions（仅此五项重开 D064）：** ① Debug 签名身份被有意轮转；② Debug 签名机制发生实质变化；
+  ③ Android 签名要求变化；④ 具体安全证据要求换钥；⑤ 源码改动破坏本地/CI 一致性。
+  **单个 agent 会话无法访问本地 Debug 私钥不构成重开理由。**
+- 本决定不声称 CI Debug 运行时验证已完成；该证据在 owner 完成 secret 替换并跑通 `moqi-test-apk.yml` 之前保持 PENDING。

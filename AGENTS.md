@@ -90,3 +90,6 @@ CI 只能作为 source review、actual diff review 和可用本地验证之后�
   `LOCAL_SIGNING = UNAVAILABLE_IN_CURRENT_SESSION`（正常、受支持状态），直接选择 CI fallback
   （`contribution/signed-rc-workflow` 的 dispatch+draft 路径），并以已记录 SHA-256 的同一产物做设备验收与
   晋升；不得反复尝试读取、导出或注入私有签名材料，也不得为此削弱任何安全约束。
+- Debug/Test 签名按 D064 执行：本地使用 `DEBUG_SIGN_KEY_FILE` + `DEBUG_SIGN_KEY_PWD_FILE`（只传路径，
+  口令与密钥内容不得出现在命令行、shell 历史、属性文件或输出中）；CI 继续使用 `DEBUG_SIGN_KEY_BASE64/PWD/ALIAS`
+  Secrets。D058 Release 身份与 Debug 身份永不互用。

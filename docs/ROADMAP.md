@@ -186,6 +186,12 @@ Phase 3 未定义独立的 "Exit Criteria" 小节（ROADMAP 中只有 Phase 2 �
 > （`DECISIONS.md` D063）；最小 workflow 改动位于 Android 分支 `contribution/signed-rc-workflow` @
 > `45000477`（自冻结点 `2ba3a999`，未 merge、未触发；冻结产品线分支不变）。D062 §4 签名门槛就此收口，
 > 下一步为产出一次 CI Signed RC 并执行既有 6 项设备清单。
+>
+> **D064 统一 Debug 签名身份 checkpoint（2026-10-05）：** 新永久 Debug 身份
+> `CN=Fcitx5 Fusion Enhanced Debug`（证书 SHA-256 `DC497182…A56A`）已建立并与 D058 完全分离；
+> 本地路径 FILE/PWD_FILE 机制已实测 VERIFIED（Android 分支 `contribution/debug-signing-identity` @
+> `69734a4d`，未 merge）。CI 侧断言常量已更新，运行时等值验证 **PENDING OWNER ACTION**（替换三个
+> `DEBUG_SIGN_KEY_*` Secrets 后重跑 `moqi-test-apk.yml`）。详见 `DECISIONS.md` D064。
 
 当前实现证据（历史索引）：
 
