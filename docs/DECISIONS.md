@@ -833,6 +833,26 @@ R8 `configuration.txt` 含该 keep 规则；`classes.dex` 中 `Offline/OnlineRec
 （2026-10-05 修订：本句原写“按 D025 的 `SIGN_KEY_*` 签名”，该签名前置已由 D058 supersede——fusionenhanced
 候选使用 D058 新固定身份，`SIGN_KEY_*` 消费机制不变。）最终状态 = RELEASE STATIC/BUILD VERIFIED + DEVICE RUNTIME PENDING。
 
+（2026-10-05 设备实证与边界修订）：上述 `maxActivePaths` 字段级修复的**静态判据不充分**。签名 release/minified
+APK（HEAD `b73dbcff`，v0.1.3.7-11，包名 `.fusionenhanced`）在 vivo X100 Pro 上**三个 Local ASR 全部失败**：
+Mic/Space 触发、Listening UI、真实波形均正常，失败发生在本地识别阶段（transcript commit 前）。FunASR Nano 决定性日志：
+`NoSuchMethodError: no non-static method Lcom/k2fsa/sherpa/onnx/OfflineRecognizerResult;.<init>(Ljava/lang/String;
+[Ljava/lang/String;[FLjava/lang/String;Ljava/lang/String;Ljava/lang/String;[F)V`，链
+`libsherpa-onnx-jni.so → OfflineRecognizer.getResult → LocalAsrEngines.funAsrNano → LocalAsrBackend.captureAndRecognize`，
+ART abort。根因：该 AAR `proguard.txt` 为 0 字节；native 用 `FindClass`+`NewObject` 按源名构造 result 类
+（`OfflineRecognizerResult`/`OnlineRecognizerResult`/`SpeechSegment`/`KeywordSpotterResult`/…），而这些构造函数在
+Kotlin 侧从不 `new`（仅 `getResult(stream).text` 取 getter），故 `-keepclassmembers { <fields>; }` 只保字段、未保 ctor，
+被 R8 当作死代码 shrink。修复（提交 `4e14cde9`）：将边界放宽为 `-keep class com.k2fsa.sherpa.onnx.** { *; }`
+（类 + 全部成员），维持“按包整体可靠、胜过随版本漂移的窄清单”的既有原则；minify/shrinkResources 保持开启，
+运行时逻辑/模型选择/provider 架构不变。重建 release APK 静态验证：签名者 SHA-256 =
+`A5:15:B7:4A:C4:C3:84:51:54:E1:7C:AD:D1:3D:02:75:BE:70:01:DD:CF:2B:97:2A:4F:2F:06:1A:FD:26:89:0C`（D058）；
+`configuration.txt` 含新 keep；`classes.dex` 中 `OfflineRecognizerResult.<init>` 以崩溃现场同一描述符仍在，
+`OnlineRecognizerResult.<init>(...)` 与 `maxActivePaths` 亦在，`usage.txt` 无 `OfflineRecognizerResult` 移除项；
+`libsherpa-onnx-jni.so`/`libonnxruntime.so` 等 native 库仍打包。历史证据不改写：此前“字段仍在”结论在其判据下成立，
+但其不足以覆盖 JNI 构造函数面。**状态 = 根因 VERIFIED + 修复 STATIC/BUILD VERIFIED + DEVICE RUNTIME PENDING**
+（新签名 APK 待 vivo X100 Pro 三引擎逐一复测 + Space 长按回归，见 `/tmp/fcitx5-d056-sherpa-jni-r8-device-test-plan.md`；
+任一引擎仍崩则保持 OPEN 采集新日志，不关闭 D056）。
+
 ## D057 — Android System ASR 运行时失败必须可见可诊断（vivo A/B 实证后的边界）
 
 **状态：CLOSED。** 源码 VERIFIED、测试 VERIFIED（330/12/0/0）、CI VERIFIED（run 37254123119
