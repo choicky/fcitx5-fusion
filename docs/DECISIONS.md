@@ -832,7 +832,18 @@ R8 `configuration.txt` 含该 keep 规则；`classes.dex` 中 `Offline/OnlineRec
 
 ## D057 — Android System ASR 运行时失败必须可见可诊断（vivo A/B 实证后的边界）
 
-**状态：Accepted（源码/测试 VERIFIED；设备 UX 观察 PENDING）。**
+**状态：CLOSED。** 源码 VERIFIED、测试 VERIFIED（330/12/0/0）、CI VERIFIED（run 37254123119
+@ `b73dbcff` SUCCESS）、设备 VERIFIED（见下方 2026-10-05 vivo X100 Pro 实测）。
+
+设备实测（2026-10-05，vivo X100 Pro，安装 `b73dbcff` 的 CI Test APK（run 37254123119），
+vivo Copilot 为当前激活 RecognitionService）：
+1. 触发 Android System ASR → 显示新的用户可见失败提示且包含错误码 5 → PASS；
+2. 失败后语音正常回到 Idle，输入法保持可用、可再次发起语音输入 → PASS；
+3. `session-audit.log` 记录到预期的仅元数据系统错误 `class=system code=5` → PASS。
+根因表述维持不变：同一条历史-good L0 二进制（`fb3b0c26`）在 vivo Copilot 服务下
+ERROR_CLIENT(5) BAD、仅切换 Android RecognitionService 到 Google 后 GOOD、期间无任何
+Fcitx 代码改动 → 未证明存在 Fcitx 源码回归；RuntimeUsable 与 Configured/Selectable/
+Available 分离；Redmi error-9 仍是独立历史故障形态，不得混同。
 
 设备实证（vivo X100 Pro，同一条历史-good L0 二进制 `fb3b0c26`，无任何 Fcitx 代码改动）：
 系统 `voice_recognition_service = com.vivo.ai.copilot/.framework.wakeup.CopilotRecognitionService`
