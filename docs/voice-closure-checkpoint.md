@@ -80,7 +80,7 @@
 **B. 发布前宜再验（SHOULD，均为设备/回归,非源缺陷）：**
 - 一次有界的全量发布回归 pass：三 Local 引擎 + Managed + System 失败/恢复 + External 交接 + Mic & Space + 语音后正常 Pinyin/MoQi 输入 + Dictionary Manager + Toolbar（D047/D048/D049 线）在目标 release APK 上。
 - release/minified 构建 + D058 指纹核验 + JVM 单测在最终 release HEAD 上复跑（本批未跑 CI;`4e14cde9` 仅 .pro,不改 JVM 行为,基线 `b73dbcff` CI `37254123119` SUCCESS 覆盖逻辑面）。
-- 首发产品口径核对：是否捆绑/内置模型（当前权重不内置 APK,下载走 fixed upstream）;许可证据（X-ASR 归档 NOTICE/转换来源、`distributionApproved` 默认 false）若首发即分发则需收口——**这是分发许可项,不是 Voice 行为阻断项**。
+- 首发产品口径核对：是否捆绑/内置模型（当前权重不内置 APK,下载走 fixed upstream）;许可证据（X-ASR 归档 NOTICE/转换来源）——**已由 D059 收口为四项权利分离**：① bundle、② mirror/re-host 项目主动不做且许可证据不足以肯定授予再分发；③ 应用内 fixed-upstream 下载入口 = 所有者批准（D050）,`downloadOffered` 从未依赖旧 `distributionApproved`；④ manual import 属用户自身行为。Android 侧陈旧文案（原 `distributionApproved`/“research only”）已重命名为 `licenseAuditComplete` 并改为如实的“audit pending”披露。**分发许可项已定,非 Voice 行为阻断项；首发下载 UI 判定 GO。**
 
 **C. 可安全推迟到首发之后（SAFE TO DEFER）：**
 - 自建服务器设备矩阵、真实云多 provider 设备矩阵、Local 长语音/性能证据、D035 fallback 设备实测、Model Manager 设备明细。

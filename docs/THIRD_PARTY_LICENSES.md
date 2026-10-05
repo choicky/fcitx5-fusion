@@ -46,6 +46,16 @@
 - 两个 X-ASR 保留上游 Apache-2.0 声明；Nano 保留 Apache-2.0、FunASR 模型协议 v1.1 和署名/模型名称证据。
 - 精确来源、revision、URL、SHA-256、archive LICENSE/NOTICE 与转换来源缺口继续逐项记录；本段是所有者确认的项目发布口径，不等同于独立法律审计，也不把待补证自动写成 APK 发布阻断。
 
+### Four-rights closure (D059, 2026-10-05)
+
+上表逐模型许可证据不变；D059 在此之上把“分发”拆成四项彼此独立的权利并给出当前三模型的权威答案：
+① bundle 进 APK = 项目主动不做（许可证据不足以肯定授予再分发）；② mirror/re-host = 项目主动不做；
+③ 应用内 fixed-upstream 下载入口 = 所有者批准（D050），当前 release 已实际提供；④ manual import = 用户
+自身合法取得的文件，非项目分发行为。“独立法律审计是否完成”不 gate ③，仅作如实 audit-pending 披露。
+Android 侧陈旧字段 `distributionApproved`（原唯一作用是给产品模型显示“research only”横幅,从不 gate 下载）
+已重命名为 `licenseAuditComplete`。首发下载 UI 判定 **GO**。reopen conditions 见 `docs/DECISIONS.md` D059；
+除其列出的情形外不重开 A/B/C 研究阶段的分发结论。
+
 正式发行前至少完成：
 
 1. 从最终依赖/SBOM 反查实际版本与 artifact；

@@ -946,3 +946,70 @@ Fusion Enhanced 密钥的**设备外独立备份 = USER-CONFIRMED COMPLETE**；�
 约束：**未来所有 Fusion Enhanced 正式 Release 必须保持该签名身份**（覆盖升级连续性的前提），
 除非另行设计并批准正式的 Android 签名密钥轮换程序；`.moqi` 与 `.fusionenhanced` 是两个不同
 App（D054），二者签名身份自此永久分离。
+
+## D059 — Local ASR 模型分发/下载资格收口（four-rights closure；final closure of the A/B/C research-phase distribution record）
+
+**状态：Accepted（2026-10-05）。本条收口 D037/D045/D050 中关于“研究/测试构建”分发口径的全部遗留，
+是后续 agent 关于当前三模型分发资格的单一权威记录；除下方 reopen conditions 外不得重复调查。**
+
+### 背景（实证，非推测）
+
+当前 Local 三模型（X-ASR 离线 INT8、X-ASR 960 ms 流式 INT8、FunASR Nano）已由 D050 确立为
+**产品模型集**：`production=true`、`recommendationEligible=true`，debug/release 均从**作者/发布方
+自己的固定公开上游**按需下载，项目不托管、不镜像、不内置权重。Android 目录在
+`LocalModelInstaller.kt` 曾携带旧 A/B/C 研究阶段（D037）遗留的两个布尔：
+- `distributionApproved`：经核查**从不 gate 下载**（下载 gate 是 `downloadOffered(BuildConfig.DEBUG)`），
+  唯一作用是 `VoiceSettingsFragment` 追加一条 “Research/private testing only; public in-product
+  distribution approval is not established.” 的横幅。因三模型都沿用默认 `false`，**release 构建会对
+  正式发布的产品模型错误显示“仅供研究/个人测试”**，与 D050 直接矛盾。
+- `testBuildDownloadOnly`：三模型都未置 `true`，是“退役 model A”提交 `81eb115d`（2026-10-01，早于
+  D050）留下的**当前无效**残留字段。
+
+结论：`distributionApproved=false` **不是**当前模型的“真实资格歧义”，而是研究阶段的**语义过载 +
+陈旧文案**——它把“独立许可证/来源审计是否完成”与“产品内下载是否获批”混为一谈。控制器文档
+（D050、`THIRD_PARTY_LICENSES.md` §“Current distribution interpretation”）早已把这两件事分开记录，
+Android 侧文案落后于该共识。
+
+### 四项法律上彼此独立的权利（三当前模型逐项一致）
+
+| 权利 | 当前三模型的权威答案 | 依据 / 代码事实 |
+|---|---|---|
+| **① 内置权重进 APK（bundle）** | **NOT APPROVED（项目主动不做）** | D050“权重不内置 APK”；无 build 路径嵌入模型。bundling 会使项目成为权重的再分发者，而上游许可证据（archive 无 LICENSE/NOTICE、Nano 导出源无 LICENSE、训练来源未核）不足以肯定授予该再分发。 |
+| **② 项目镜像 / 重新托管（mirror / re-host）** | **NOT APPROVED（项目主动不做）** | D050“项目不托管、不镜像”；`downloadBase`/`archiveUrl` 均指向上游原站（huggingface.co / github.com k2-fsa release），无项目侧托管。 |
+| **③ 应用内固定上游下载入口（in-app upstream download）** | **APPROVED（本条要交付的产品能力）** | D050 所有者确认的发布口径；`downloadOffered(testBuild=false)=true` 对三模型成立（`LocalModelInstallerTest` / `XAsrModelTest` 已 pin）。用户直接从作者公开上游按其自身条款拉取，项目不转发、不存储权重。 |
+| **④ 手动导入（manual import）** | **PERMITTED（非项目分发行为）** | `ModelAction.Import` 无 gate；`ModelJobs.import` 接受用户自选文件、按名匹配并以 pinned SHA-256 校验。用户对自己合法取得的文件负责，项目不为此作分发决定。 |
+
+“独立法律审计是否完成”不属于上述任何一项的批准，也不 gate ③；它是一个**如实披露的未完成事项**，
+保留在模型详情文案中（见下），既不写成审计 PASS，也不当作 ③/发布线的笼统阻断项（D050）。
+
+### Android 元数据更正（最小可维护，非新合规框架；Android `2aa3a999` 于 `contribution/fusion-enhanced-identity-naming-r8`）
+
+- `distributionApproved` → 重命名为 **`licenseAuditComplete`**，语义即“独立许可/来源审计是否完成”，
+  三模型仍默认 `false`（不猜测、不声称批准），并在文档中明确它**不 gate 下载**；
+- 详情横幅文案 `voice_model_research_status` → **`voice_model_audit_pending`**：如实说明“从作者固定
+  公开上游获取、本应用不内置也不镜像、上游许可与来源证据尚未经独立审计”，不再把产品模型称为
+  “仅供研究/个人测试”；
+- FunASR Nano 的 `limitation` 去掉陈旧“Research model;”前缀，保留 34–39 s 空 final 实测限制；
+- `testBuildDownloadOnly` 保留为**保留字段**（当前无条目使用），注释由“描述 model A 现状”改为
+  描述机制；`LocalModels.kt` / `ModelRows.kt` 中把机制说成 model A/D037 现状的注释同样更正。
+- **未改动**：任何 URL、revision、asset id、SHA-256、size、条目顺序、下载/导入运行时行为。
+
+### 最终决定
+
+首个 Fusion Enhanced Release 的应用内模型下载入口交付的是权利 ③，而 ③ 已由 D050 明确批准且当前
+release 构建已实际提供（`downloadOffered` 从未依赖 `distributionApproved`）；④ 是用户自身行为；①②
+项目主动不做且许可证据不足以肯定授予再分发，与 ③ 无关。故本项不阻断发布线。
+
+**LOCAL MODEL DOWNLOAD UI FOR FIRST FUSION ENHANCED RELEASE: GO**
+
+### Reopen conditions（仅以下情形才重新调查；否则四项答案持续有效，不得重翻 A/B/C 研究阶段结论）
+
+1. 某模型的 artifact/revision/URL/SHA-256 改变（上游字节不同）；
+2. 上游许可证或授权声明改变、或被进一步澄清；
+3. 下载入口改指向非作者原主的宿主（触及权利 ②/镜像）；
+4. 项目开始镜像 / 重新托管权重（改变 ②）；
+5. 项目开始在 APK 内置权重（改变 ①）；
+6. 出现与当前记录矛盾的**具体**法律证据（原始 LICENSE/NOTICE、导出/训练来源链等）。
+
+逐模型许可证据细节（作者声明、archive 缺 LICENSE/NOTICE、导出/训练来源缺口、pinned id/hash）继续以
+`docs/THIRD_PARTY_LICENSES.md` 为准；本条只裁定四项权利与 UI 发布资格，二者不互相覆盖。
