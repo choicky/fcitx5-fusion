@@ -1311,3 +1311,85 @@ RC.2、不建 tag / GitHub Release / PR、不触发签名构建；未读取、�
   （AGENTS 分类规则不变）。
 - **Reopen conditions：** 仅当已发布产物被证实存在具体缺陷、签名/供应链完整性被证伪、或 owner 明确决定
   另行发布新版本时，按 AGENTS CLOSED EVIDENCE RULE 重开对应事项。
+
+## D069 — Architecture A 中英混输收口：Master Switch 撤销、产品化裁定集合、Auxiliary Filter 融合回归与发布边界
+
+**状态：Accepted（2026-10-06）。** 本条是混输线在 fusion 权威文档中的首次正式记录（此前 `docs/` 无任何
+MixedInputEnabled/混输条目，grep 已核验）。命名澄清：本条 "Architecture A" = 中英混输架构，**区别于**
+D027 的 Voice Architecture A。本任务未 merge PR #3、未创建 tag / GitHub Release、未触碰 D060/D066/D068
+发布边界（addons 发布 pin 仍为 `47401b04`）；LibIME 全程处于修改边界之外、未被改动；未读取、打印或修改
+任何私有签名材料（D058/D064 身份冻结不变）。
+
+- **SUPERSEDE（显式撤销）：** 混输设计初期“混输由 `MixedInputEnabled` master switch 门控”的要求自本条起被撤销：
+  Architecture A 是 Pinyin 与 Shuangpin 的常规能力，**不设 master switch**；英文候选参与只由唯一门控
+  `SpellEnabled`（默认 ON）决定；classical ISpell 单词 sidecar 已退役，同一配置永远不可能喂出两条独立英文
+  管线（实现 `fd102b7`）。sidecar 的 upper-raw 行为由 EnglishArcOracle 大小写保全规则吸收：用户键入的大写
+  权威，全小写 span 采用 canonical 显示。
+- **PRODUCT DECISIONS（产品化裁定，逐项对应实现提交）：**
+  - **classical-derived pure-Han coverage：** 放置策略的中文覆盖判定读取 classical decoder 的纯 Han 全 raw
+    读数，而非 mixed 有界 pool 内部——保证大写快打产品路径（Apple/iPhone）保持领先（`6a0e951` + `fd102b7`
+    结构放置策略；`fd102b7` 同时移除被证伪的 `canTileRawFully()` 探针：LibIME parser 可 tile 任意 raw，
+    该探针不携带必要性信号）。
+  - **English 3-byte emission floor：** `EnglishArcOracle.minSpanLength = 3`；1/2 字母 SCOWL 条目与拼音音节
+    重合，会令 beam 把任意 raw 铺成字母汤。floor 等于 §9(b)/correction oracle 证据下界；词库条目本身保留
+    （dictionary API 不受影响）。
+  - **tier-ordered completions：** `EnglishLexicon::completions` 按词频 tier 选最优条目（tier 内短者优先）并
+    受有界扫描约束，取代首个字典序邻位，与 §13 tier-driven completionEvidence 一致（`6a0e951`）。
+  - **whole-span ranker bonus：** UnifiedRanker 新增 `wWholeSpan`（0.15）——单 arc 全 span 读数应胜过碎片化
+    tiling；演示反转 0.4916 vs 0.3986（"iphon"），任何 wCost 取值都无法在不破坏 cost ordering 的情况下修复
+    该反转，故须结构 bonus 而非调权（`6a0e951`）。
+  - **widening fallback：** top-K 路径全部解析失败时 `MixedEngine::compute` 以扩大的 survivor set 重试一次，
+    防止“长、不可解析但低成本”的中文 arc 清零整个 mixed 层（`6a0e951`）。
+  - **VAsQuickphrase reservation：** 产品面 corpus harness 运行前显式关闭 VAsQuickphrase——其开启时 `v` 起头
+    raw 永远不会进入 pinyin 组合；这是 harness 前置条件记录，不改任何产品行为（`6a0e951`）。
+  - **English-learning-on-commit seam：** MixedCandidateWord 携带其计算所依 raw span；`select()` /
+    `selectUpToSegment(k)` 经 `PinyinEngine::noteMixedEnglishSelection` 把已确认英文段 span 通过共享
+    `shouldLearn` gate 折入 English user lexicon，并以 `StandardPaths::safeSave` 崩溃安全持久化（写入被拒时
+    显式记错）；partial selection 只训练已冻结前缀（`8e7ad01`）。**Harness 发现（如实记录）：** Instance
+    harness 的 `setupTestingEnvironment` 按设计跳过 user paths，user-path 磁盘断言在 harness 内结构性不可行；
+    生产文件 round trip（`pinyin/mixed_english_user.tsv`，字段完整）改由 testenglishuserlexicon check #14 经
+    safeSave + reload 钉住。设备侧持久化维持 **NOT RUN**。
+- **AUXILIARY FILTER 融合回归（本轮修复 + 下游验证分支）：**
+  - `c5b78c9`：Auxiliary Filter 是 post-CandidateList UI 能力，必须只匹配组合前沿。`filterByStroke` 原扫描
+    候选全部字符，mixed 候选可越过内嵌英文 surface 靠后部汉字存活、英文前沿候选可同样匹到尾部汉字；现扫描
+    止于第一个无笔画映射字符（Han frontier）：纯 Han 候选保留原任意字符匹配，mixed 候选只按首部 Han run
+    过滤，英文前沿候选无可匹配 run（与 MoQi 首字符锚一致；MoQi 从未有此回归）。同提交修复 Backspace 清空
+    buffer 后 `inStrokeFilterMode` 残留吞掉下次触发、二次调用失效的缺陷。
+  - 下游融合回归分支 `feature/mixed-moqi-fusion-regression`（fork 仓库，仅验证，不并入发布线）：`62f233c`
+    merge moqi 产品线 `0220285`（MoQi Auxiliary Filter 并入统一 `AuxiliaryFilter{Disabled,Stroke,MoQi}`
+    引擎 API；默认 `Stroke` 保持既有行为；触发键配置路径仍为 `FilterByStroke` 不变；MoQi 模式接受 a–z 入
+    buffer）；`fa4c0d4` 在真实产品路径闭合 {Disabled,Stroke,MoQi} × {Pinyin,Shuangpin} × mixed 全矩阵：
+    frontier keep/bait、二次调用、backspace 退出、翻页、过滤选中 commit。**Disabled 单元格断言落在
+    tab-action 面**（无「笔画/墨奇」action + mixed 列表完整），原因：Disabled 下 active composition 上的
+    raw grave 落入 upstream 标点/commit 回退（布局无关的既有行为），按按键断言会误测该回退。Ziranma 码取自
+    LibIME `171edcf` SPMap_C_Ziranma 钉值（配=`pz`、件=`jm`）；MoQi 码表 `6d8ba8f1` 断言
+    `66deab4a…e792` 不受影响；测试语法补记：`Key("Escape")` 或 `Key(FcitxKey_Escape)` 有效，小写
+    `"escape"` 无效；testfrontend commit 期望队列是严格 FIFO，任何意外 Commit 即 abort。
+- **PINS & EVIDENCE（final state）：**
+  - addons `feature/mixed-input-arch-a` @ `c5b78c9`，base = upstream `61474bd3`，领先 24 个提交；累计 diff
+    50 文件 +103,271/−99（`/tmp/mixed-input-final.diff`；融合回归 diff `c5b78c9..fa4c0d4` 17 文件
+    +1,382/−105；`/tmp` 任务 artifacts 已于本轮全部按最终实际状态重生成）。
+  - PR #3 → `fcitx/fcitx5-chinese-addons@master`：**OPEN、未 merge**（不得为省事而 merge）；终态
+    gcc / clang / clang-format / CodeQL 全绿（run `37422090686`）。
+  - Android 集成分支 `feature/mixed-input-arch-a` @ `e3cec1d8`：gitlink 由过期 `e3d8f0c` 更新为 `c5b78c9`。
+  - 最终 Debug APK `org.fcitx.fcitx5.android-v0.1.3.8-rc.1-8-ge3cec1d8-arm64-v8a-debug.apk`，85,771,636 B，
+    SHA-256 `d7d9635f75e22fcfbd01d89be628939901e83cea340ae5d8337b394c78a6ef5f`；D064 Debug 签名（apksigner
+    DN `C=CN, O=choicky, CN=Fcitx5 Fusion Enhanced Debug`，证书 SHA-256
+    `dc497182c5486634fd68e571b878a33ecea68bdad205c3d61aed09b98392a56a` == D064 权威值）；包名
+    `org.fcitx.fcitx5.android.debug`、versionCode 112；内嵌 `english_lexicon.tsv` SHA-256
+    `defcefe35b4ab00a9f262fd3f0e8bfa62a3aee66a2b26cb3711f5e7de9ec6daf` 与 `c5b78c9` 源逐字节一致；
+    `lib/arm64-v8a/libpinyin.so` SHA-256 `24d485a73e9ed83ae3a6d0f23aebf7a984fe0c807bf466d02a826cd08fe94b5a`。
+    D058 Release 身份与 D064 Debug 身份互不混用（不变量）。
+  - Gate 3：`localhost/fcitx5-upstream-validation:gcc` 容器内两棵树（纯 arch-a 与融合回归分支）ctest
+    **19/19 PASS**；benchmark（`/tmp/mixed-input-benchmark.md`）mixed p50/p95/p99/max =
+    538.6/1955.8/1955.8/1955.8 µs，fast-path p50 81.8 µs，production pipeline compute p50 4015.8 µs，
+    与 3fbd72b 记录复跑偏差 <2%。
+  - **诚实边界：** 设备 smoke test = **NOT RUN**（本环境无设备/模拟器，不得记 PASS）；Android 分支无 CI
+    wiring（`test-apk.yml` 不含该分支且其 `ADDON_COMMIT` 硬编码 `47401b04`），本地 gradle 构建 + 逐字节
+    产物核验是本线诚实的 Android 验证路由。
+- **发布边界：** 本线**不改变** D068 已发布首版；未来并入产品线需独立采纳决定 + 完整设备验收与新的
+  D063/D064 签名产物流程。
+- **Reopen conditions：** 仅当 (a) 新设备/真实产品路径证据与上述断言矛盾，(b) PR #3 上游评审要求变更
+  placement / learning / filter 合同语义，(c) owner 决定并入发布线（届时按 D063/D064 走新 pin 与新签名
+  产物）时重开对应分项。“还能测更多”（更大真实语料、长组合扩展矩阵、设备覆盖）属 VALIDATION DEBT，不构成重开
+  理由（AGENTS 分类规则不变）。

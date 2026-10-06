@@ -528,6 +528,26 @@ ASR
 
 Android 架构稳定后再评估 Windows、Linux、macOS、iOS，并保持 Trigger / Configured Implementation 分离。
 
+## Phase 9 — 中英混输 Mixed Input（Architecture A）
+
+**状态：实现与收口 COMPLETE（2026-10-06，D069）；设备验证 NOT RUN；未并入发布产品线**
+
+命名澄清：本 Phase 的 “Architecture A” 指中英混输架构（unmodified LibIME 之上的独立混输管线），与
+D027 的 Voice Architecture A 无关。
+
+- 实现位于 addons fork `feature/mixed-input-arch-a` @ `c5b78c9`（base upstream `61474bd3`，24 提交，
+  PR #3 OPEN 未 merge，gcc/clang/clang-format/CodeQL 绿 run `37422090686`）；LibIME 未修改。
+- 产品线裁定（撤销 MixedInputEnabled master switch、SpellEnabled 单一英文门控、ISpell sidecar 退役、
+  emission floor / tier completions / whole-span bonus / widening fallback / classical-derived placement /
+  learning-on-commit seam / auxiliary filter frontier anchoring 等）全部记录于 D069。
+- Android 集成分支 `feature/mixed-input-arch-a` @ `e3cec1d8`（gitlink → `c5b78c9`）；最终 Debug APK
+  SHA-256 `d7d9635f…ef5f`（D064 签名，逐字节核验见 D069）。
+- 下游融合回归分支 `feature/mixed-moqi-fusion-regression` @ `fa4c0d4`：{Disabled,Stroke,MoQi} ×
+  {Pinyin,Shuangpin} × mixed 全矩阵产品路径 19/19 PASS；仅验证，不并入发布线。
+- **剩余（VALIDATION DEBT，非 blocker）**：设备 smoke test（NOT RUN）、设备侧 user-lexicon 持久化、
+  更大真实语料/长组合扩展矩阵。并入首发产品线需 owner 采纳决定 + 完整设备验收 + 新 D063/D064 签名产物
+  流程；发布 pin `47401b04`（D066/D068）不因本 Phase 改变。
+
 ## 工程节奏
 
 - 修改前核对源码/API/现有测试；
@@ -555,6 +575,9 @@ paired punctuation 的 formatter-only repair 暴露出验证状态必须分层�
 - Dictionary、Voice/ASR 和 Toolbar 已有实现批次；剩余真机回归、长语音/下载控制与 Toolbar 冻结审计按各自 checkpoint 继续，不把未测项目记为 PASS。
 - 下一步入口：Toolbar/Voice Settings 真机回归与缺陷收口、Local 长语音/下载控制设备明细与 NOTICE/转换来源证据补齐（**下载 UI 资格本身已由 D059 定为 GO,非阻断项**）、Managed Cloud/Self-hosted checkpoint；LLM 仍为后续事项。
 - MoQi 上游贡献不在当前下一步：PR #300 已关闭并保留 `contribution/moqi-upstream-v2` 作为验证参考；不要为上游接受度继续重设计 MoQi 表格下载或发布流程。
+- （2026-10-06 新增，见 Phase 9 / D069）中英混输 Architecture A 收口 COMPLETE：addons `c5b78c9`（PR #3 绿、未 merge）、
+  Android 集成 `e3cec1d8`、融合回归矩阵 `fa4c0d4` 19/19 PASS；剩余仅设备 smoke / 持久化 / 扩展语料类 VALIDATION DEBT；
+  不改变 D068 首发发布边界（pin `47401b04` 不变），并入产品线需 owner 采纳决定。
 
 ### Strategy 4 上游贡献边界（2026-10-04）
 
