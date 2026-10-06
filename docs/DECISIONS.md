@@ -1324,7 +1324,9 @@ D027 的 Voice Architecture A。本任务未 merge PR #3、未创建 tag / GitHu
   Architecture A 是 Pinyin 与 Shuangpin 的常规能力，**不设 master switch**；英文候选参与只由唯一门控
   `SpellEnabled`（默认 ON）决定；classical ISpell 单词 sidecar 已退役，同一配置永远不可能喂出两条独立英文
   管线（实现 `fd102b7`）。sidecar 的 upper-raw 行为由 EnglishArcOracle 大小写保全规则吸收：用户键入的大写
-  权威，全小写 span 采用 canonical 显示。
+  权威，全小写 span 采用 canonical 显示。（该句中被后续证据推翻的部分：以 canonical 显示**取代**字面形态；
+  D071 裁定候选集须同时保留 canonical 显示与用户键入的字面 surface，canonical 可排位在前。仍有效的部分：
+  用户键入大写权威、默认显示形态为 canonical。）
 - **PRODUCT DECISIONS（产品化裁定，逐项对应实现提交）：**
   - **classical-derived pure-Han coverage：** 放置策略的中文覆盖判定读取 classical decoder 的纯 Han 全 raw
     读数，而非 mixed 有界 pool 内部——保证大写快打产品路径（Apple/iPhone）保持领先（`6a0e951` + `fd102b7`
@@ -1448,3 +1450,52 @@ learned reranker / neural boundary / Scheme 2。
   （须重跑 B/D 组而非加词表）；(d) owner 采纳 learned reranker 提案时按 §51.A+ 证据门重开，
   本条同时记录 **A+ learned reranker：本轮不需要（INSUFFICIENT EVIDENCE 状态解除——确定性的
   有界插入类已在固定语料上闭合 ranking error，未出现必须依赖学习模型才能达标的案例）**。
+
+## D071 — Canonical/字面双形态共存与 Android 集成重新基线（Canonical+Literal Coexistence & Android Re-baseline）
+
+**状态：Accepted（2026-10-06）。** 本条 (1) **部分 supersede D069**：全小写 span 的 canonical 显示不再
+以淘汰用户字面 surface 为代价——候选集必须**同时**包含 canonical 显示与字面形态（canonical 可排位在前，
+如 `chatgpt → ChatGPT(rank 0) + chatgpt`）；(2) 修正 Architecture A 的 Android 集成基线与 addons 集成
+head；(3) 固化真机现实差距的调查结论与验证层级。不改变 D070 的放置类、护栏与分数不可比禁令。
+
+- **真机证据与根因（device-acceptance APK，addons `57d72c2` pin）：**
+  - 观察 A（Auxiliary Filter Disabled/Stroke/MoQi 配置入口消失）：非前端缺陷。APK 字符串取证
+    （`libpinyin.so` 中 `AuxiliaryFilter` 出现 0 次、assets 无 moqima 表）+ 谱系审计证明
+    `feature/mixed-input-arch-a` 的纯 arch-a 分支自上游 master 分叉，**不含量产 AuxiliaryFilter/moqima
+    融合线约 53 个提交**；Android 设置页是 fcitx5 通用 config 渲染，schema 里没有的选项不会显示。
+    正确集成 head 是 `feature/mixed-moqi-fusion-regression`（D070 PINS 记录的 `06c9afd`，
+    = moqi 线 `0220285` + arch-a 收口，且内容覆盖发布 pin `47401b04`——其净效果一行已在树内）。
+  - 观察 F（首次打开 toolbar 只有 Tools+Hide）：Android arch-a 分支 fork 于 `531e80b9`，早于 rc.2 线的
+    `f2a64da1 fix(toolbar)`（IdleUi 构造页 = 逻辑默认展开态）。属**陈旧基线回归**，非重实现事项；
+    以 merge（`e1c52628`）保留双历史地 bring-in，不重写。
+  - 观察 E/C（真机中英混输不可用、macos 在 Pinyin 模式表现为 "ma cos"）：**native 同码复现失败**。
+    用产品 pin 的 libime `ecd2379`（1.1.16-3）在容器内全新 build addons `57d72c2` 跑固定语料，
+    与容器 libime 1.1.17 结果**逐行相同**（A 组 rank 0、C mixed rank 0、failures=0），数据文件
+    sha256 逐字节一致（sc.dict `38b9ca9a…`、zh_CN.lm `3588b394…`、english_lexicon `defcefe35…`）⇒
+    libime 版本翻转假设被否定；差距定位在 **Android runtime 层**（frontend/引擎状态），列为
+    device-only 诊断项与 Android integration FAIL 的残留根因，未经真机诊断日志
+    （raw/SpellEnabled/mixedEngine 可用性/arc 数/pool size，一个失败用例）不得调下游排序。
+  - 观察 D（ai/an/pin/win/long/game 未见英文）：对照冻结语料合同逐项为**已接受行为**（B 组保守放置），
+    非缺陷，不改。
+- **实现（addons `feature/mixed-moqi-fusion-regression` head `dd81e1b`）：** `EnglishArcOracle` 在
+  all-lowercase canonical 重拼写分支追加**并行 literal arc**（同 span、`resolvedOutput = 用户字面 span`），
+  复用 segmentation 既有 parallel-arc 机制（distinct `sourceLocalRank`）；provenance 仍为 Canonical 以保持
+  ranker 特征对等（非分数特例），boundaryConfidence 0.90<0.95 仅用于打破 cost tie、保证 canonical 显示
+  确定性地排在字面之前。composedText 去重天然保留两个 surface；`isBoundedInsertionClass` 判据不变，
+  字面 arc 同判据进入插入类；**无词表、无逐词规则**。
+- **语料门扩展（属性优先）：** group A 同一次 bulk 扫描分别测 canonical 与 literal rank，断言共存
+  （literal 缺失=FAIL）与排序（literal 不得先于 canonical）；mixed 用例 `wodakaigithub` 断言
+  `喔惮岂github` 可达。AFTER（`dd81e1b`，产品 libime ecd2379 全新 build）：A 全部 rank 0 +
+  literalRank 1×6、`C github rank=1`、`RANKCORP SUMMARY failures=0`、MIXEDCORP 7/7/1.000/0、
+  ctest 19/19、clang-format 与 `git diff --check` 干净。
+- **验证层级（harness gap，§8）：** `testpinyin` 是 **native core/product-path 测试**，不是 Android E2E，
+  文档与报告不得称其为 Android E2E；三层级为 native corpus gate（addons CI + 本条 product-libime 复跑）
+  → Android CI 构建/单测/JVM 门 → 真机 device acceptance（仅此层可判定观察 E 的 runtime 根因）。
+  最小自动化回归门=上述前两层；第三层以 §12 设备清单为准。
+- **集成后 PINS：** Android `feature/mixed-input-arch-a` = merge `e1c52628` + gitlink `fa095815`
+  （addons `dd81e1b`）+ workflow `fb9f16d5`；addons 融合回归 head `dd81e1b`（父 `06c9afd`）。
+  Toolbar 首显不变量的自动覆盖维持现状（rc.2 已接受的 `f2a64da1` + CI 运行的 `ToolbarActionTest`），
+  不在本条为可测性重构 IdleUi；首显正确性归 device checklist。
+- **Reopen conditions：** (a) 真机诊断日志与 arc/rank 层结论矛盾；(b) beam topK 截断使某些产品路径
+  literal 不可达（需语料证据，不加词表）；(c) 上游 PR #3 评审要求改变双形态语义；(d) 观察 E 的
+  Android runtime 根因确诊后若要求修改 core 放置策略，须重跑固定语料而非局部补丁。
