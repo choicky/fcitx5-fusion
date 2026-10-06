@@ -587,6 +587,14 @@ paired punctuation 的 formatter-only repair 暴露出验证状态必须分层�
 - （2026-10-06，D070）混输排名终局修正 COMPLETE：blanket classical-coverage 放置规则替换为有界跨源插入类，
   `chatgpt`/`macos`/`openwrt`/`libime` 在真实产品路径全部 rank 0，MIXEDCORP MRR 1.000，两棵树 ctest 19/19；
   addons head `57d72c2`（PR #3 仍 OPEN 未 merge），发布边界与 VALIDATION DEBT 分类不变。
+- （2026-10-06，D071）Architecture A Android 现实差距调查：首个 device-acceptance APK（addons pin `57d72c2`）
+  的真机矛盾定位为**集成基线错误而非 core 缺陷**——aux filter UI 缺失=纯 arch-a 线不含量产 AuxiliaryFilter/moqima
+  融合线（pin lineage 错），toolbar 首显回归=分支缺 rc.2 `f2a64da1`（fork 过早）。已修正：Android
+  `feature/mixed-input-arch-a` merge rc.2 baseline（`e1c52628`）+ addons gitlink 改指融合 head `dd81e1b`
+  （= `06c9afd` + canonical/字面双形态共存）；native A/B 用产品 pin libime `ecd2379` 复跑语料与容器 1.1.17
+  逐行一致 ⇒ 真机混输失败为 **Android runtime 层差距**，device-only 诊断项，未确诊前不调下游排序。
+  **状态：Architecture A native/core PASS；Android integration 重基线完成、待新 APK 真机复测；device
+  acceptance FAIL→UNDER RETEST；Release readiness BLOCKED（发布 pin `47401b04` 不变）。**
 
 ### Strategy 4 上游贡献边界（2026-10-04）
 
