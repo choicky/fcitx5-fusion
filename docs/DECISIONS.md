@@ -1280,3 +1280,34 @@ RC.2、不建 tag / GitHub Release / PR、不触发签名构建；未读取、�
 - **Reopen conditions：** 仅当 (a) 未来明确决定恢复 D051 并纳入首发（需 runtime PoC + 新裁定）、(b) pin
   `47401b04` 被证明与 upstream 标点基线或 MoQi 断言不一致、(c) RC.2 设备验收产出 Toolbar/MoQi/词库的具体回归
   证据时，重开本条相应分项。“还能测更多”不构成重开理由（D060 §7 分类规则不变）。
+
+## D068 — 首个 Fusion Enhanced 正式发布（RC.2 精确产物晋升）
+
+**状态：Accepted / CLOSED（2026-10-06）。** 本条只记录验收与发布事实；不重开、不修改 D060–D067 任何冻结边界或裁定，历史条目全文保留。
+
+- **Owner 设备验收（owner 提供，本任务未重跑任何设备测试、未重开 D066/D067 调查）：** RC.2 DEVICE
+  ACCEPTANCE = **PASS**，D066/RC.2 清单全部 **8 项 APPROVED DEVICE CHECKS = PASS**；FINAL RELEASE = **GO**。
+- **发布方式 = 精确产物晋升（D063 不变量 `device-tested == published == ACCEPTANCE_APK_SHA256`）：** 仅将
+  既有 GitHub Draft `v0.1.3.8-rc.2`（release id `403830061`）置为 `draft=false` 发布。**未** rebuild、
+  **未** 重跑 release build、**未** resign、**未** 替换/上传/改动资产、**未** 新建 RC/tag、**未** 移动 tag、
+  **未** 触碰 RC.1（draft id `403658765` 维持 REJECTED 历史证据）。
+- **Phase A 发布前十项核验（全部 PASS，逐项）：** ① tag == `v0.1.3.8-rc.2`；② release id == `403830061`；
+  ③ 当时 `draft=true`/`published_at=null`；④ 资产唯一且即验收 APK；⑤ 文件名逐字符 ==
+  `org.fcitx.fcitx5.android.fusion-enhanced-v0.1.3.8-rc.2-0-gf2a64da1-arm64-v8a-release.apk`；⑥ size ==
+  67,728,186 B；⑦ GitHub asset digest == 下载本体本地 `sha256sum` == `93a42897f0d053436f113f32ca88aac539eb0f18e8034f6f130309356e8deb9b`；
+  ⑧ annotated tag `398fc520` peel → `f2a64da1c0344a8b8c385fb3f57c00752efbbf81`；⑨ `apksigner verify
+  --print-certs`：v1+v2 Verifies，单签名者，证书 SHA-256 `a515b74a…890c` == D058 canonical（DN
+  `CN=Fcitx5 Fusion Enhanced Release, O=choicky, C=CN`）；⑩ asset id `612850708`、`updated_at`
+  `2026-10-05T14:48:48Z` 与 D067 生产记录一致 → 未被替换。
+- **发布与发布后复核：** 2026-10-06T01:06:19Z 发布（`published_at` 写入、`draft=false`）；复核 tag 未动、
+  asset id/名/size/digest/updated_at 全部不变，发布产物 SHA-256 仍 == `93a42897…deb9b`；
+  Release URL `https://github.com/choicky/fcitx5-android/releases/tag/v0.1.3.8-rc.2`。
+- **基线登记：** 产品源 `f2a64da1`（分支 `contribution/fusion-enhanced-identity-naming-r8`）；addons 发布
+  pin `47401b04681615024e4cf87c4797005b26e202ff`（随包 `punc.mb.zh_CN` == upstream 41 行）；**D051 维持
+  PAUSED / 排除于首发**；RC.2 成为正式版是**精确产物晋升**的结果，版本串中的 `-rc.2` 为 D067 生产时的
+  命名事实、非疏漏（不得为满足命名而重建，D063 禁止）。
+- **状态口径：** **FIRST FUSION ENHANCED RELEASE = PUBLISHED**；acceptance → publication 之间**零重建**。
+  各功能族既有 VALIDATION DEBT（扩展矩阵类）不因发布而自动升格为 blocker，也不因发布而被记为已测
+  （AGENTS 分类规则不变）。
+- **Reopen conditions：** 仅当已发布产物被证实存在具体缺陷、签名/供应链完整性被证伪、或 owner 明确决定
+  另行发布新版本时，按 AGENTS CLOSED EVIDENCE RULE 重开对应事项。

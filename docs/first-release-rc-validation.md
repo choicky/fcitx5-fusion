@@ -162,3 +162,20 @@ owner 已对 §6 产物 X（RC.1，`148457a4…8dee`）执行 D062 设备验收�
   验收不变量 `device-tested == published == ACCEPTANCE_APK_SHA256` 自本产物起适用。
 - **RC.1：** 维持 REJECTED，draft/资产未触碰（id `403658765`，digest `148457a4…` 不变）。
 - 未修改任何仓库源文件；未读取或改动私有签名材料；**FINAL RELEASE：PENDING OWNER DEVICE ACCEPTANCE**。
+
+## 9. D068：Owner 设备验收 PASS，RC.2 以精确产物晋升发布（2026-10-06）
+
+**D068: FIRST FUSION ENHANCED RELEASE PUBLISHED · device-tested == published == ACCEPTANCE_APK_SHA256 = VERIFIED · REBUILT = NO**
+
+- **Owner 验收（本任务未重跑设备测试、未重开 D066/D067 调查）：** RC.2 DEVICE ACCEPTANCE = **PASS**；
+  `/tmp/fcitx5-d066-rc2-retest-checklist.md` 全部 **8 项 APPROVED DEVICE CHECKS = PASS**；FINAL RELEASE = **GO**。
+- **发布前核验（Phase A，10 项全 PASS）：** tag `v0.1.3.8-rc.2` / release id `403830061` / 当时 draft；
+  唯一资产即验收 APK，文件名与 size（67,728,186 B）逐字匹配；GitHub digest == 下载本体本地 sha256 ==
+  `93a42897f0d053436f113f32ca88aac539eb0f18e8034f6f130309356e8deb9b`；annotated tag `398fc520` peel →
+  `f2a64da1`；apksigner v1+v2、单签名者、证书 == D058 canonical；asset id `612850708` 与 `updated_at`
+  `2026-10-05T14:48:48Z` 与 §8 生产记录一致（未替换）。
+- **发布（Phase B，仅晋升）：** `gh release edit v0.1.3.8-rc.2 --draft=false`，2026-10-06T01:06:19Z 生效；
+  发布后复核 `draft=false`、`published_at` 写入、tag 未动、asset id/名/size/digest/`updated_at` 全部不变，
+  最终产物 SHA-256 仍 == `ACCEPTANCE_APK_SHA256`。未 rebuild / resign / 替换 / 新建 tag / 新建 RC。
+- **RC.1：** 维持 REJECTED，draft/资产未触碰（id `403658765`）。**D051：** 维持 PAUSED / 排除于首发（D066）。
+- URL：`https://github.com/choicky/fcitx5-android/releases/tag/v0.1.3.8-rc.2`。

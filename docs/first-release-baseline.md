@@ -63,6 +63,14 @@ DECISIONS.md D066 更正——D061 的“首发接受 D051”被 supersede、发
 = **REJECTED**，其 draft/资产不得发布或修改；首发验收针对 **RC.2** 新产物（产品线 `f2a64da1` + pin `47401b04`）
 重新执行，维持 `device-tested == published == ACCEPTANCE_APK_SHA256` 不变量（D063 规则迁移至新产物）。
 
+**D068 收口（2026-10-06）：** RC.2 owner 设备验收 = **PASS**（8 项 APPROVED DEVICE CHECKS 全部 PASS，FINAL
+RELEASE = GO；验收由 owner 提供，D068 任务未重跑设备测试）。RC.2 draft（release id `403830061`）已于
+2026-10-06T01:06:19Z 以**精确产物晋升**（仅 `draft=false`）发布，**未 rebuild / resign / 替换资产**；
+发布产物即验收产物：`…fusion-enhanced-v0.1.3.8-rc.2-0-gf2a64da1-arm64-v8a-release.apk`，67,728,186 B，
+SHA-256 `93a42897f0d053436f113f32ca88aac539eb0f18e8034f6f130309356e8deb9b`，签名 == D058。
+**FIRST FUSION ENHANCED RELEASE = PUBLISHED**（DECISIONS.md D068）。RC.1 维持 REJECTED 历史证据；
+上条真值表中“RC.2 需复测”类条目以本次 8 项清单验收结果收口，扩展矩阵类 VALIDATION DEBT 口径不变。
+
 ## 3. Voice provider 架构（冻结；source 与 D055 一致）
 
 ```

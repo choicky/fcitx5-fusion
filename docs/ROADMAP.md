@@ -571,7 +571,7 @@ invocation 后处理。`preferredVoiceInput` 保留 Android voice-input IME/subt
 
 ### 当前开发基线（2026-10-03）— current-state 已被 D060 取代
 
-> **当前权威基线见 `docs/first-release-baseline.md`（D060）：** Android 产品线 `contribution/fusion-enhanced-identity-naming-r8` @ `2ba3a999`；addons 发布 pin `9b3448e6`（开发 gitlink `19f06898`）；LibIME upstream 无 fork；D058 签名身份。下表是 2026-10-03 的**历史**三仓库快照，保留供追溯，不再作为 current-state。
+> **当前权威基线见 `docs/first-release-baseline.md`（D060）：** Android 产品线 `contribution/fusion-enhanced-identity-naming-r8` @ `2ba3a999`；addons 发布 pin `9b3448e6`（开发 gitlink `19f06898`）；LibIME upstream 无 fork；D058 签名身份。下表是 2026-10-03 的**历史**三仓库快照，保留供追溯，不再作为 current-state。（后续更正：D066 将产品线更正为 `f2a64da1`、pin 更正为 `47401b04`；D068 已以 RC.2 精确产物晋升发布首个正式版，见下方发布记录。）
 
 以下是后续 AI/开发者继续开发时使用的三仓库协作基线。它描述当前持续开发线，**不要求也不暗示**从历史 Phase checkpoint 或 Release pin 回退 checkout：
 
@@ -594,6 +594,12 @@ addons 的 `9b3448e6` 位于用于发布固定的 punctuation 分支线上，不
 - 已发布 [`v0.1.3-fusion.6`](https://github.com/choicky/fcitx5-android/releases/tag/v0.1.3-fusion.6)：Android commit `e48896accb8c6f85ccee6006cfb689c1419ec227`，addons commit `9b3448e6b3889e4281ea39e334c7e5714f8a8b12`，发布 CI run [`37037562844`](https://github.com/choicky/fcitx5-android/actions/runs/37037562844)；对应 debug CI run [`37036451307`](https://github.com/choicky/fcitx5-android/actions/runs/37036451307) 也成功。
 - 正式 APK：`org.fcitx.fcitx5.android.moqi-v0.1.3-fusion.6-0-ge48896ac-arm64-v8a-release.apk`，SHA256 `dfeefe4571c82f073c2a6618acc824959eccb93d61aff0efeb4b8cf1640a0982`；码表 SHA256 `66deab4aaba1285e3c85eb3a364c21bc08db1911b61df8e934f0d006ca7e7923`，签名证书 SHA-256 `c90122d652b624fae7040a7869efc1d6cd1506d2803d58b19ff4599d2abbada7`。
 - 发布 APK 已核验包名 `.moqi`、versionCode `112`、`zh_CN` 的 `fcitx5-chinese-addons.mo` 实际 `msgid/msgstr`、码表和 sherpa-onnx/ONNX native runtime；未执行真机检查，不将资源核验写成真机 UI PASS。
+
+#### 首个 Fusion Enhanced 正式发布（2026-10-06，D068）
+
+- 已发布 [`v0.1.3.8-rc.2`](https://github.com/choicky/fcitx5-android/releases/tag/v0.1.3.8-rc.2)（release id `403830061`）：**FIRST FUSION ENHANCED RELEASE = PUBLISHED**。产品源 `contribution/fusion-enhanced-identity-naming-r8` @ `f2a64da1`；addons 发布 pin `47401b04681615024e4cf87c4797005b26e202ff`。
+- 发布方式 = **精确产物晋升（D063）**：owner 对 RC.2 完成 8 项设备验收全 PASS（FINAL RELEASE = GO）后，仅将 D067 生产的既有 draft 置为 `draft=false`（2026-10-06T01:06:19Z）；**未 rebuild / resign / 替换资产 / 新建 tag**。
+- 正式 APK：`org.fcitx.fcitx5.android.fusion-enhanced-v0.1.3.8-rc.2-0-gf2a64da1-arm64-v8a-release.apk`，67,728,186 B，SHA256 `93a42897f0d053436f113f32ca88aac539eb0f18e8034f6f130309356e8deb9b` == `ACCEPTANCE_APK_SHA256`；签名证书 SHA-256 == D058 canonical（`A5:15:B7:4A:…:89:0C`）。RC.1（`403658765`）维持 REJECTED 历史证据，未触碰。
 
 以下 Phase 4C 列表是历史进度快照；其中 Local 模型集、顺序和发布下载口径已由 D050 部分替代，保留用于追溯，不作为当前状态唯一来源。
 
