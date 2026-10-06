@@ -1393,3 +1393,58 @@ D027 的 Voice Architecture A。本任务未 merge PR #3、未创建 tag / GitHu
   placement / learning / filter 合同语义，(c) owner 决定并入发布线（届时按 D063/D064 走新 pin 与新签名
   产物）时重开对应分项。“还能测更多”（更大真实语料、长组合扩展矩阵、设备覆盖）属 VALIDATION DEBT，不构成重开
   理由（AGENTS 分类规则不变）。
+
+## D070 — Final Ranking Closure：有界跨源插入类取代 D069 blanket 放置策略（Bounded Cross-Source Insertion Class）
+
+**状态：Accepted（2026-10-06）。** 本条**显式 supersede D069 PRODUCT DECISIONS 中
+「classical-derived pure-Han coverage」条目里由 blanket 规则承担的部分**：当 classical decoder
+对全 raw 存在纯 Han 读数时，把**整个** mixed pool 一律压到 classical 列表之后的放置策略被替换为
+**有界跨源插入类（bounded cross-source insertion class）**。D069 其余裁定（3-byte floor、
+tier-ordered completions、wWholeSpan、widening fallback、VAsQuickphrase、learning seam、
+auxiliary filter 融合回归、发布边界与 master switch 撤销）**全部继续有效**；本条不改 LibIME、
+不改两个来源各自的 intra-source 排序、不比较未校准跨源原始分数（§19 禁令不变）、不引入
+learned reranker / neural boundary / Scheme 2。
+
+- **blanket 规则失败的证据（真实产品路径，`testpinyin` bulk 列表，c5b78c9）：**
+  `chatgpt → ChatGPT rank 113`（top1=茶通过平台）、`macos → macOS rank 88`（top1=马车哦是）、
+  `openwrt → OpenWrt rank 9`、`libime → LibIME rank 367`、learn 后 E2 placement 仍 113。
+  根因：force-decode 的碎片 Han tiling 对几乎任何小写字母流都存在，`chineseCoversWholeRaw`
+  于是恒真，把 whole-span Canonical 重拼写也整体埋葬；MIXEDCORP 基线 MRR 0.717、top1 5/7。
+- **替换策略（属性判据，无词表）：** `UnifiedRanker::isBoundedInsertionClass(c, rawSize)` =
+  单 arc + 全 span（alignment[0].rawBegin==0 && rawEnd==rawSize）+ English source +
+  provenance ∈ {Canonical, CustomPhrase}。Canonical 只在词典 surface 与键入 span 大小写结构不同
+  （chatgpt→ChatGPT、macos→macOS、github→GitHub、openwrt→OpenWrt、libime→LibIME）时存在；
+  歧义小写重合词（win/long/game/pin/an/ai surface==raw ⇒ Exact）、Completion/Correction
+  （对 "chang" 的补全、对 "githbu" 的修正）按构造不满足，保持保守放置。CustomPhrase 使
+  用户确认过的词经 learning 进入该类（§6.E）。类成员获得有界领先 slot（插入序号 0,1,…），
+  其余候选与既有 `mixedLeads` 路径逐字节不变 ⇒ **中文 intra-source（LibIME classical 顺序）与
+  英文 intra-source（pool 顺序）都原样保留**，跨源之间只有**位置类插入**，没有任何分数比较。
+- **音节护栏（语料驱动）：** classical 存在**单音节纯 Han 全 raw 读数**时类被抑制——
+  `chang → Chang`（词典 tier-4 姓氏）在首次替换运行中把 top1 从 长 夺走，证明「合法拼音音节
+  同时是英文姓氏」的 raw 必须中文优先（han/wei/ming 同理）；多段 force-cover（茶通过平台/
+  马车哦是）是缩写产物、非音节，不触发抑制。护栏读取的是 classical decoder 结构
+  （sentence().size()==1），不是池内分数。
+- **固定产品路径排名语料（先于调优冻结，groups A–F，`testMixedRankingCorpus`）：**
+  BEFORE（c5b78c9）= failures 6/6 组暴露：A 4 项 rank≠0 + E2；B/C/D/F 全绿 ⇒ 期望与既有产品
+  合同一致（ai/an/pin/win/long/game 保守：win 无全 raw Han 读数、其英文领先为 D069 期既有行为，
+  如实编码而非重写期望；multi-switch 二段英文按实际 "嗨phone" 铺段断言可达性；纠错按词典
+  QWERTY-substitution/transposition 模型选 "githbu" 证据例）。AFTER（57d72c2）：A 全部 rank 0
+  （chatgpt/macos/github/iphone/openwrt/libime），B/D 护栏与污染门全绿（chang top1=长），
+  C mixed 保持领先（wodakaigithub/iphonepeijian/woxiangmaiiphonepeijian rank 0），E 学习只移动
+  被确认词（pin 213→213）且中文续打不破坏（nihao→你），F Shuangpin mixed 可达（rank 129，
+  与 D069 放置合同一致），`RANKCORP SUMMARY failures=0`；存量 MIXEDCORP 由
+  top1 5/7、MRR 0.717 升至 **top1 7/7、MRR 1.000、pollution 0**。
+- **PINS & EVIDENCE：** addons `feature/mixed-input-arch-a`：`860ed68`（放置实现 +
+  isBoundedInsertionClass）+ `57d72c2`（语料），base `c5b78c9`；融合回归分支
+  `feature/mixed-moqi-fusion-regression` merge 提交 `06c9afd`；容器
+  `localhost/fcitx5-upstream-validation:gcc` 两棵树全量 build + **ctest 19/19**、
+  `testpinyin` EXIT=0（含 MIXEDSTROKE/MIXEDMOQI/MIXEDAUX-SP 门）、clang-format 干净、
+  `git diff --check` 干净。benchmark：mixed p50/p95/p99/max = 522.4/1930.5/1930.5/1930.5 µs
+  （基线 538.6/1955.8，−3%），fast-path p50 82.7 µs（81.8，噪声带内），production compute p50
+  3919.9 µs（4015.8，−2.4%），lexicon RSS delta 7188 KiB；放置判定为每候选 O(arcs) 属性检查，
+  无逐键无界扫描。CI run `37432014234`（head `57d72c2`，fork 分支）：**clang-format / gcc / clang 全部 SUCCESS**。
+- **Reopen conditions：** (a) 新设备/真实产品路径证据与 rank-0 类断言矛盾；(b) PR #3 上游评审
+  要求变更放置类语义；(c) 词库变更使新的 valid-pinyin-syllable 姓氏 Canonical 溢出护栏覆盖
+  （须重跑 B/D 组而非加词表）；(d) owner 采纳 learned reranker 提案时按 §51.A+ 证据门重开，
+  本条同时记录 **A+ learned reranker：本轮不需要（INSUFFICIENT EVIDENCE 状态解除——确定性的
+  有界插入类已在固定语料上闭合 ranking error，未出现必须依赖学习模型才能达标的案例）**。

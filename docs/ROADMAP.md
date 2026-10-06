@@ -540,6 +540,12 @@ D027 的 Voice Architecture A 无关。
 - 产品线裁定（撤销 MixedInputEnabled master switch、SpellEnabled 单一英文门控、ISpell sidecar 退役、
   emission floor / tier completions / whole-span bonus / widening fallback / classical-derived placement /
   learning-on-commit seam / auxiliary filter frontier anchoring 等）全部记录于 D069。
+- （2026-10-06，D070）Final Ranking Closure：D069 的 blanket「classical-derived pure-Han coverage」放置规则被
+  有界跨源插入类替换（whole-span 单 arc Canonical/CustomPhrase + 单音节 Han 护栏）。addons `57d72c2`
+  （fix `860ed68` + 固定产品路径排名语料 `testMixedRankingCorpus`）：chatgpt 113→0、macos 88→0、openwrt 9→0、
+  libime 367→0，MIXEDCORP MRR 0.717→1.000（top1 7/7、pollution 0），RANKCORP failures 0；两棵树 ctest 19/19、
+  aux filter 矩阵与 Shuangpin 门全绿；benchmark 与收口基线偏差 ≤3%（无 material regression）。LibIME 未动、
+  两源 intra-source 排序未动、无分数比较、无词表。
 - Android 集成分支 `feature/mixed-input-arch-a` @ `e3cec1d8`（gitlink → `c5b78c9`）；最终 Debug APK
   SHA-256 `d7d9635f…ef5f`（D064 签名，逐字节核验见 D069）。
 - 下游融合回归分支 `feature/mixed-moqi-fusion-regression` @ `fa4c0d4`：{Disabled,Stroke,MoQi} ×
@@ -578,6 +584,9 @@ paired punctuation 的 formatter-only repair 暴露出验证状态必须分层�
 - （2026-10-06 新增，见 Phase 9 / D069）中英混输 Architecture A 收口 COMPLETE：addons `c5b78c9`（PR #3 绿、未 merge）、
   Android 集成 `e3cec1d8`、融合回归矩阵 `fa4c0d4` 19/19 PASS；剩余仅设备 smoke / 持久化 / 扩展语料类 VALIDATION DEBT；
   不改变 D068 首发发布边界（pin `47401b04` 不变），并入产品线需 owner 采纳决定。
+- （2026-10-06，D070）混输排名终局修正 COMPLETE：blanket classical-coverage 放置规则替换为有界跨源插入类，
+  `chatgpt`/`macos`/`openwrt`/`libime` 在真实产品路径全部 rank 0，MIXEDCORP MRR 1.000，两棵树 ctest 19/19；
+  addons head `57d72c2`（PR #3 仍 OPEN 未 merge），发布边界与 VALIDATION DEBT 分类不变。
 
 ### Strategy 4 上游贡献边界（2026-10-04）
 
