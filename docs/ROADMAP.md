@@ -550,6 +550,15 @@ D027 的 Voice Architecture A 无关。
   SHA-256 `d7d9635f…ef5f`（D064 签名，逐字节核验见 D069）。
 - 下游融合回归分支 `feature/mixed-moqi-fusion-regression` @ `fa4c0d4`：{Disabled,Stroke,MoQi} ×
   {Pinyin,Shuangpin} × mixed 全矩阵产品路径 19/19 PASS；仅验证，不并入发布线。
+- （2026-10-07，Phase 3A-2 native/core 收口）addons fork `feature/android-runtime-diagnostics` @ `010b1eb`
+  （base `d75ed43`，两提交：`efb2890` 实现+耦合回归、`010b1eb` persisted user-model fixture）：B1 中文词弧缺陷
+  （LibIME 多音节词弧经真实 decoder 发射）、有界混搜多样性缺陷（每 frontier 分类保留窗 + 终端 top-K
+  最高英文类保留，Cmax=2，英文类优先填充；`englishSegmentCap=0` 保留 legacy 单窗回退）、committed
+  multi-switch 回归、以及 Shuangpin hs+iPhone+pzjm Case 5（已由 Phase-3A-1 非致命 OPEN-FINDING 例外升级为
+  fatal 回归断言）全部 CLOSED；B1.1-A/B 收窄旁路已移除；无跨源 cost normalization、不改 terminal selection
+  归属、LibIME 未修改；persisted user-model fixture（§17，真实公共 API、确定性 temp 隔离）PASS；
+  容器全量 ctest 20/20、testpinyin 含 MIXEDHANQ OK。MIXEDDIAG witness 记录按计划保留至下一 Android device /
+  Fix-C 观察轮；Fix C 未实施；Android 设备集成/验收 NOT RUN（下一 gate）；发布边界不变（pin `47401b04`）。
 - **剩余（VALIDATION DEBT，非 blocker）**：设备 smoke test（NOT RUN）、设备侧 user-lexicon 持久化、
   更大真实语料/长组合扩展矩阵。并入首发产品线需 owner 采纳决定 + 完整设备验收 + 新 D063/D064 签名产物
   流程；发布 pin `47401b04`（D066/D068）不因本 Phase 改变。
@@ -595,6 +604,10 @@ paired punctuation 的 formatter-only repair 暴露出验证状态必须分层�
   逐行一致 ⇒ 真机混输失败为 **Android runtime 层差距**，device-only 诊断项，未确诊前不调下游排序。
   **状态：Architecture A native/core PASS；Android integration 重基线完成、待新 APK 真机复测；device
   acceptance FAIL→UNDER RETEST；Release readiness BLOCKED（发布 pin `47401b04` 不变）。**
+- （2026-10-07，Phase 3A-2）混输 native/core 收口 COMPLETE（详见 Phase 9 `010b1eb` 记录）：B1 词弧缺陷、
+  有界混搜多样性缺陷、Case 5 搜索驱逐缺陷均 CLOSED 且为 fatal 回归保护，ctest 20/20；**Phase 3A-2
+  native/core: COMPLETE**；下一 gate 仍为 Android device integration/acceptance（设备验收、MIXEDDIAG
+  witness 观察与 Fix C 判定），不把设备侧未测项记为 PASS。
 
 ### Strategy 4 上游贡献边界（2026-10-04）
 
