@@ -524,9 +524,25 @@ ASR
 
 ## Phase 8 — Additional Platforms
 
-**状态：NOT STARTED**
+**状态：Windows 架构收口 COMPLETE（2026-10-07，D072）；Windows Stage 1 NEXT（NOT STARTED）；Linux、macOS、iOS NOT STARTED**
 
 Android 架构稳定后再评估 Windows、Linux、macOS、iOS，并保持 Trigger / Configured Implementation 分离。
+
+### Windows
+
+Windows normative/current architecture authority 为 `docs/windows-architecture.md`（D072 自 `researching-notes`
+迁入；旧 snapshot 为 SUPERSEDED / HISTORICAL）。
+
+- Stage 0 architecture closure：**COMPLETE**（D072）。
+- Stage 0.5 TSF census / P0-C architecture validation：**解决 P0-C 所需部分 COMPLETE**（census 0.5B/0.5C/0.5D，
+  证据提交 `328f5e6`）；其余 census 应用/行为 **DEFERRED / UNKNOWN**（`docs/windows-architecture.md` §18）。
+- P0-C Key / Effect Ordering：**CLOSED by project decision**，A′ ACCEPTED；Stage 0.5D 证据自身分类 NOT-CLOSED
+  保持为历史事实。
+- Chromium compatibility：**DEFERRED UNKNOWN**（工具限制导致无观察，不是失败）。
+- 仍 OPEN：P0-A（含回调不可用/drain 未决的 recovery contract）、P0-B、P0-D、lifecycle discontinuity；
+  wire format、permanent identifiers、未决 Host topology、timing thresholds、UI 仍 UNFROZEN。
+- 下一步：**Stage 1** portable sans-IO FusionCore + deterministic simulator + RG-0（NOT STARTED；产品实现在
+  `fcitx5-fusion-windows`）。
 
 ## Phase 9 — 中英混输 Mixed Input（Architecture A）
 

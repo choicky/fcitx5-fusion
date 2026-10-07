@@ -72,6 +72,7 @@ Phase 3 已完成；Phase 4 的 Voice/ASR 产品化、Phase 5 的词库管理和
 - [需求规格](docs/REQUIREMENTS.md)
 - [路线图](docs/ROADMAP.md)
 - [技术决策](docs/DECISIONS.md)
+- [Windows 当前架构（normative，D072）](docs/windows-architecture.md)
 - [总控仓库改名记录](docs/repository-rename.md)
 - [研究记录](research/README.md)
 

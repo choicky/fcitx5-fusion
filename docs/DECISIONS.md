@@ -1499,3 +1499,50 @@ head；(3) 固化真机现实差距的调查结论与验证层级。不改变 D0
 - **Reopen conditions：** (a) 真机诊断日志与 arc/rank 层结论矛盾；(b) beam topK 截断使某些产品路径
   literal 不可达（需语料证据，不加词表）；(c) 上游 PR #3 评审要求改变双形态语义；(d) 观察 E 的
   Android runtime 根因确诊后若要求修改 core 放置策略，须重跑固定语料而非局部补丁。
+
+## D072 — Windows P0-C 收口：A′ 接受为 Windows 架构方向，Windows 架构权威迁入本仓库
+
+**状态：Accepted（2026-10-07）。** 适用范围仅为 Windows 线；不改变 D001（Android 第一目标平台）与 D060 首发基线。
+
+- **决定 1 — A′ ACCEPTED（Windows 架构方向）：** STATE async where possible，保留 consumed STATE → EFFECT
+  watermark；EFFECT ordered / unique / non-coalescible，以 bounded synchronous TSF materialization 为环境允许时的
+  优先主路径，满足 mutation/composition/selection/readback 条件后才记录显式 APPLIED terminal；显式 async/failure
+  fallback 与 recovery 为强制；prior EFFECT 未决时 later PASS 采用 drain-before-PASS（where lawful）——K /
+  `OnKeyDown` 为已测 Notepad + Word 上的最小已证实策略，T / `OnTestKeyDown` 仅在实际投递时 opportunistic，
+  correctness 不依赖 T，无普遍回调保证；无通用产品 `SendInput`/`PostMessage` replay，不以合成 `WM_CHAR`/newline
+  作为正常 PASS；FORCE_ASYNC 保留为 diagnostic/development 能力；全部公共 correctness 机制保留。“bounded” 只约束
+  client 可控部分（admission、Host wait、queue、fallback wait、operation count/payload、eligibility/disable policy），
+  不表示可抢占进行中的同步 TSF 调用。完整规范：`docs/windows-architecture.md` §6–§7。
+- **决定 2 — P0-C architecture research = CLOSED by project decision：** 依据为经独立核查的
+  `fcitx5-windows-tsf-census` 证据（`328f5e6bbec33e05dd10f7066b470b529316a5fa`；0.5B `419b73e`/`00c2150`，
+  0.5C `30bbbf6`/`140b404`，0.5D `8cbe13f`/`328f5e6`）**加上**本条对 Chromium 的显式 defer 范围决定。
+  **Stage 0.5D 证据自身的分类是 NOT-CLOSED**（其要求的收口范围包含 Chromium），该历史分类在其实验范围内仍然有效，
+  不改写为 CLOSURE-A；**不声称证据自身关闭了 P0-C**。
+- **决定 3 — Chromium compatibility = DEFERRED UNKNOWN：** 0 次合格运行、无 TSF trace；Edge 尝试因自动化工具
+  URL-policy 检查在实验前停止。这是工具限制，不是 Chromium TSF 失败，也不证明不支持 drain-before-PASS；
+  项目裁定该 UNKNOWN 不阻断架构冻结，不声称 Chromium 支持，也不为 P0-C 继续 Chromium 实验；可在 Stage 2.5/4
+  真实 TIP 集成时重新取证。
+- **决定 4 — Stage 0.5 口径：** 解决 P0-C 所需的 Stage 0.5 工作 COMPLETE；其余 census 应用与行为（见
+  `docs/windows-architecture.md` §18）为 DEFERRED / UNKNOWN，不表述为“全部 Stage 0.5 完成”。Stage 0
+  architecture closure COMPLETE；下一阶段 Stage 1 portable sans-IO FusionCore + simulator + RG-0（NOT STARTED）。
+- **决定 5 — 回调不可用 / drain 未决：** 架构要求显式 recovery/ownership disposition，不得把取消的 key 伪装为 PASS；
+  具体 recovery contract 不在本条冻结，分配给 P0-A（定义）与 Stage 1（以 RG-0 实现与验证）。
+- **决定 6 — Authority 迁移：** Windows normative/current architecture authority 自 `researching-notes`
+  `windows-ime/fcitx5-windows-current-architecture.md`（提交 `855ec99`）迁入本仓库 `docs/windows-architecture.md`；
+  旧文件标记 SUPERSEDED / HISTORICAL、保留原文；`researching-notes` 继续承担研究叙述、证据解读、架构历史与 supporting
+  reviews，`fcitx5-windows-tsf-census` 承担可复现低层证据，`fcitx5-fusion-windows` 承担产品实现。
+- **Supersession：** (a) census 历史 “Recommendation B”（bounded-sync 与 fully-async EFFECT 并列开放）被 A′ 取代；
+  census 中 “Model B”（协议模型）与 evolution Stage H 的 upstream 策略 “option B” 是不同概念，不受本条 supersede；
+  (b) researching-notes 2026-10-07 snapshot 中 P0-C OPEN、“Stage 0.5 REQUIRED”、“sync/async 最终策略待 Stage 0.5”
+  与 “zero synchronous Host coordination” 为 OPEN 项的表述，作为当前状态不再有效（历史保留，Stage K 原文不改写）。
+- **仍 OPEN / UNFROZEN（本条不关闭）：** lifecycle discontinuity（§9）；P0-A；P0-B；P0-D（纳入已核查的注册/提权观察，
+  仍 OPEN）；permanent identifiers / wire identifier set、final wire format、未决 Host topology、production timing
+  thresholds、UI；effect-capable key 精确分类。
+- **外部评审：** researching-notes `windows-ime/reviews/claude-2026-10-07.md` §2 与 A′ 一致、属 supporting review input；
+  接受来源是项目证据与本决定；不设外部 AI 评审 gate。
+- **Requirements：** `docs/REQUIREMENTS.md` 不变——其中没有 Windows 规范性需求与 A′ 冲突，Windows correctness
+  invariants 由 `docs/windows-architecture.md` §4 承载。
+- **Reopen conditions：** (a) 新的第三方证据表明在产品必须支持的 target class 中，K 与 T 均不投递或合法 drain 普遍不可得，
+  使 A′ 主路径在该类不可行（仅 Chromium 结果为 UNKNOWN 不构成 reopen）；(b) 证据表明主要 target 中同步 EFFECT
+  materialization 常态被拒，使 fallback 成为实际正常路径；(c) TSF 公开 API/行为变化与本条依据矛盾；(d) Stage 1
+  RG-0 或真实集成证明 §7.5 公共机制不足以维持 §4 invariants；(e) 本条核查所依据的 census 原始证据被发现不可靠。

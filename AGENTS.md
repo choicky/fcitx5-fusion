@@ -6,6 +6,7 @@
 
 - 开始设计或实现前，先阅读相关需求、技术决策、路线图、研究记录，以及所涉及上游仓库的最新源码、公开接口和现有测试。
 - 判断当前预期行为时，按以下权威顺序读取：`REQUIREMENTS.md` 当前有效需求、`DECISIONS.md` 中最新且未被 superseded 的 Accepted decision、`ROADMAP.md` 当前 Phase/checkpoint，最后才参考历史记录。首个 Fusion Enhanced 发布的**当前产品基线 / 范围 / 功能状态矩阵以 `docs/first-release-baseline.md`（D060）为唯一 current-state 权威**；它与其指针取代任何旧的“当前实现/开发基线”表述。
+- Windows 线的当前规范性架构权威为 `docs/windows-architecture.md`（D072）；`researching-notes` 中的 Windows 架构文档仅为研究叙述与历史，不作为当前权威。
 - 不得把 `SUPERSEDED`、`PARTIALLY SUPERSEDED`、`HISTORICAL` 或 `DEPRECATED` 条目实现为当前行为；仅部分 supersede 旧决定时，旧决定原位置必须标明仍有效和不再规范的部分。看似 ACTIVE 的冲突不得自行推断。
 - 设计假设必须以当前源码和可复现证据验证；不要仅凭文档、历史结论、记忆或接口名称推断行为。
 - 若已接受的设计与最新源码、公开 API 或实际测试结果冲突，立即停止相关实现。记录并报告冲突位置、源码版本或提交、相关调用链、测试结果及影响范围，等待设计被明确修订后再继续。
