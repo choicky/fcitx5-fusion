@@ -544,9 +544,11 @@ Windows normative/current architecture authority 为 `docs/windows-architecture.
 - 下一步：**Stage 1** portable sans-IO FusionCore + deterministic simulator + RG-0（NOT STARTED；产品实现在
   `fcitx5-fusion-windows`）。
 
-## Phase 9 — 中英混输 Mixed Input（Architecture A）
+## Phase 9 — 中英混输 Mixed Input（Architecture A；历史冻结）
 
-**状态：实现与收口 COMPLETE（2026-10-06，D069）；设备验证 NOT RUN；未并入发布产品线**
+**状态：历史实现与收口记录保留；不再是当前目标架构（D074，2026-10-09 authority closure）。混输侧 A′
+per-gap ChineseGapSolver / Chinese (start,end) Top-1 产品语义已 SUPERSEDED；Phase3C production
+implementation remains frozen；R6 已停止，不再继续 N2/B1/B2/J/H；设备验证/发布集成不因本次收口自动开启。**
 
 命名澄清：本 Phase 的 “Architecture A” 指中英混输架构（unmodified LibIME 之上的独立混输管线），与
 D027 的 Voice Architecture A 无关。
@@ -579,6 +581,52 @@ D027 的 Voice Architecture A 无关。
   更大真实语料/长组合扩展矩阵。并入首发产品线需 owner 采纳决定 + 完整设备验收 + 新 D063/D064 签名产物
   流程；发布 pin `47401b04`（D066/D068）不因本 Phase 改变。
 
+> **历史边界说明（D074）：** 本 Phase 的 Architecture A/A′、Phase3A-2 retention、ChineseGap Top-1、
+> placement closure 和 native 20/20 是历史 implementation/evidence，其代码、K1 incremental reuse、
+> diagnostics 与实验报告作为可复用工程成果原样保留；A′ 的 per-gap solve 与 Chinese Top-1 contract
+> 不再作为 accepted 产品语义，sunk implementation cost 也不构成未来架构 authority。Gate Q2 已判
+> INVALID，不得作为新 architecture acceptance evidence。
+
+## Phase 10 — M2+ Implementation PoC
+
+**状态：NEXT（D074，2026-10-09 authority closure complete；PoC NOT STARTED）。** Mixed Input authority
+baseline 已由 D074 收口：单一 bounded mixed search 为当前 implementation candidate；混输侧 A′ 产品架构
+SUPERSEDED（历史证据保留）；旧 Architecture A 实现不逐字恢复，“A 质量低主要因 Chinese word scoring 缺
+path context”仅为 WORKING HYPOTHESIS TO VERIFY；M3-B（proposed D073，NOT ACCEPTED）保持 deferred
+research candidate，其 Data/Quality/Mobile Cost Gate 不构成 M2+ 前置阻断；R6 已停止，不再继续
+N2/B1/B2/J/H。本 Phase 不恢复或继续 Phase3C production implementation。
+
+### 架构 contract（长期要求，权威文本见 REQUIREMENTS §2.1 / D074 §3）
+
+- [ ] 每次 input update 一个 bounded mixed search；Chinese/English 作为同一 mixed graph 的 hypotheses/arcs；
+- [ ] LM state 作为 path state 组成部分；Chinese transition 按 path LM state 做 context-aware scoring
+      （pinned LibIME `LanguageModel::score` 语义 + 仅 source-verified/已验证的最小调整）；
+- [ ] English transition 经单一集中式 transitionAcrossEnglish policy；
+- [ ] context 生效前不得把 Chinese span 不可逆固定为 Top-1；搜索 bounded 且保留有限多路径 diversity；
+- [ ] 不直接比较/相加未经校准的 heterogeneous raw scores；
+- [ ] Pinyin/Shuangpin 一等；alignment、partial selection、composition semantics 保持；
+- [ ] Auxiliary Filter 保持 downstream；LibIME 不修改，能力不足证据触发 Hard Stop 重评。
+
+### 本轮实验设定（experimental decision rules，非永久 Requirements）
+
+- English 侧冻结 = 实验控制条件：使用与 R5c FINAL 相同的 English lexicon、candidate
+  recognition/filtering、English Core 与 placement；本轮不加入雾凇、白霜或新 English/CN-EN dictionary；
+  English lexicon 增强 deferred 至 M2+ architecture decision 之后；
+- beam B ∈ {4, 8, 16}；English LM state policy 本轮测试 reset / preserve 两种；
+- 判定线：四配置 Top-3 计数之和 ≥184（A′ baseline 52+54+39+41=186），单配置相对 baseline 最多下降 2；
+- 本轮 Pinyin Chinese p95 ≤10 ms（仅此轮 gate；5 ms/10 ms 永久性能 target 尚无 accepted requirement，
+  不得由本轮自动升级）；
+- 六次 evaluation matrix（B×LM-state 指定组合）与本轮具体 counter/report 文件名按 m2p instruction
+  在 PoC 任务 preflight 中记录；ASan 仅跑 instruction 指定的两项 test；
+- 上述参数只约束本轮 PoC，不进入 REQUIREMENTS/AGENTS 永久文本（D074 §7）。
+
+### Explicit non-goals
+
+本 Phase 不恢复 A′ per-gap ChineseGapSolver、不实现 M3-B MixedRecallProvider、不选择 neural model
+family/inference runtime/quantization/model size/feature schema/training mixture、不并入发布产品线；
+不改变 D068 发布 pin `47401b04`、Android gitlink/product pin；不构建 APK/release/tag；不修改
+researching-notes 历史研究与 `/tmp` 历史 evidence。
+
 ## 工程节奏
 
 - 修改前核对源码/API/现有测试；
@@ -609,6 +657,14 @@ paired punctuation 的 formatter-only repair 暴露出验证状态必须分层�
 - （2026-10-06 新增，见 Phase 9 / D069）中英混输 Architecture A 收口 COMPLETE：addons `c5b78c9`（PR #3 绿、未 merge）、
   Android 集成 `e3cec1d8`、融合回归矩阵 `fa4c0d4` 19/19 PASS；剩余仅设备 smoke / 持久化 / 扩展语料类 VALIDATION DEBT；
   不改变 D068 首发发布边界（pin `47401b04` 不变），并入产品线需 owner 采纳决定。
+- （2026-10-09，D074）Mixed Input authority closure COMPLETE：中英混输当前 implementation candidate 为
+  **M2+ 单一 bounded mixed search**（Chinese/English 同一 mixed graph，LM state 为 path state，English
+  transition 经集中式 transitionAcrossEnglish）；混输侧 A′ per-gap ChineseGapSolver/Chinese Top-1 产品语义
+  SUPERSEDED，其代码/K1/diagnostics/实验报告保留为历史 evidence；proposed D073（M3-B）重标为
+  PROPOSED — NOT ACCEPTED，M3-B 维持 deferred research candidate；Gate Q2 = INVALID 不作 acceptance
+  evidence；R6 已停止（不再继续 N2/B1/B2/J/H）。**Next = M2+ implementation PoC（Phase 10）**；English
+  lexicon 增强 deferred 至 M2+ architecture decision。不得更新 D068 发布 pin `47401b04`、Android
+  gitlink、生产线或 APK。
 - （2026-10-06，D070）混输排名终局修正 COMPLETE：blanket classical-coverage 放置规则替换为有界跨源插入类，
   `chatgpt`/`macos`/`openwrt`/`libime` 在真实产品路径全部 rank 0，MIXEDCORP MRR 1.000，两棵树 ctest 19/19；
   addons head `57d72c2`（PR #3 仍 OPEN 未 merge），发布边界与 VALIDATION DEBT 分类不变。
@@ -622,8 +678,9 @@ paired punctuation 的 formatter-only repair 暴露出验证状态必须分层�
   acceptance FAIL→UNDER RETEST；Release readiness BLOCKED（发布 pin `47401b04` 不变）。**
 - （2026-10-07，Phase 3A-2）混输 native/core 收口 COMPLETE（详见 Phase 9 `010b1eb` 记录）：B1 词弧缺陷、
   有界混搜多样性缺陷、Case 5 搜索驱逐缺陷均 CLOSED 且为 fatal 回归保护，ctest 20/20；**Phase 3A-2
-  native/core: COMPLETE**；下一 gate 仍为 Android device integration/acceptance（设备验收、MIXEDDIAG
-  witness 观察与 Fix C 判定），不把设备侧未测项记为 PASS。
+  native/core: COMPLETE**；当时记录的下一 gate（Android device integration/acceptance、MIXEDDIAG
+  witness 观察与 Fix C 判定）属 R6 线，已由 D074（2026-10-09）停止：R6 不再继续 N2/B1/B2/J/H，当前
+  next = M2+ implementation PoC；不把设备侧未测项记为 PASS。
 
 ### Strategy 4 上游贡献边界（2026-10-04）
 

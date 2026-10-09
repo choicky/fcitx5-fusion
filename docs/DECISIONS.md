@@ -1546,3 +1546,215 @@ head；(3) 固化真机现实差距的调查结论与验证层级。不改变 D0
   使 A′ 主路径在该类不可行（仅 Chromium 结果为 UNKNOWN 不构成 reopen）；(b) 证据表明主要 target 中同步 EFFECT
   materialization 常态被拒，使 fallback 成为实际正常路径；(c) TSF 公开 API/行为变化与本条依据矛盾；(d) Stage 1
   RG-0 或真实集成证明 §7.5 公共机制不足以维持 §4 invariants；(e) 本条核查所依据的 census 原始证据被发现不可靠。
+
+## D073 — Mixed Input M3-B Architecture Decision Closure：Graph-aware Parallel Mixed Recall
+
+**状态：PROPOSED — NOT ACCEPTED（2026-10-09 由 D074 裁定）。** 本条目正文按 M3-B 提议记录原样保留、
+不改写。本条目此前所标 “Accepted（2026-10-07）” 无效：Architecture Challenge（Gate P/Q）最终报告
+（`/tmp/mixed-architecture-challenge-final-report.md`）明确 proposed D073 diff 保持 uncommitted /
+unaccepted，target/fallback selection 仍 OPEN；Gate Q2 已被 owner 判定 **INVALID**，不得作为任何新
+architecture acceptance evidence。**本条目因此不具有当前架构权威**：其“supersede 此前 active wording”
+“本条是当前架构权威”“selection CLOSED by decision”与 Data/Quality/Mobile Cost Gate 作为 M2+ 前置的
+自称，一并作废；中英混输当前 architecture authority 见 D074。M3-B Graph-aware Parallel Mixed Recall
+维持 **deferred research candidate**，不是当前 product target；未来若经真实证据重新提出，须以新决策
+条目重新接受审查，不得沿用本条文本直接生效。
+
+### 1. Target and mandatory fallback
+
+目标架构是 **M3-B — Graph-aware Parallel Mixed Recall**。确定性基础和必须可独立工作的 fallback 是
+**M2 — Classical Mixed Search**：
+
+```text
+Raw Roman Stream → MixedCompositionState → bounded hypothesis/segmentation graph
+  ├─ LibIME-backed Chinese hypotheses
+  └─ English Core hypotheses
+  → parallel M2 Classical Mixed Search + M3-B MixedRecallProvider
+  → Unified Mixed Candidate Pool → contextual/optional learned ranking
+  → CandidateList → existing Auxiliary Filter (MoQi / Stroke)
+```
+
+M3-B 是目标架构，不是可有可无的未来选项；M2 必须在没有 M3-B 时独立提供确定性输入能力。
+MixedRecallProvider 必须可替换、可禁用、失败隔离。模型缺失、超时、推理失败、不支持 ABI、OOM 等情况必须
+回退到 M2，不得破坏 composition、partial selection 或普通输入。
+
+M3-B 不拥有 Pinyin/Shuangpin 解码、composition、中文学习、English dictionary、partial selection、candidate
+lifecycle 或 MoQi/Stroke；Auxiliary Filter 继续位于混输候选生成/排序之后。
+
+### 2. Frozen boundaries
+
+- LibIME 初始保持不变。只有真实 PoC 证明上层 contract 不足时才重开 API；优先 generic、可 upstream 的 API，
+  不 fork。
+- 不直接比较异构 LibIME、English、model raw score；统一排序前必须有明确 feature/calibration。
+- Pinyin、Shuangpin、partial selection、继续 composition/typing、learning、Backspace/Escape/paging 和重复
+  Auxiliary Filter 均为一等要求。
+- M1 Chinese Top-N + late reranking 仅作 benchmark/control；M3-C neural reranking 仅作 ablation/control。
+- M3-A raw-Roman→final-sentence full neural decoder 和 M4/full joint decoder deferred。
+- Phase3C/A′ 与 ChineseGap Top-1 不是未来 product architecture。
+
+### 3. Reuse and rework classification
+
+**KEEP / adapt:** MixedCompositionState、raw/output alignment、provenance、selection-frontier/partial-selection
+infrastructure、仍有效的 English Core abstractions/resources、Pinyin/Shuangpin seams、Auxiliary Filter seam、
+可复用的 test/benchmark infrastructure。
+
+**REWORK / REPLACE:** Chinese Top-1 gap contract、A′ ChineseGapSolver final boundary、mixed recall/search retention、
+把 product semantics 编进 placement 的规则、candidate truncation、heterogeneous score/ranking contract，以及任何
+在 cross-language context 影响 recall 之前进行不可逆 pruning 的假设。
+
+### 4. Required implementation gates
+
+**Data Gate:** 建立合法可用且有代表性的中英混输数据；区分自然 code-switch corpus 与真实 IME keystroke data；
+定义受控 Romanization/Pinyin/Shuangpin/synthetic augmentation。不得把 ASR code-switch corpus 宣称为 IME typing
+数据。
+
+**Quality Gate:** 使用 pinned LibIME 产生的真实 ambiguity witnesses，不得发明中文歧义；分别统计 segmentation、
+recall、context-modeling、ranking failure；在同一 corpus 上比较 M2、M3-B 和 M3-C control，并测 Recall@K、
+Top1、MRR/NDCG、partial-selection/continuation。
+
+**Mobile Cost Gate:** 做 Android-oriented latency/RSS/model-size/cold/warm/incremental 测量，报告 p50/p95/p99/max
+及 per-key work；A′ measurements 仅保留为 historical baseline；明确拒绝 naive per-span repeated full
+`Decoder::decode`，并要求 M3-B 用增量质量收益证明其相对 M2 的 latency/RSS 成本合理。
+
+### 5. Evidence discipline and roadmap transition
+
+商业证据只用于动机，不证明当前产品运行时调用图。现代 WeChat evidence 当前为 high-confidence static evidence，
+不是 proven runtime call graph；WeChat runtime call-chain verification 保留为 research item。Sogou/Tencent/Baidu
+patents 说明 mixed-search/context 方向但不证明当前产品恰好采用 M3-B。Rime 与 iFlytek 不是本决定的质量目标。
+M3-B 尚未通过 Data/Quality/Mobile gates。
+
+开放式 architecture selection/re-baseline 至此 **CLOSED by decision**。下一阶段为
+**“M3-B Architecture PoC / Validation”**，先做 contract 和 experimental validation，不做 production integration。
+Phase3C production implementation remains frozen；不更新 Android gitlink/product pin，不构建 APK/release/tag。
+
+下一阶段首次产出必须包括：precise hypothesis-graph contract、Chinese hypothesis provider contract、English
+hypothesis provider contract、MixedRecallProvider input/output/failure contract、M2/M3-B/M3-C benchmark design、
+Data Gate feasibility evidence，以及足以测试 recall/quality/mobile-cost assumptions 的最小 throwaway PoC。
+PoC 不预先决定 neural model/runtime/quantization/model size/beam width-N/final feature schema/training mixture，
+也不预先决定 M3-B 是否默认启用。
+
+## D074 — Mixed Input Authority Closure：混输 A′ 产品架构 Supersession 与 M2+ Architecture Contract
+
+**状态：Accepted（2026-10-09）。** 本条是 Android/Fcitx5 Fusion 中英混输的当前 architecture authority，
+依据 owner 已确认的 Project Instructions V2 与最终版 m2p implementation contract 收口。本条是
+docs/governance closure：不实现 M2+、不修改生产源码、不修改 LibIME、不运行 benchmark，
+Expected Behavioral Delta = NONE。
+命名澄清：本条所称混输侧 “A′” 指 Phase 3C 的 per-gap `ChineseGapSolver` 产品机制，**与 D072 的 Windows
+P0-C A′（TSF Key/Effect ordering）同名异物**；本条不修改、不重开、不被解读为影响 D072 或 Windows 线。
+
+### 1. KEEP — Architecture A 上位结构与仍有效的既有裁定
+
+- 上位结构继续有效：Chinese lexical hypotheses（LibIME-derived，含 Chinese LM、UserDict/history 能力）
+  与 English Core hypotheses（lexicon、canonical form、completion、correction、user learning）进入
+  **同一个 bounded mixed hypothesis graph / search**，经统一候选表示/排序 → CandidateList →
+  Auxiliary Filter（保持 downstream）。
+- “中文/英文独立”的规范定义：**candidate sourcing、lexicon ownership、learning ownership、resource
+  responsibility 独立**。它不意味着两个完整 decoder 必须分别完成整句解码，也不意味着
+  Chinese/English 先各自选出最终结果再 late merge。不得为了 mixed input 把 English resources
+  无原则混入 Chinese dictionary。
+- D069–D071 中仍有效的裁定全部 KEEP：master switch 撤销与 `SpellEnabled` 单一英文门控（同一配置
+  不得喂出两条独立英文管线）、English Core 作为正式 candidate source、3-byte emission floor、
+  tier-ordered completions、`wWholeSpan`、widening fallback、English-learning-on-commit seam、
+  Auxiliary Filter frontier 融合回归、两个 intra-source 排序不动、未经校准跨源 raw score 不可
+  直接比较（D070 禁令）、canonical+字面双形态共存（D071）、raw↔output alignment、partial
+  selection、composition preservation、Pinyin/Shuangpin 一等支持。
+- D068 product/release boundary 不变（见 §8）。
+
+### 2. SUPERSEDED — 混输侧 A′ 产品架构
+
+- **OLD：** A′（Phase 3C）—— per-English-boundary / per-gap Chinese solve、Chinese (start,end)
+  Top-1 contract、cross-language context 生效前的不可逆 Chinese Top-1 pruning，以及为 A′ 性能
+  实现而产生、但未经产品证据证明的 retention/transition 限制。
+- **STATUS：** SUPERSEDED as accepted 产品语义（2026-10-09）。M2+ 开启时**不得运行 A′ per-gap
+  ChineseGapSolver**；上述约束不得继续作为 accepted 产品要求。
+- **STILL VALID（HISTORICAL EVIDENCE / 可复用工程成果）：** A′ 的代码、K1 incremental reuse、
+  diagnostics（含 MIXEDDIAG witness 机制）、benchmark/counter 基础设施、全部实验与设备报告，以及
+  Phase 9 的 native 20/20、ctest/CI 数字，原样保留为历史实现证据；不删除、不改写历史报告。
+  D069–D071 中被 D070/D071 自身明确保留的裁定继续按其原范围有效。
+- **REPLACED BY：** M2+（§3）。
+- **EVIDENCE/RATIONALE：** owner-approved 最终版 m2p implementation contract；architecture challenge
+  与 R5c/R6 阶段已验证事实。**Gate Q2 已判 INVALID，不得作为本条 acceptance evidence**；R6 已停止
+  （不得继续 N2/B1/B2/J/H），未完成的实验不得被写成支持了它没有支持的结论。无效 Q2 结果之外
+  的历史质量/性能数字仅作历史事实。
+
+### 3. M2+ = 当前 implementation candidate
+
+```text
+Raw Input
+  ↓
+Chinese lexical hypotheses + English Core hypotheses
+  ↓
+ONE Mixed Hypothesis Graph / bounded search
+  ↓
+each partial path carries LM state
+  ↓
+Chinese transition：pinned LibIME LanguageModel::score semantics
+  + 仅 source-verified / previously-validated 的最小调整
+  ↓
+English transition：单一集中式 transitionAcrossEnglish policy
+  ↓
+bounded diverse paths
+  ↓
+Unified candidate representation / ranking
+  ↓
+CandidateList
+  ↓
+Auxiliary Filter
+```
+
+Architecture requirements（长期，进入 REQUIREMENTS §2.1）：
+
+1. 每次 input update 使用**一个** bounded mixed search；Chinese 与 English 是同一 mixed
+   graph/search 中的 hypotheses/arcs，不是先各自解码完成再合并；
+2. LM state 是 search path state 的组成部分；Chinese transition 依该 path 当前 LM state 做
+   context-aware scoring；
+3. 不得在 cross-language context 有机会发挥作用前，把 Chinese span 不可逆固定成 Top-1；
+4. 搜索必须 bounded 并保留有限的多路径/diversity；
+5. 不得直接比较/相加未经校准的 heterogeneous Chinese/English raw scores；
+6. Pinyin/Shuangpin 均为一等支持；raw↔output alignment、partial selection、composition
+   semantics 必须保持；
+7. English transition 经一个集中式 transitionAcrossEnglish policy；
+8. Auxiliary Filter 继续位于主候选生成之后；
+9. LibIME 不修改；仅当实现过程中真实源码事实证明必要能力无法通过当前接口获得时，按 Hard Stop
+   规则重新评估（§5）。
+
+### 4. Architecture A 旧实现不是直接恢复目标
+
+旧 Architecture A 实现 **NOT restored verbatim**。“Architecture A 质量低主要因为 Chinese word
+scoring 缺少足够 path context” 当前是 **WORKING HYPOTHESIS TO VERIFY**，由 M2+ PoC 检验，不得写成
+已证明事实，也不得据此直接恢复旧实现细节。
+
+### 5. proposed D073 / M3-B 状态
+
+D073 已重标为 **PROPOSED — NOT ACCEPTED**，其正文作为 M3-B 提议记录原样保留；本条不 accept M3-B，
+也不得把 M3-B 写成 Accepted Architecture。M3-B 保持 **deferred research candidate**，不是当前
+product target；未来若经真实证据重启，必须以新的 decision 条目重新进入审查，不得沿用 D073 文本
+直接生效。proposed D073 的 Data/Quality/Mobile Cost Gate 不构成 M2+ 实现的前置阻断。
+
+### 6. M2+ PoC 的 English 侧冻结 = 实验控制条件
+
+本轮 M2+ PoC 使用与 R5c FINAL 相同的 English lexicon、English candidate recognition/filtering、
+English Core 与 placement；不加入雾凇、白霜或任何新 English/CN-EN dictionary。这是**实验控制条件**，
+用于隔离 mixed-search 架构变量，不代表永久禁止未来增强 English lexicon；English lexicon 增强决策
+deferred 至 M2+ architecture decision 之后。
+
+### 7. 长期架构要求 vs 本轮实验参数
+
+实验参数**不升级为永久 Requirements**，仅在 ROADMAP Phase 10 当前实验设定中管理：beam
+B = 4/8/16；English LM state 本轮测试 reset / preserve 两策略；Top-3 四配置计数之和 ≥184；
+A′ baseline 52+54+39+41=186；单配置最多下降 2；本轮 Pinyin Chinese p95 ≤10 ms；指定 ASan 两项
+test；六次 evaluation matrix；本轮具体 counter/report 文件名。最终 5 ms / 10 ms performance
+target：仓库当前**没有**独立 accepted 的硬延迟 requirement（researching-notes §11.8 亦禁止发明无依据
+阈值），因此不得仅因本轮 instruction 自动升级；如未来需要，须以单独决定确立。
+
+### 8. 发布边界与工程状态不变
+
+本条不改变 D068 首发发布边界（addons pin `47401b04`）、D060 current-state 权威、Android
+gitlink/product pin、PR #3 状态；不构建 APK/release/tag。`researching-notes` 混输架构文档与
+`/tmp/mixed-rebaseline-*`、gate 报告均为历史研究/实现证据，保持原样。
+
+### 9. Reopen conditions
+
+仅当 (a) M2+ 实现中的真实源码/API/call-chain 证据与 §3 requirements 冲突（Hard Stop，按
+AGENTS.md 报告并等待设计修订）；(b) M2+ PoC 结果促使 owner 重新评估 A′ 机制或 M3-B；(c) owner
+正式修订 m2p contract 时，重开对应分项。“还能测更多”、扩展矩阵或未穷尽 ROM/设备覆盖本身不构成
+重开或 blocker（AGENTS 分类规则不变）。

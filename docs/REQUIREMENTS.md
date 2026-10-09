@@ -20,6 +20,35 @@
 - Rime / rime-frost 是成熟参考与备选，不是硬依赖。
 - 除非 PoC 证明现有能力不足，不重新实现拼音解码器，不修改 LibIME 核心。
 
+### 2.1 Mixed Input architecture boundary (D074)
+
+中英混输保持 Architecture A 上位结构：Pinyin/Shuangpin Chinese hypotheses（LibIME-derived，
+含 Chinese LM、UserDict/history 能力）与 English Core hypotheses 进入**同一个 bounded mixed
+hypothesis graph / bounded search**，产出统一候选表示并排序后进入 CandidateList；
+Auxiliary Filter 继续位于主候选生成之后（downstream）。
+
+“中文/英文独立”的规范含义是 **candidate sourcing、lexicon ownership、learning ownership、
+resource responsibility 独立**；它不意味着两个完整 decoder 必须分别完成整句解码，也不意味着
+Chinese/English 先各自选出最终结果再 late merge。不得为了 mixed input 把 English resources
+无原则混入 Chinese dictionary。
+
+每次 input update 使用一个 bounded mixed search；LM state 是 search path state 的组成部分，
+Chinese transition 按该 path 当前 LM state 做 context-aware scoring（以 pinned LibIME
+`LanguageModel::score` 语义为基准，只允许源码核实/已验证的最小调整）；English transition
+经集中式策略处理。搜索必须 bounded 并保留有限的多路径 diversity；不得在 cross-language
+context 有机会发挥作用前，把 Chinese span 不可逆固定成 Top-1；A′ per-gap ChineseGapSolver
+及其 Chinese (start,end) Top-1 contract 不是 M2+ 产品架构。不得直接比较/相加未经校准的
+heterogeneous Chinese/English raw scores。
+
+Pinyin/Shuangpin 都是一等支持；raw↔output alignment、partial selection、composition
+preservation 语义必须保持。LibIME 原则上不修改；只有实现过程中真实源码事实证明所需能力无法
+经现有接口获得时，才按 Hard Stop 规则重新评估。M3-B Graph-aware Parallel Mixed Recall
+（proposed D073，未接受）保持 deferred research candidate，不是当前 product target。
+
+本轮 M2+ PoC 的实验参数（beam B、English LM state 策略、计数/降幅判定线、本轮延迟 gate、
+评测矩阵与 ASan 子集等）属于 experimental decision rule，**不是永久产品需求**，只在
+ROADMAP 当前实验记录中管理。
+
 ## 3. Auxiliary Filter
 
 Auxiliary code 是候选过滤手段，不是主输入编码。
