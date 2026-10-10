@@ -587,16 +587,41 @@ D027 的 Voice Architecture A 无关。
 > 不再作为 accepted 产品语义，sunk implementation cost 也不构成未来架构 authority。Gate Q2 已判
 > INVALID，不得作为新 architecture acceptance evidence。
 
-## Phase 10 — M2+ Implementation PoC
+## Phase 10 — M2+ Implementation PoC / 架构评估与 HR1 Held-out 评估（CLOSED；历史实验记录）
 
-**状态：NEXT（D074，2026-10-09 authority closure complete；PoC NOT STARTED）。** Mixed Input authority
-baseline 已由 D074 收口：单一 bounded mixed search 为当前 implementation candidate；混输侧 A′ 产品架构
-SUPERSEDED（历史证据保留）；旧 Architecture A 实现不逐字恢复，“A 质量低主要因 Chinese word scoring 缺
-path context”仅为 WORKING HYPOTHESIS TO VERIFY；M3-B（proposed D073，NOT ACCEPTED）保持 deferred
-research candidate，其 Data/Quality/Mobile Cost Gate 不构成 M2+ 前置阻断；R6 已停止，不再继续
-N2/B1/B2/J/H。本 Phase 不恢复或继续 Phase3C production implementation。
+**状态：CLOSED（2026-10-10，D075 Accepted）。** 本 Phase 的架构评估目的已完成：M2+ 单一 bounded
+mixed search 经 PoC 与 HR1 held-out 评估收口，**M2+/r4 已被接受为当前产品 Mixed Input 架构
+baseline**；**architecture selection 已 CLOSED，M2+ 不再是“implementation candidate”**。本节以下
+内容（架构 contract checklist、实验设定、non-goals）自本日起为**历史实验记录**，不再构成 CURRENT/
+NEXT 表述；旧状态行 “NEXT（… PoC NOT STARTED）/ 单一 bounded mixed search 为当前 implementation
+candidate” 与 “下一道 gate 是另一轮 M2+ 架构决策实验” 的措辞已由 D075 取代（正文原意保留于历史，
+不再规范）。旧 Architecture A/A′ 内容不变：A′ per-gap ChineseGapSolver 产品架构 SUPERSEDED、保留为
+historical/reference implementation 与证据；M3-B（proposed D073，NOT ACCEPTED）维持 deferred
+research candidate；R6 已停止，不再继续 N2/B1/B2/J/H；本 Phase 不恢复 Phase3C production
+implementation。**Next = Phase 11 r4 productization/integration，不是另一轮 PoC。**
 
-### 架构 contract（长期要求，权威文本见 REQUIREMENTS §2.1 / D074 §3）
+### HR1 Held-out 评估收口记录（2026-10-10）
+
+- HR1 held-out 评估（reveal attempt 1，按冻结 RCM 与冻结决策规则执行）**有效**：determinism 门
+  48/48 engine×cell run pairs EQUIVALENT（`/tmp/gate-hr1/reveal/attempt-1/report.md`；前置认证与
+  negative-control 注入验证 `/tmp/gate-hr1/h1-report.md`；语料冻结 HSF STATUS: COMPLETE）。
+- **中文回归门 PASS**（C7 step 1 全部 no trigger）。
+- 冻结选择规则下 **r4（而非 r3）成为 M2+ 代表**（C7 step 2 `not clearly worse; M=r4`）。
+- 主 held-out 质量指标（Track A ∩ MIXED ci Top-3）**A′ vs r4 = INCONCLUSIVE**（C7 step 3，
+  p<0.05=no）：**不写作 r4 在质量上统计性战胜 A′，不写作 M2+ 有被证明的更高质量上限**。
+- 产品决定基于完整证据：冻结规则下可比的 held-out 质量 + 显著更好的 runtime cost/latency
+  （held-out 侧 mixed keys p50/p95/p99：A′ ≈ 4.6–14.5 / 22.1–82.0 / 39.1–142.9 ms，r4 ≈
+  3.8–6.1 / 18.1–26.5 / 33.1–51.3 ms；进程 wall median A′ ≈ 40–195 s vs r4 ≈ 34–75 s，峰值 RSS
+  相当）+ 架构/产品属性 + 维护考量。A′ 在每个独立 Chinese gap 内做更完整的
+  LibIME decode，r4 使用有界增量搜索并可剪枝中间状态——该区分保留，不声称 r4 在每一召回维度占优。
+- 当前验证的 r4 使用 **ENG_STATE=reset**（validated implementation policy，非永久架构不变量）；
+  cross-English Chinese LM-state preservation = UNVERIFIED/DEFERRED，非产品化阻断。
+- **HR1 held-out 数据集已消耗**：不得再作为面向架构调参的 unseen held-out 证据；无 r5/r6、
+  无 A′ effort-parity 实验、无新一轮 held-out 架构竞争。
+
+### 架构 contract（长期要求，权威文本见 REQUIREMENTS §2.1 / D074 §3；current-state 由 D075 收口）
+
+（以下 checklist 保留为历史 gate 记录；其长期要求文本仍然有效，产品化继承项见 Phase 11。）
 
 - [ ] 每次 input update 一个 bounded mixed search；Chinese/English 作为同一 mixed graph 的 hypotheses/arcs；
 - [ ] LM state 作为 path state 组成部分；Chinese transition 按 path LM state 做 context-aware scoring
@@ -607,7 +632,14 @@ N2/B1/B2/J/H。本 Phase 不恢复或继续 Phase3C production implementation。
 - [ ] Pinyin/Shuangpin 一等；alignment、partial selection、composition semantics 保持；
 - [ ] Auxiliary Filter 保持 downstream；LibIME 不修改，能力不足证据触发 Hard Stop 重评。
 
-### 本轮实验设定（experimental decision rules，非永久 Requirements）
+### 本轮实验设定（experimental decision rules，非永久 Requirements；历史记录，HR1 已消耗）
+
+> 历史实验记录：以下为本轮（HR1）冻结决策规则的原文留存。参数含 beam、判定线、reset/preserve
+> 测试策略与 English lexicon defer 前提，均**不是**永久 Requirements；其中 “English lexicon 增强
+> deferred 至 M2+ architecture decision 之后” 的前提已由 D075（architecture decision = 接受
+> M2+/r4）满足，词库增强回到正常产品/维护裁定；“本轮测试 reset / preserve 两种” 的未来状态预期
+> 已由 D075 §3 取代（当前验证 = reset；preserve = deferred/unverified）。不得再访问已消耗的
+> HR1 held-out MIXED 行用于调参。
 
 - English 侧冻结 = 实验控制条件：使用与 R5c FINAL 相同的 English lexicon、candidate
   recognition/filtering、English Core 与 placement；本轮不加入雾凇、白霜或新 English/CN-EN dictionary；
@@ -626,6 +658,36 @@ N2/B1/B2/J/H。本 Phase 不恢复或继续 Phase3C production implementation。
 family/inference runtime/quantization/model size/feature schema/training mixture、不并入发布产品线；
 不改变 D068 发布 pin `47401b04`、Android gitlink/product pin；不构建 APK/release/tag；不修改
 researching-notes 历史研究与 `/tmp` 历史 evidence。
+
+## Phase 11 — M2+/r4 Productization / Integration（当前 Phase）
+
+**状态：NEXT（2026-10-10，D075 Accepted）。** Architecture evaluation / HR1 = **CLOSED**；当前接受
+的 product Mixed Input 架构 baseline = **M2+/r4**。本 Phase 是把已验证的 r4 语义产品化并集成，
+**不是**另一轮 M2+ PoC。
+
+### 目标与顺序
+
+- [ ] **首先保持已验证的 r4 行为**：以 HR1 认证引擎配置（bounded mixed search、path LM state、
+      集中式 transitionAcrossEnglish、当前验证策略 ENG_STATE=reset）的行为语义为参照基线；产品化
+      改动不得静默偏离该行为，偏离须以新证据和新裁定显式进行；
+- [ ] 将 gate-er4 实验 payload 提炼为 addons fork 上的产品分支工作（从 R5c FINAL base `010b1eb`
+      起的 experiment diff 语义 → 可审查的产品提交序列；实验开关/诊断/env-var 面到产品配置面的
+      映射为产品化决策项，不在本 roadmap 预先规定）；
+- [ ] 在 productization 批次中按 AGENTS.md 三层验证执行：source/semantic review、机械/静态 review、
+      真实 build/ctest/CI；
+- [ ] 后续 Android 集成与设备验收按正常产品流程另行裁定（本 Phase 建立前不更新 gitlink/产品线/发布 pin）。
+
+### Explicit non-goals
+
+- **无 r5/r6、无 A′ effort-parity 实验、无新一轮 held-out 架构竞争**；HR1 held-out 数据集已消耗，
+  不得再用作 unseen held-out 证据或对其调参；
+- **Cross-English Chinese LM-state preservation（preserve 或其他 transition 策略）= deferred
+  research**，不是当前 requirement，也不阻断本 Phase；
+- 不恢复 A′ per-gap ChineseGapSolver 产品语义；不实现 M3-B（proposed D073 维持 NOT ACCEPTED）；
+- 不把 HR1 实验参数（beam、阈值、语料规模、reset 本身）写入永久 Requirements；
+- 发布边界不变：D060 current-state 权威、D068 发布 pin `47401b04`、Android 产品线
+  `contribution/fusion-enhanced-identity-naming-r8` @ `f2a64da1` 不因本 Phase 自动更新；不构建
+  APK/release/tag，直到产品化与验收证据支持相应裁定。
 
 ## 工程节奏
 
@@ -665,6 +727,19 @@ paired punctuation 的 formatter-only repair 暴露出验证状态必须分层�
   evidence；R6 已停止（不再继续 N2/B1/B2/J/H）。**Next = M2+ implementation PoC（Phase 10）**；English
   lexicon 增强 deferred 至 M2+ architecture decision。不得更新 D068 发布 pin `47401b04`、Android
   gitlink、生产线或 APK。
+  （**2026-10-10 更正：** 该 M2+ PoC/HR1 已执行并收口；“implementation candidate/待架构决定”表述不再
+  规范。当前 accepted baseline = **M2+/r4**，Next = **r4 productization（Phase 11）**，见 D075 与
+  下方 2026-10-10 条目。本段其余内容保留为 2026-10-09 历史记录。）
+- （2026-10-10，D075）Mixed Input 架构基线终局 COMPLETE：HR1 held-out 评估**有效**（determinism
+  48/48 EQUIVALENT），中文回归门 **PASS**，冻结选择规则下 **r4（而非 r3）成为 M2+ 代表**，主质量指标
+  **A′ vs r4 = INCONCLUSIVE**（不得写作 r4 质量统计性胜 A′ 或 M2+ 质量上限更高）；owner 基于完整
+  证据（可比 held-out 质量 + 显著更优 runtime cost/latency + 架构/产品属性 + 维护考量）接受
+  **M2+/r4 为当前产品 Mixed Input 架构 baseline，A′ 与 M2+ 架构竞争 CLOSED**，A′ 保留为
+  historical/reference implementation。当前验证 r4 = ENG_STATE=reset（非永久不变量）；
+  cross-English LM-state preservation = UNVERIFIED/DEFERRED，非阻断。无 r5/r6、无 A′ parity、
+  无新 held-out 竞争；HR1 held-out 数据集已消耗。**Next = Phase 11 r4 productization/integration**，
+  产品化必须首先保持已验证 r4 行为。发布边界不变（D068 pin `47401b04`、Android 产品线、gitlink、
+  APK 均不更新）。
 - （2026-10-06，D070）混输排名终局修正 COMPLETE：blanket classical-coverage 放置规则替换为有界跨源插入类，
   `chatgpt`/`macos`/`openwrt`/`libime` 在真实产品路径全部 rank 0，MIXEDCORP MRR 1.000，两棵树 ctest 19/19；
   addons head `57d72c2`（PR #3 仍 OPEN 未 merge），发布边界与 VALIDATION DEBT 分类不变。
@@ -680,7 +755,8 @@ paired punctuation 的 formatter-only repair 暴露出验证状态必须分层�
   有界混搜多样性缺陷、Case 5 搜索驱逐缺陷均 CLOSED 且为 fatal 回归保护，ctest 20/20；**Phase 3A-2
   native/core: COMPLETE**；当时记录的下一 gate（Android device integration/acceptance、MIXEDDIAG
   witness 观察与 Fix C 判定）属 R6 线，已由 D074（2026-10-09）停止：R6 不再继续 N2/B1/B2/J/H，当前
-  next = M2+ implementation PoC；不把设备侧未测项记为 PASS。
+  next = M2+ implementation PoC（该项随后已执行并经 HR1 于 2026-10-10 收口，见 D075/Phase 11）；
+  不把设备侧未测项记为 PASS。
 
 ### Strategy 4 上游贡献边界（2026-10-04）
 

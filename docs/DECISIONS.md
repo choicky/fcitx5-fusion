@@ -1641,6 +1641,16 @@ Expected Behavioral Delta = NONE。
 命名澄清：本条所称混输侧 “A′” 指 Phase 3C 的 per-gap `ChineseGapSolver` 产品机制，**与 D072 的 Windows
 P0-C A′（TSF Key/Effect ordering）同名异物**；本条不修改、不重开、不被解读为影响 D072 或 Windows 线。
 
+> **部分修订注记（2026-10-10，由 D075 接受）：** 本条 §3 标题 “M2+ = 当前 implementation candidate” 的
+> candidate 表述、把架构选择理解为仍然 OPEN 的读法、以及把 “M2+ PoC / 另一轮 architecture-decision
+> experiment” 当作下一道 gate 的 current-state 表述（含 §6 的 “English lexicon 增强 deferred 至 M2+
+> architecture decision 之后” 之 defer 前提、§7 中 “English LM state 本轮测试 reset / preserve 两策略”
+> 作为未来状态的预期），**均不再规范**；对应 current-state 以 D075 为准：HR1 held-out 评估已完成且有效，
+> M2+/r4 已被接受为当前产品 Mixed Input 架构 baseline，架构竞争 CLOSED。本条其余内容按其原文继续有效，
+> 包括 §1 KEEP 裁定、§2 A′ 产品架构 SUPERSEDED 裁定本身、§3 所列九项长期架构 contract 要求（规范文本在
+> REQUIREMENTS §2.1）、§4、§5、§8；§9 reopen 条件 (b) 已按 D075 消化。本条正文是历史记录，原样保留、
+> 不改写。
+
 ### 1. KEEP — Architecture A 上位结构与仍有效的既有裁定
 
 - 上位结构继续有效：Chinese lexical hypotheses（LibIME-derived，含 Chinese LM、UserDict/history 能力）
@@ -1758,3 +1768,98 @@ gitlink/product pin、PR #3 状态；不构建 APK/release/tag。`researching-no
 AGENTS.md 报告并等待设计修订）；(b) M2+ PoC 结果促使 owner 重新评估 A′ 机制或 M3-B；(c) owner
 正式修订 m2p contract 时，重开对应分项。“还能测更多”、扩展矩阵或未穷尽 ROM/设备覆盖本身不构成
 重开或 blocker（AGENTS 分类规则不变）。
+
+## D075 — Mixed Input 架构基线终局：M2+/r4 接受为产品架构 Baseline 与 HR1 Held-out 评估收口
+
+**状态：Accepted（2026-10-10）。** 本条是 Android/Fcitx5 Fusion 中英混输的当前 architecture
+authority，依据 owner 已确认并采纳的 Project Instructions V2.1 最终架构结论与 HR1 held-out 评估
+裁决收口。本条是 docs/governance closure：不实现 r4、不修改生产源码、不修改 LibIME、不修改测试
+harness/benchmark、不运行任何评测、不访问已消耗的 HR1 held-out 数据行；Expected Behavioral
+Delta = NONE。本条对 D074 做部分修订（分项清单见 D074 头部注记与本条 §4），D074/D073 正文作为
+历史原样保留、不改写。命名澄清沿用 D074：混输侧 “A′” 与 D072 的 Windows P0-C A′ 同名异物；
+本条不修改、不重开、不被解读为影响 D072 或 Windows 线。
+
+### 1. 架构裁定（Accepted）
+
+- **M2+（单一 bounded mixed search，长期 contract 见 REQUIREMENTS §2.1 / D074 §3）被接受为当前
+  产品 Mixed Input 架构 baseline。** M2+/r4 = current accepted product architecture baseline。
+- **A′ 与 M2+ 之间的架构竞争 CLOSED。** A′ 保留为 historical/reference implementation 与证据
+  （其 per-gap `ChineseGapSolver` / Chinese Top-1 产品语义已由 D074 SUPERSEDED），不再是 competing
+  accepted product architecture；sunk implementation cost 不构成翻案依据。
+- **r4 = 在被评估的 M2+ 家族（r1–r4）中选出的 production baseline**；其已验证行为是产品化的行为
+  参照（§6）。
+- **不计划** r5/r6、A′ effort-parity 实验或任何新一轮 held-out 架构竞争。下一阶段是 **r4
+  productization/integration**（ROADMAP Phase 11），不是另一轮 M2+ PoC。
+
+### 2. HR1 Held-out 评估裁决（证据措辞精确，不升级、不降级）
+
+- **HR1 held-out 评估有效（valid）**：reveal attempt 1 按冻结 RCM（sha256
+  `28aa933e86705078c4c477c479b33090097d3a4ed394c2861e3ab24cda839f8a`）与冻结决策规则执行，
+  determinism 门 48/48 engine×cell run pairs EQUIVALENT（`/tmp/gate-hr1/reveal/attempt-1/report.md`；
+  前置认证与 negative-control 注入验证见 `/tmp/gate-hr1/h1-report.md`，held-out 语料冻结 HSF
+  STATUS: COMPLETE）。
+- **中文回归门 PASS**：C7 step 1 各引擎对 U 参照的 ZH_ONLY ci Top-3 / exact Top-1 比较全部
+  no trigger。
+- **在冻结选择规则下，r4（而非 r3）成为 M2+ 代表**：C7 step 2 `r4 vs r3 … → not clearly worse;
+  M=r4`。
+- **A′ vs r4 在主 held-out 质量指标（Track A ∩ MIXED ci Top-3）上为 INCONCLUSIVE**：C7 step 3
+  `Aprime vs r4 … p<0.05=no → INCONCLUSIVE`。因此**不得**写作 r4 在质量上统计性地战胜 A′，
+  **不得**写作 M2+ 具有被证明的、高于 A′ 的质量上限（proven higher quality ceiling）。
+- **产品决定基于完整证据**：在冻结决策规则下可比的 held-out 质量 + 显著更好的 runtime cost/
+  latency（held-out 侧 mixed keys p50/p95/p99：A′ ≈ 4.6–14.5 / 22.1–82.0 / 39.1–142.9 ms，r4 ≈
+  3.8–6.1 / 18.1–26.5 / 33.1–51.3 ms；进程 wall median A′ ≈ 40–195 s vs r4 ≈ 34–75 s，峰值 RSS
+  两者相当）+ 架构与产品属性（单一 bounded search、path LM state、集中式 transition policy、
+  无 per-gap 重复完整解码）+ 维护成本考量。
+- **召回区分必须保留**：A′ 在每个独立 Chinese gap 内执行更完整的 LibIME decode；r4 使用有界
+  增量搜索并可剪枝中间状态。**不得**制造“r4 在每一召回维度都优于 A′”的声称。
+- **HR1 held-out 数据集已被消耗**：此后不得将其描述或用作面向架构调参的 unseen held-out 证据。
+
+### 3. ENG_STATE=reset 裁定
+
+- 当前经验证的 r4 行为使用 **ENG_STATE=reset**；这是**当前验证过的实现策略**，
+  **不是**永久架构不变量（not a permanent architecture invariant）。
+- “Chinese LM state 是 search-path state 的组成部分”是长期架构要求；它**不**蕴含该状态当前必须
+  跨越 English transition 被保留。
+- **Cross-English Chinese LM-state preservation（preserve 或其他策略）= UNVERIFIED / DEFERRED
+  研究项，不是 r4 productization 的 blocker 或前置。**
+- HR1 实验参数（beam 大小、判定阈值、语料规模、`MIXED_M2P_*` 开关组合、reset 本身）**不**升级为
+  永久架构 Requirements；仅在 ROADMAP 实验记录中管理。
+
+### 4. 与 D074 的关系（KEEP / SUPERSEDED 分项）
+
+- **KEEP（仍有效）：** D074 §1 全部 KEEP 裁定；§2 A′ 产品架构 SUPERSEDED 裁定本身及其历史证据
+  保留条款；§3 九项长期架构 contract 要求（规范文本在 REQUIREMENTS §2.1）；§4（旧 Architecture A
+  实现不逐字恢复；WORKING HYPOTHESIS 定性保留）；§5（M3-B 状态，见本条 §5）；§8（发布边界）。
+- **SUPERSEDED（不再规范，已加注于 D074 头部）：** §3 标题的 “当前 implementation candidate”
+  表述及其候选读法；“架构选择仍然 OPEN”的任何读法；“另一轮 M2+ architecture-decision experiment
+  是下一道 gate”的路线表述（ROADMAP Phase 10 NEXT 措辞据此收口）；§6 中 “English lexicon 增强
+  deferred 至 M2+ architecture decision 之后”的 defer 前提——该 architecture decision 即本条，
+  前提已满足，词库增强回到正常产品/维护裁定，本条既不授权也不禁止任何具体词库变更；§7 中把
+  reset/preserve 双策略测试当作未来状态的预期（未来状态由本条 §3 与后续研究界定）。
+- **§9(b) 消化：** “PoC 结果促使 owner 重新评估 A′ 机制” 已按其自身语义由 owner 决定完成——
+  owner 基于 PoC/HR1 证据接受 M2+/r4，不恢复 A′ 为产品架构。
+
+### 5. M3-B（proposed D073）状态不变
+
+D073 维持 **PROPOSED — NOT ACCEPTED**；M3-B Graph-aware Parallel Mixed Recall 维持 **deferred
+research candidate**，不是当前 product target。本条不 accept M3-B，其 Data/Quality/Mobile Cost
+Gate 仍不构成 r4 productization 的前置阻断。
+
+### 6. 下一阶段语义边界（由 ROADMAP Phase 11 承载）
+
+- Next = **r4 productization/integration**；产品化**必须首先保持已验证的 r4 行为**（HR1 认证的
+  引擎语义为行为参照），再走正常工程流程（产品配置化、fork 集成、设备验收、发布裁定）。
+- 无 r5/r6、无 A′ effort-parity 实验、无新 held-out 架构竞争。
+- Cross-English LM-state preservation 是 deferred research，不阻塞产品化。
+- 发布边界不变：D060 current-state 权威、D068 首发发布边界（addons pin `47401b04`、Android
+  产品线 `contribution/fusion-enhanced-identity-naming-r8` @ `f2a64da1`）、PR #3 未 merge 状态、
+  Android gitlink/生产线均不因本条改变；不构建 APK/release/tag。
+
+### 7. Reopen conditions
+
+按 AGENTS.md 已收口证据与重开规则执行：仅**实质性新事实**可重开对应分项——相关产品行为/源码变化、
+依赖/artifact/版本变化、上游 API/许可/行为变化、与已接受结果矛盾的新设备证据、CI/release 回归、
+或命中本条专有的其他 reopen 条件；以及 r4 实现中真实源码/API/call-chain 证据与 REQUIREMENTS §2.1
+contract 冲突时按 Hard Stop 报告并等待设计修订（继承 D074 §9(a)）。**没有**自动触发的 r5/r6、
+A′ parity 或新 held-out campaign；“还能测更多”、矩阵不穷尽、未测 ROM 或缺少额外实验本身不构成
+重开理由。
