@@ -598,7 +598,9 @@ candidate” 与 “下一道 gate 是另一轮 M2+ 架构决策实验” 的措
 不再规范）。旧 Architecture A/A′ 内容不变：A′ per-gap ChineseGapSolver 产品架构 SUPERSEDED、保留为
 historical/reference implementation 与证据；M3-B（proposed D073，NOT ACCEPTED）维持 deferred
 research candidate；R6 已停止，不再继续 N2/B1/B2/J/H；本 Phase 不恢复 Phase3C production
-implementation。**Next = Phase 11 r4 productization/integration，不是另一轮 PoC。**
+implementation。**Next = Phase 11 r4 productization/integration，不是另一轮 PoC。**（该 Phase 11
+后续已于 2026-10-10 **VERIFIED / CLOSED**，见 Phase 11 与「当前下一步」；本句保留为该日裁定时的
+路线表述。）
 
 ### HR1 Held-out 评估收口记录（2026-10-10）
 
@@ -659,23 +661,70 @@ family/inference runtime/quantization/model size/feature schema/training mixture
 不改变 D068 发布 pin `47401b04`、Android gitlink/product pin；不构建 APK/release/tag；不修改
 researching-notes 历史研究与 `/tmp` 历史 evidence。
 
-## Phase 11 — M2+/r4 Productization / Integration（当前 Phase）
+## Phase 11 — M2+/r4 Productization / Integration（CLOSED）
 
-**状态：NEXT（2026-10-10，D075 Accepted）。** Architecture evaluation / HR1 = **CLOSED**；当前接受
-的 product Mixed Input 架构 baseline = **M2+/r4**。本 Phase 是把已验证的 r4 语义产品化并集成，
-**不是**另一轮 M2+ PoC。
+**状态：VERIFIED / CLOSED（2026-10-10，人工独立审核接受；架构 authority 仍是 D075，本收口不新增
+Decision）。** Architecture evaluation / HR1 = **CLOSED**；当前接受的 product Mixed Input 架构
+baseline = **M2+/r4**。本 Phase 把已验证的 r4 语义产品化为 addons fork 上的产品代码并通过审核；
+它**不是**另一轮 M2+ PoC。**下一道主产品线步骤 = Android integration（见「当前下一步」）。**
 
-### 目标与顺序
+### 收口事实（accepted closure facts）
 
-- [ ] **首先保持已验证的 r4 行为**：以 HR1 认证引擎配置（bounded mixed search、path LM state、
-      集中式 transitionAcrossEnglish、当前验证策略 ENG_STATE=reset）的行为语义为参照基线；产品化
-      改动不得静默偏离该行为，偏离须以新证据和新裁定显式进行；
-- [ ] 将 gate-er4 实验 payload 提炼为 addons fork 上的产品分支工作（从 R5c FINAL base `010b1eb`
-      起的 experiment diff 语义 → 可审查的产品提交序列；实验开关/诊断/env-var 面到产品配置面的
-      映射为产品化决策项，不在本 roadmap 预先规定）；
-- [ ] 在 productization 批次中按 AGENTS.md 三层验证执行：source/semantic review、机械/静态 review、
-      真实 build/ctest/CI；
-- [ ] 后续 Android 集成与设备验收按正常产品流程另行裁定（本 Phase 建立前不更新 gitlink/产品线/发布 pin）。
+- 产品化基于 **D075 accepted M2+/r4 baseline**，productization base = addons fork
+  `010b1eb`（`feature/android-runtime-diagnostics` tip）。
+- **HR1-tested r4 provenance 已确认**：recovered `er4-work/src/im` 与 HR1 评估的 r4 产品代码
+  **逐字节一致**（`diff -rq …/hr1-work/b2p/src/im …/er4-work/src/im` 无输出）；r4 无单一
+  commit，故 provenance 是 byte-identical 而非 commit-identical（`provenance.md`）。
+- 最终 addons 产品分支 `feature/mixed-input-r4-productization`（已 push 到 fork，本地 == 远端 ==
+  `644205f`，tree clean）：`8b55f82` English lexicon/data republish（7 files，+602/−424）、
+  `644205f` M2+/r4 product path + product tests（15 files，+1982/−269）。
+- 最终 productization delta `010b1eb..644205f` = **22 files，+2584 / −693**；累计 diff
+  `productization.diff` sha256 前缀 `f961815de21d2596…`。
+- D075 认证值正确成为产品默认值，唯一设置点 `mixedM2PConfig()`：**B = 4**
+  （`M2P_DEFAULT_RETENTION_BEAM`）、**λ = 0.025**（`M2P_DEFAULT_LM_LAMBDA`）、
+  **κ = 0.8**（`M2P_DEFAULT_ENGLISH_KAPPA`）、terminal cost = **total**、hand-off cost =
+  **total**（LM-aware 单一成本式；实验期由 `MIXED_M2P_TERMINAL_SCORE` / `MIXED_M2P_HANDOFF_SCORE`
+  切换的 structural-only 替代项在产品树中为 0 处）、**ENG_STATE = reset**（集中于
+  `transitionAcrossEnglish` 边界；是当前验证策略而非永久不变量，D075 §3）。
+- 实验专用 env 开关 / diagnostics / counters / trace / gate / selectors 已从产品 `im/` 移除
+  （`getenv` in `im/` = 0）。
+- A′ `ChineseGapSolver` 实验路径**未随产品发布**（`im/` 内 0 处代码）。
+- **两条被明确接受的偏离**（source-evidence-driven deviations，**不是**清理未完成）：
+  `LibIMEChineseArcOracle` 保留（产品路径实际使用的 live base API：M2+ word-arc 表由其构建，
+  `pinyin.cpp:2026` → seam `pinyin.cpp:719-744`，有 base 测试覆盖）；
+  `MixedSegmentationSearch::searchFrom` 保留（live/reachable base API：`mixedM2PEnabled()` 未创建
+  M2+ search 时 `MixedEngine::compute` 即走此路径，`mixedengine.cpp:105`、`:155`，base 断言
+  `test/testmixedsegmentation.cpp:168-182`）。删除二者会移除 base 功能与已测行为，与「首先保持
+  已验证 r4 行为」冲突。证据 `layera/layer-a.md` A.4。
+- **`git diff --check` 状态（精确措辞，不得写作裸 PASS）**：非 lexicon 源码 findings = **0**；生成的
+  `im/pinyin/english_lexicon.tsv` **保留继承来的 trailing-tab 格式**（delta 内 242 行输出 = 121 条被标记
+  新增行 + 121 条内容回显，全部位于该文件），因为该文件是生成物且与已验证 payload **逐字节一致**
+  （sha256 前缀 `ed36694fde1d1420`），重排格式会改变随包词库及其行为。该例外**已接受、非阻断**
+  （`layera/layer-a.md` A.5）。
+- **最终验证证据已接受**：warning-free build（`BUILD_WARNINGS=0`，151 targets）；`ctest` **20/20**
+  （含最终提交树）；Layer C final equivalence cycles **hard differences = 0**（600 rows/cycle，
+  `rank_exact`/`rank_ci` 每次 run 600/600 一致，偏差仅落在 payload 自身 flip 集的 `top2`/`top3`）；
+  LibIME 未修改；Phase 11 内无 Android 集成；无 release / tag / upstream push；fork 产品分支 push 成功。
+  诚实限制：等价性仅在 DEV 冻结语料上证明（对已验证 payload 的 fidelity，不是新的泛化结论），评估器
+  本身从来不是字节可复现（LibIME 同分候选不稳定排序）；已消耗 HR1 held-out MIXED 行未被读取用于调参，
+  也未运行任何新评估。
+
+### 目标与顺序（收口状态）
+
+- [x] **保持已验证的 r4 行为**：以 HR1 认证引擎配置（bounded mixed search、path LM state、集中式
+      `transitionAcrossEnglish`、当前验证策略 ENG_STATE=reset）为行为参照；产品化改动未静默偏离，
+      偏离处以 Layer C hard=0 与新证据显式确认；
+- [x] 将 gate-er4 实验 payload 提炼为 addons fork 上的产品分支（`010b1eb` 起的 experiment diff 语义 →
+      两个可审查产品提交；实验开关/诊断/env-var 面 → 产品配置面映射见上方收口事实）；
+- [x] 按 AGENTS.md 三层验证执行：Layer A source/semantic + 机械/静态 review、Layer B 真实
+      build/ctest、Layer C 行为等价（未把较低层结果冒充较高层）；
+- [x] **Android 集成与设备验收按正常产品流程另行裁定**：本 Phase 未更新 gitlink / 产品线 / 发布 pin，
+      该项现在是**下一道主产品线步骤**，不属于本 Phase 已完成内容。
+
+Phase 11 证据（不复制进总控仓库，按路径索引）：`/tmp/mixed-r4-productization/` 下
+`final-report.md`（§16 结果声明，authoritative outcome）、`validation.md`（oracle 定义与 cycles
+1–7）、`layera/layer-a.md`、`layerb/layer-b.md`、`layerc/`（`cmprows.py` 与逐 cycle 结果）、
+`conflict-audit.md`、`CHECKLIST.md`、`provenance.md`、`productization.diff`。
 
 ### Explicit non-goals
 
@@ -687,7 +736,11 @@ researching-notes 历史研究与 `/tmp` 历史 evidence。
 - 不把 HR1 实验参数（beam、阈值、语料规模、reset 本身）写入永久 Requirements；
 - 发布边界不变：D060 current-state 权威、D068 发布 pin `47401b04`、Android 产品线
   `contribution/fusion-enhanced-identity-naming-r8` @ `f2a64da1` 不因本 Phase 自动更新；不构建
-  APK/release/tag，直到产品化与验收证据支持相应裁定。
+  APK/release/tag。
+- **English lexicon 规模不冻结**：当前随包词库 = 已验证 r4 baseline 所属词库，其状态随本 Phase
+  收口一并接受；未来「面向中文上下文的更小 English Lexicon」是**独立工作流**，属正常产品/维护
+  裁定（D075 §4），**不得回溯改动已 CLOSED 的 Phase 11 r4 产品化证据**，也不提前把 1k/3k/5k 或
+  任何其它规模写成产品 requirement。
 
 ## 工程节奏
 
@@ -729,7 +782,8 @@ paired punctuation 的 formatter-only repair 暴露出验证状态必须分层�
   gitlink、生产线或 APK。
   （**2026-10-10 更正：** 该 M2+ PoC/HR1 已执行并收口；“implementation candidate/待架构决定”表述不再
   规范。当前 accepted baseline = **M2+/r4**，Next = **r4 productization（Phase 11）**，见 D075 与
-  下方 2026-10-10 条目。本段其余内容保留为 2026-10-09 历史记录。）
+  下方 2026-10-10 条目（D075 与 Phase 11 收口；后者已于同日 VERIFIED/CLOSED，主线下一步现为
+  Android integration）。本段其余内容保留为 2026-10-09 历史记录。）
 - （2026-10-10，D075）Mixed Input 架构基线终局 COMPLETE：HR1 held-out 评估**有效**（determinism
   48/48 EQUIVALENT），中文回归门 **PASS**，冻结选择规则下 **r4（而非 r3）成为 M2+ 代表**，主质量指标
   **A′ vs r4 = INCONCLUSIVE**（不得写作 r4 质量统计性胜 A′ 或 M2+ 质量上限更高）；owner 基于完整
@@ -740,6 +794,31 @@ paired punctuation 的 formatter-only repair 暴露出验证状态必须分层�
   无新 held-out 竞争；HR1 held-out 数据集已消耗。**Next = Phase 11 r4 productization/integration**，
   产品化必须首先保持已验证 r4 行为。发布边界不变（D068 pin `47401b04`、Android 产品线、gitlink、
   APK 均不更新）。
+  （**2026-10-10 后续：** Phase 11 已执行并于同日 **VERIFIED / CLOSED**，见下条；本条保留为 D075
+  裁定当时的状态记录。）
+- （2026-10-10，Phase 11）**M2+/r4 Productization = VERIFIED / CLOSED**（人工独立审核接受；不新增
+  Decision，架构 authority 仍为 D075）。产品化基于 D075 accepted M2+/r4 baseline，base
+  `010b1eb`；HR1-tested r4 provenance 已确认（recovered `er4-work/src/im` 与 HR1 评估的 r4 产品代码
+  逐字节一致）。最终 addons 产品分支 `feature/mixed-input-r4-productization`（`8b55f82` English
+  lexicon/data republish + `644205f` M2+/r4 product path + product tests，已 push 到 fork，本地 ==
+  远端 == `644205f`）；delta 22 files，+2584/−693，`productization.diff` sha256 前缀
+  `f961815de21d2596…`。D075 认证值成为产品默认值（B=4、λ=0.025、κ=0.8、terminal=total、
+  handoff=total、ENG_STATE=reset）；实验 env 开关/诊断/counters/trace/gate/selectors 已从产品 `im/`
+  移除；A′ `ChineseGapSolver` 实验路径未随产品发布。**两条偏离经审核明确接受**（`LibIMEChineseArcOracle`
+  与 `MixedSegmentationSearch::searchFrom` 保留 = live base API + base 测试覆盖，是源码证据驱动的正确
+  偏离，不是清理未完成）。`git diff --check` 精确状态：**非 lexicon 源码 findings = 0**；生成的
+  `english_lexicon.tsv` 保留继承来的 trailing-tab 格式以维持与已验证 payload 的逐字节一致，该例外
+  已接受、非阻断。最终证据接受：warning-free build、`ctest` 20/20、Layer C final equivalence cycles
+  hard differences = 0、LibIME 未修改、Phase 11 内无 Android 集成、无 release/tag/upstream push。
+  证据：`/tmp/mixed-r4-productization/`（`final-report.md` §16、`validation.md`、`layera/`、`layerb/`、
+  `layerc/`、`conflict-audit.md`、`CHECKLIST.md`、`provenance.md`、`productization.diff`）；细则见
+  ROADMAP Phase 11 收口事实。
+  **Main product path next = Android integration** of the accepted M2+/r4 productized addons
+  implementation（集成基线 / gitlink / APK / 设备验收另行按正常产品流程裁定；本轮未执行）。发布边界
+  不变（D060 current-state 权威、D068 pin `47401b04`、Android 产品线 `f2a64da1`、gitlink 均未因本
+  Phase 更新）。**English lexicon 分离**：当前随包词库 = 已验证 r4 baseline 所属词库；未来「更小
+  中文上下文 English Lexicon」是独立工作流，不得回溯改动已 CLOSED 的 Phase 11 证据，也不提前冻结
+  1k/3k/5k 或任何其它规模为产品 requirement。
 - （2026-10-06，D070）混输排名终局修正 COMPLETE：blanket classical-coverage 放置规则替换为有界跨源插入类，
   `chatgpt`/`macos`/`openwrt`/`libime` 在真实产品路径全部 rank 0，MIXEDCORP MRR 1.000，两棵树 ctest 19/19；
   addons head `57d72c2`（PR #3 仍 OPEN 未 merge），发布边界与 VALIDATION DEBT 分类不变。
