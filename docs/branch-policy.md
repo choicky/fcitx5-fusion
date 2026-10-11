@@ -101,7 +101,10 @@ pin（如 workflow env `ADDON_COMMIT`）引用的 SHA，必须在该引用者存
 约束）或将其纳入永久分支，才能继续删除）。
 
 当前确证的 release pin：Android `release-apk.yml` `ADDON_COMMIT=47401b04…`（D068
-发布基线）当前唯一 remote protector 是 addons `fix/punctuation-candidate-pairs`。
+发布基线；其父提交 `9b3448e6` 为 `v0.1.3.7`/`v0.1.3.8-rc.1`/`v0.1.3-fusion.6` 的 pin）由 addons
+durable annotated tag `archive/d068-release-pin-47401b04` 保护（Gate 2 建立；原唯一 protector
+`fix/punctuation-candidate-pairs` 已删除，证据见
+`evidence/branch-governance-gate2-2026-10-11/reachability.md`）。
 
 ## 11. 跨仓变更顺序（Android ⇄ addons）
 
@@ -143,8 +146,10 @@ pin（如 workflow env `ADDON_COMMIT`）引用的 SHA，必须在该引用者存
 - **Gate 1 migration evidence** = `evidence/branch-governance-gate1-2026-10-11/`
   （ref-normalization 事实快照：创建 fusion refs、default branch 变更、rulesets、
   origin/HEAD 刷新；未做任何删除/重命名/tag/force-push/代码/workflow 变更）。
-- **Gate 2（future）** = 分支清理执行，尚未开始；任何删除动作须先满足 §10/§12 并
-  以独立治理批次进行。
+- **Gate 2 execution evidence** = `evidence/branch-governance-gate2-2026-10-11/`
+  （2026-10-11 执行：按 §10/§12 删除 13 个远端分支、建立 2 个 §9 archive tag；永久分支、
+  default branch、ruleset、源码与 workflow 未变）。后续删除动作仍须满足 §10/§12 并以独立
+  治理批次进行。
 
 ## 15. Reopen / 修订
 
