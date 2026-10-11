@@ -69,9 +69,13 @@ Gate 2 之后不再新建。
 
 - 需要**固定**的产物/基线用 annotated tag；需要**继续移动**的工作用 branch。
   不得用分支名表达“已冻结的发布点”。
-- 提议/接受的 tag 命名空间：
-  - `fusion/v<version>` — 产品发布点（Android 既有 `v*` release workflow 兼容；
-    实际发布沿用仓库现行 tag 实践）；
+- 产品发布 tag：使用 **Fusion Versioning Policy（D077）**定义的 canonical 语法
+  `v<complete-upstream-version>-fusion.<N>`（可带已接受的成熟度后缀 `-rc.K`）。
+  该形式匹配 Android 现行 `release-apk.yml` 的 `v*` tag 触发器（D077 §验证）。
+  版本/tag 语义的唯一 primary authority 是 D077；本文件只引用、不重复。
+  （本 policy 早期草案曾提出 `fusion/v<version>` 命名空间；它与 `v*` 触发器不
+  兼容，已在 PR #5 评审轮废弃，从未生效。）
+- 治理用 tag 命名空间：
   - `archive/<name>` — annotated，**仅**给有持续复现/审计价值的固定点；
   - `evidence/<id>` — 治理证据快照点。
 - **禁止**机械地为每个待删分支补建 archive tag，把 branch clutter 转成 tag clutter。

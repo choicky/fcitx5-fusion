@@ -92,7 +92,9 @@ rewritten. Details: local-origin-head-before-after.md, active-worktrees.md.
 ## K. Branch Policy documentation deliverable
 
 - Branch: `docs/branch-policy` (fcitx5-fusion, from origin/main 0c2f050).
-- Durable policy: `docs/branch-policy.md` (Accepted, 12-item policy of Gate 1 spec).
+- Durable policy: `docs/branch-policy.md` (accepted canonical Branch Policy; policy
+  content = the Gate 1 accepted branch-policy items, organized under scoped
+  sections; version/tag semantics are delegated to D077, not duplicated here).
 - Accepted Decision: D076 in `docs/DECISIONS.md` (states explicitly that no previous
   accepted Branch Policy is superseded, per repository evidence).
 - AGENTS.md: one added authority pointer (docs/branch-policy.md as current authority;
@@ -101,7 +103,9 @@ rewritten. Details: local-origin-head-before-after.md, active-worktrees.md.
   head `docs/branch-policy`, opened 2026-10-11, **left open (not merged)** per Gate 1.
   Initial content commit: `87f224f2dc5b1285280cfae61c6fe9a686737c84` (12 files,
   +678 lines: AGENTS.md, docs/DECISIONS.md, docs/branch-policy.md, 9 evidence files);
-  the follow-up commit on this branch recording these PR facts is the branch head.
+  follow-up commits on this branch record the PR identity and the blocker-only
+  review pass (D077 acceptance + tag-namespace and check.yml corrections); the
+  branch head is the latest commit of `docs/branch-policy`.
 
 ## L. Confirmations
 
@@ -118,11 +122,22 @@ start. Evidence-branch inventory classifications were read as inputs only.
   capability verified via API before settings changes; inventory facts consistent
   with remote state; no history rewrite needed; no protection needed weakening any
   unrelated rule.
-- Recorded nuances (not blockers): (1) addons check.yml only runs on `master` PRs —
-  PRs based on `fusion` won't run it until a future ci/* batch adds the filter
-  (workflow edits forbidden in Gate 1); (2) test-apk.yml push filters still name 3
-  legacy branches (inert; Gate 2+/ci concern); (3) fusion PR rule requires ≥1
-  approval (schema minimum for an active PR requirement); (4) gate-q3r1-worktree
+- Recorded nuances (not blockers): (1) addons check.yml remains upstream/
+  master-oriented; fusion-based product PRs do not automatically run it, and this
+  neither invalidates the migration nor contradicts the repository's
+  local-validation-first / CI-opt-in policy — whether a fusion CI trigger should
+  exist is a separate future CI decision, not decided by D076/D077 (full
+  disposition: workflow-trigger-audit.md); (2) test-apk.yml push filters still
+  name 3 legacy branches (inert; Gate 2+/ci concern); (3) fusion PR rule requires
+  ≥1 approval (schema minimum for an active PR requirement); (4) gate-q3r1-worktree
   branch-name drift (active-worktrees.md) — Gate 2 inventory item.
+- PR #5 review pass (2026-10-11, blocker-only, documentation-scope): two P1 review
+  findings resolved — ① the draft `fusion/v<version>` release-tag namespace was
+  incompatible with `release-apk.yml`'s `v*` trigger and is replaced by the newly
+  accepted D077 canonical syntax `v<complete-upstream-version>-fusion.<N>`
+  (statically verified compatible; no workflow changed); ② the addons check.yml /
+  fusion relationship is now documented precisely as a current-state fact with an
+  explicit disposition instead of a "future ci/* will fix" nuance. Follow-up
+  commits also add D077 and correct the D076 tag bullet.
 - Gate 2 (branch cleanup) NOT started; prerequisites are branch-policy.md §10/§12
   plus the MUST-PROTECT list (E).

@@ -44,12 +44,23 @@ Workflow files present at this commit (1): .github/workflows/check.yml.
 - No `schedule` triggers exist in either repo. No workflow behavior depends on
   HEAD/default for trigger evaluation.
 - `pull_request` filters: check.yml restricts PRs to base `master` — after the
-  default change, NEW PRs default to base `fusion` and would not run check.yml
-  (this is an upstream-CI-coverage nuance, not a heavy-trigger risk; the audit
-  requirement was "does behavior change inconsistently with policy" — Gate 1
-  policy keeps `master` as the upstream sync line where check.yml continues to
-  run on upstream sync pushes; recorded as a known consequence, no workflow edit
-  in this task).
+  default change, NEW PRs default to base `fusion` and do NOT automatically run
+  check.yml (its clang-format/build/test jobs). Disposition (PR #5 review finding
+  #2, resolved as a documentation correction, not a workflow change):
+  1. check.yml remains upstream/master-oriented; it validates upstream sync pushes
+     and master-based PRs, which is what the `master` upstream-sync line needs.
+  2. Gate 1 explicitly prohibited workflow modification, and intentionally made
+     none; nothing here invalidates the canonical `fusion` ref / default-branch
+     migration, whose oracles were ref identity, trigger neutrality, and settings.
+  3. Fusion product development follows the repository's established
+     local-validation-first / GitHub-CI-opt-in policy (AGENTS.md): master-oriented
+     check.yml was never the required validation gate for downstream product PRs;
+     the authoritative checks are local Gradle builds plus device verification.
+  4. Whether an automatic fusion CI trigger SHOULD exist is a separate future CI
+     policy/change decision (a `ci/*` batch); it is NOT decided by D076/D077 and
+     NOT decided by this migration. This PR claims neither that fusion currently
+     receives the same automatic check.yml coverage as master, nor that automatic
+     CI for fusion is mandatory under any existing Accepted Authority.
 - fdroid.yml/pull_request.yml: PR/dispatch-driven, unaffected by default change.
 - release-apk.yml: tag-keyed; unaffected.
 

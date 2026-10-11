@@ -1880,7 +1880,8 @@ Delta = NONE；不修改生产源码、workflow、测试或 REQUIREMENTS。
 - 上游集成模型：update master → `integration/upstream-YYYY-MM` ← 合入上游 → 验证 →
   reviewed PR 回 fusion。`contribution/*` 仅用于上游贡献，可 rebase，永不作 trunk。
 - Phase 是 ROADMAP 概念，不是长期分支；evidence 分支不是标准类别；tag 表达固定点
-  （`fusion/v<version>`、`archive/<name>`（annotated，仅持续复现/审计价值）、
+  （产品发布 tag 语法由 D077 canonical 定义：`v<complete-upstream-version>-fusion.<N>`
+  （可带 `-rc.K` 成熟度后缀）；治理命名空间 `archive/<name>`（annotated，仅持续复现/审计价值）、
   `evidence/<id>`），禁止机械补建 archive tag 造成 tag clutter。
 - **Gitlink 可达性不变量**：canonical/release-relevant ref（含 workflow `ADDON_COMMIT`
   pin）引用的 SHA 必须可达于永久分支或 durable tag；sole-protector 分支删除前必须先证明。
@@ -1904,3 +1905,78 @@ Delta = NONE；不修改生产源码、workflow、测试或 REQUIREMENTS。
 默认分支、ruleset 或 canonical `fusion` ref 出现与本 policy 冲突的外部变化（含
 non-fast-forward 移动）→ 立即 STOP 并按 AGENTS.md 冲突规则报告。policy 修订只能通过
 新的 Accepted Decision。
+
+## D077 — Fusion Versioning Policy：canonical 版本命名 `<upstream-version>-fusion.<N>`
+
+**状态：Accepted（2026-10-11）。** 分类：**既有发布实践的形式化 + 前瞻规范统一；不
+supersede 任何 Accepted Decision**（逐条权威核查见 §3）。本条是 version/tag 语义的唯一
+primary authority；`docs/branch-policy.md` §9 只引用本条、不重复内容。REQUIREMENTS.md 现无
+版本命名需求，本条不改 REQUIREMENTS（不属于需求域）。本条为 documentation batch：不修改
+Android/addons/LibIME 源码、不修改任何 workflow、不创建 tag、不触发 CI、不发布；Expected
+Behavioral Delta = NONE。
+
+### 1. Canonical 形式
+
+- 人类可读版本（versionName 基线）：`<complete-upstream-version>-fusion.<Fusion-revision>`；
+  Git 发布 tag：`v<complete-upstream-version>-fusion.<Fusion-revision>`。
+  例：`0.1.3-fusion.1` … `0.1.3-fusion.9` / `v0.1.3-fusion.9`。
+- 预发布成熟度后缀置于 Fusion revision 之后：`0.1.4-fusion.1-rc.1` → `0.1.4-fusion.1-rc.2`
+  → `0.1.4-fusion.1`（对应 tags `v0.1.4-fusion.1-rc.1` 等）。不引入 alpha/beta，除非未来
+  真实发布流程需要。
+
+### 2. 语义规则
+
+1. **完整保留**上游 release version 作为 upstream-baseline 分量，不缩写、不改写。
+2. upstream-version 分量必须标识 Fusion 产品**实际已并入**的上游 release baseline。
+3. 上游发布更新版本**本身不构成**变更该分量的授权：若 Fusion 仍基于 upstream 0.1.3，
+   则继续发布 `0.1.3-fusion.N`，即使 upstream 0.1.4 已公开。
+4. 仅当更新的上游 baseline 实际通过 branch-policy.md §4 的上游集成流程完成
+   integration/validation 并进入永久 `fusion` trunk 后，才可切换到该 baseline 的
+   `0.1.4-fusion.1`。
+5. 同一 upstream baseline 内，Fusion revision 单调递增。
+6. upstream baseline 变更时，Fusion revision 重置为 1。
+7. 发布成熟度由 `-rc.K` 等后缀表达（§1）。
+8. Android `versionCode` 与该人类可读语义**独立**：仅要求在可安装 Fusion releases 间严格
+   单调递增（现行机制：`Versions.baseVersionCode` 手动 bump，不变）。除非未来 Accepted
+   Decision 要求，不把 upstream/Fusion 结构数学编码进 versionCode。
+9. 使用旧命名方案的历史发布（`v0.1.3-moqi.1/.2`、`v0.1.3.7`、`v0.1.3.8-rc.1/.2`、已发布
+   `v0.1.3-fusion.6` 等）是**历史事实**：不为符合新 policy 而重写历史证据、旧 tag、旧发布
+   记录或旧报告。
+10. 若未来上游版本形态出现不可预见的解析/表示歧义：仍保留完整上游 release version，
+    下游表示通过未来 Accepted Decision 解决；不提前发明投机性复杂度。
+
+### 3. 与既有权威的关系（supersession 核查）
+
+- **D054**（version 来自单一权威算法 `git describe --tags --long --always`；APK 文件名
+  branding）：**仍有效，机制不变**。本条只约束所打 tag 的形式；describe 随 tag 顺延输出。
+- **D060 / D066 / D068**（首发基线、RC.1 驳回与 pin 更正、RC.2 精确产物晋升发布）：均为
+  已发生发布事实与历史证据，**保持不变**；其中 `v0.1.3.8-rc.N` 是当时执行用 tag，不构成本
+  条意义上对未来 releases 的规范命名形式。本条不推翻、不改写它们（规则 9）。
+- **D063**（签名产物与精确晋升策略）：发布流程权威**不变**；`-rc.K` 只是成熟度命名表达。
+- **D064 / D058**（签名身份）：与版本命名无关，不变。
+- **D075 / D076**：无版本形态裁定；D076 §1 的 tag 命名空间已改为引用本条。
+- 结论：无任何先前 Accepted Decision 被 supersede；本条为 **formalization**（先例：
+  `v0.1.3-fusion.6` 已经由现行 `release-apk.yml` 管线正式发布，CI run `37037562844` 成功）。
+
+### 4. 静态兼容性验证（read-only，源码/配置为 Android fusion head `bb6f88a5`，2026-10-11）
+
+- `build-logic/convention/src/main/kotlin/ProjectExtensions.kt`：
+  `buildVersionName = runCmd("git describe --tags --long --always", Versions.baseVersionName)`
+  —— 纯字符串直通，无数值/结构解析；Android versionName 接受该字符串（历史产物已实际携带
+  `v0.1.3.8-rc.2-0-g…` 与 `v0.1.3-fusion.6-0-ge48896ac` 风格 versionName）。
+- `build-logic/convention/src/main/kotlin/Versions.kt`：`calculateVersionCode() =
+  baseVersionCode * 10 + abiId`（`baseVersionCode` 为手动常量，现 11）——versionCode 与
+  versionName 形态完全解耦，符合规则 8。
+- `.github/workflows/release-apk.yml`：触发 `on.push.tags: ["v*"]` —— `v0.1.3-fusion.9`
+  匹配；workflow 对 tag 名本身**无版本解析**，仅对 Gradle 产物名做字符串前缀
+  case/替换检查（`org.fcitx.fcitx5.android-` → `…fusion-enhanced-`），与版本形态无关。
+- `app/org.fcitx.fcitx5.android.yml`（F-Droid recipe metadata）：placeholder builds，无
+  针对 fork tag 的 regex 解析。
+- **结论：`0.1.3-fusion.9` / `v0.1.3-fusion.9` / `0.1.4-fusion.1-rc.2` 无实际 parser/format
+  不兼容**，无需 STOP。PR #5 评审发现的草案 `fusion/v<version>` 形式因不匹配 `v*` 触发器而
+  废弃（见 branch-policy.md §9）。
+
+### 5. Reopen conditions
+
+未来上游版本形态命中规则 10 的解析歧义、或发布基础设施出现与本条冲突的真实需求时，按
+Hard Stop 报告并通过新的 Accepted Decision 解决。
