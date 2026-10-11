@@ -91,11 +91,16 @@ working data, superseded by branches.tsv).
 ## G. Publication details
 
 - Evidence branch: `evidence/branch-inventory-2026-10-11` (name available — created fresh, no suffix needed)
-- Created from: latest `origin/main` @ 483470c (verified to contain the merged Phase 11 docs update — PR #3 —
-  after a fresh `git fetch`; fetch timestamp below)
-- Commits / files / PR number+URL: recorded in the follow-up commit of this branch (final-report.md is
-  updated in-commit once the PR number exists)
-- The main fcitx5-fusion worktree was NOT switched (branch built via plumbing; only the evidence branch was pushed)
+- Created from: latest `origin/main` @ 483470c after a fresh `git fetch --prune` at 2026-10-11T03:21:34Z;
+  verified origin/main contains the merged Phase 11 docs update (fusion PR #3, commit ad58d57 is an ancestor).
+- Commit 1: b5029651 "docs(evidence): branch inventory before repository cleanup" — exactly the 6 evidence
+  files under `evidence/branch-inventory-2026-10-11/` (+774 lines; no other file touched).
+- Pushed: `origin/evidence/branch-inventory-2026-10-11` — the only branch pushed by this task.
+- PR: choicky/fcitx5-fusion **#4** — https://github.com/choicky/fcitx5-fusion/pull/4 — OPEN against `main`,
+  evidence-only body per task spec; **NOT merged**; no CI requested or triggered for this evidence PR.
+- Commit 2 (this follow-up): records these publication details in final-report.md.
+- The main fcitx5-fusion worktree was NOT switched (branch built via plumbing; checked-out branch remained
+  docs/phase11-complete-current-state-sync throughout)
 
 ## H. Explicit confirmations
 
