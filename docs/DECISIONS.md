@@ -1779,6 +1779,16 @@ Delta = NONE。本条对 D074 做部分修订（分项清单见 D074 头部注�
 历史原样保留、不改写。命名澄清沿用 D074：混输侧 “A′” 与 D072 的 Windows P0-C A′ 同名异物；
 本条不修改、不重开、不被解读为影响 D072 或 Windows 线。
 
+> **澄清注记（2026-10-11，Confirmed Evidence；不改变本条任何裁定、证据或历史表述）：** 经产品
+> 基线源码复核（fcitx5-chinese-addons @ 644205f），本条接受的 M2+/r4 中，unified bounded mixed
+> search 规范混输候选的 **generation**（Layer 1）；PinyinEngine 最终组装（Layer 2）经既有
+> 排序/组装机制（customCandidateMap / CandidateOrder / inplace_merge，im/pinyin/pinyin.cpp:816-993）
+> 把混输候选与 LibIME classical 候选及其他既有来源做候选级 composition——“非两个整句 decoder
+> 末端朴素 late merge”是本条及 REQUIREMENTS §2.1 禁止对象的准确含义，不排除该候选级
+> composition。classical 路径对大写/raw literal 字面候选的保留同样不构成 English Core 拥有的
+> 词汇假设。本注为对既有接受文本的读法澄清，非新增 authority；REQUIREMENTS §2.1 已据相同
+> 口径加注澄清注记。
+
 ### 1. 架构裁定（Accepted）
 
 - **M2+（单一 bounded mixed search，长期 contract 见 REQUIREMENTS §2.1 / D074 §3）被接受为当前
