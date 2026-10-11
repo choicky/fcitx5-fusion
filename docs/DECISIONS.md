@@ -1863,3 +1863,44 @@ Gate 仍不构成 r4 productization 的前置阻断。
 contract 冲突时按 Hard Stop 报告并等待设计修订（继承 D074 §9(a)）。**没有**自动触发的 r5/r6、
 A′ parity 或新 held-out campaign；“还能测更多”、矩阵不穷尽、未测 ROM 或缺少额外实验本身不构成
 重开理由。
+
+## D076 — Fusion 分支治理：Canonical Branch Policy 接受（docs/branch-policy.md）
+
+**状态：Accepted（2026-10-11）。** 本条接受 `docs/branch-policy.md` 为分支治理的当前唯一
+Accepted Branch Policy（current-state 权威）。仓库证据核查（AGENTS.md / REQUIREMENTS.md /
+ROADMAP.md 与 docs/ 检索“branch policy”）确认此前**不存在**已接受的 Branch Policy，故本条
+**不 supersede 任何先前决定**；D060/D063/D068/D075 的发布边界、pin 与权威地位不变，本条仅将
+其分支引用纳入 canonical 命名框架。本条为 documentation/governance batch：Expected Behavioral
+Delta = NONE；不修改生产源码、workflow、测试或 REQUIREMENTS。
+
+### 1. 接受的 policy 要点（正文权威见 docs/branch-policy.md）
+
+- 永久分支：Android/addons 各自 `fusion`（product trunk）+ `master`（upstream-only sync
+  line）；fcitx5-fusion `main`。master 永不承载 Fusion-owned commit；fusion 永不重写。
+- 上游集成模型：update master → `integration/upstream-YYYY-MM` ← 合入上游 → 验证 →
+  reviewed PR 回 fusion。`contribution/*` 仅用于上游贡献，可 rebase，永不作 trunk。
+- Phase 是 ROADMAP 概念，不是长期分支；evidence 分支不是标准类别；tag 表达固定点
+  （`fusion/v<version>`、`archive/<name>`（annotated，仅持续复现/审计价值）、
+  `evidence/<id>`），禁止机械补建 archive tag 造成 tag clutter。
+- **Gitlink 可达性不变量**：canonical/release-relevant ref（含 workflow `ADDON_COMMIT`
+  pin）引用的 SHA 必须可达于永久分支或 durable tag；sole-protector 分支删除前必须先证明。
+- 跨仓顺序：先 addons fusion，再 Android gitlink 独立变更并记录 exact SHA。
+- 删除前 cleanup 清单（§12）：可达性、文档/CI/AGENTS 引用、上游贡献价值、worktree、open PR。
+
+### 2. Canonical refs（本条接受时已存在的事实，非本条创建）
+
+- choicky/fcitx5-android `refs/heads/fusion` = `bb6f88a54b1a2d353225a256833ec42ba15cefdd`
+  （原 `contribution/fusion-enhanced-identity-naming-r8` remote tip）。
+- choicky/fcitx5-chinese-addons `refs/heads/fusion` = `644205f6626011b37a0e1cc7fa789e00020e453d`
+  （原 `feature/mixed-input-r4-productization` tip）。
+- 两 code repo GitHub default branch 已切至 `fusion`；`master` 保留为上游同步线。
+- 迁移过程与验证证据：`evidence/branch-governance-gate1-2026-10-11/`（Gate 1 ref
+  normalization，未删除/重命名/tag/force-push 任何 ref，未改 workflow 与源码）。
+- Gate 2（分支清理）**未开始**；`evidence/branch-inventory-2026-10-11/` 的分类仅为历史
+  清点结论，执行删除前必须逐项满足 branch-policy.md §10/§12。
+
+### 3. Reopen conditions
+
+默认分支、ruleset 或 canonical `fusion` ref 出现与本 policy 冲突的外部变化（含
+non-fast-forward 移动）→ 立即 STOP 并按 AGENTS.md 冲突规则报告。policy 修订只能通过
+新的 Accepted Decision。
