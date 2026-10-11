@@ -1876,9 +1876,16 @@ Delta = NONE；不修改生产源码、workflow、测试或 REQUIREMENTS。
 ### 1. 接受的 policy 要点（正文权威见 docs/branch-policy.md）
 
 - 永久分支：Android/addons 各自 `fusion`（product trunk）+ `master`（upstream-only sync
-  line）；fcitx5-fusion `main`。master 永不承载 Fusion-owned commit；fusion 永不重写。
+  line）；fcitx5-fusion `main`。master 永不承载 Fusion-owned commit——该不变量为
+  **前瞻性**裁定：android master 上既有的两个 pre-D076 fork-only CI 遗留提交作为历史
+  事实保留、不重写、不构成先例（精确定位与处置边界见 branch-policy.md §2；其清理属
+  未来独立治理批次）。fusion 永不重写。
 - 上游集成模型：update master → `integration/upstream-YYYY-MM` ← 合入上游 → 验证 →
   reviewed PR 回 fusion。`contribution/*` 仅用于上游贡献，可 rebase，永不作 trunk。
+- fusion PR 合并的**两层要求**：GitHub 机械规则 = 必须经 PR、零强制 approving review
+  （ruleset `required_approving_review_count=0`，单维护者操作性安排）；项目流程规则 =
+  合并/PASS 判定前仍需独立评审（项目独立 AI review + owner 合并决定）。两层含义见
+  branch-policy.md §3/§13。
 - Phase 是 ROADMAP 概念，不是长期分支；evidence 分支不是标准类别；tag 表达固定点
   （产品发布 tag 语法由 D077 canonical 定义：`v<complete-upstream-version>-fusion.<N>`
   （可带 `-rc.K` 成熟度后缀）；治理命名空间 `archive/<name>`（annotated，仅持续复现/审计价值）、

@@ -78,10 +78,17 @@ github-settings-before-after.md.
 
 Before: classic protection GETs 404 ("Branch not protected"), rulesets `[]` on both
 repos — nothing existed to overwrite. After: rulesets active —
-android 24866829 (fusion: deletion, non_fast_forward, pull_request≥1 approval),
-android 24866831 (master: deletion, non_fast_forward), addons 24866832 (fusion),
-addons 24866833 (master); no bypass actors. Mechanically-enforced vs policy-only
-split recorded. Details: github-settings-before-after.md.
+android 24866829 (fusion: deletion, non_fast_forward, pull_request≥1 approval at
+application), android 24866831 (master: deletion, non_fast_forward), addons
+24866832 (fusion, same as application), addons 24866833 (master); no bypass
+actors. Mechanically-enforced vs policy-only split recorded.
+Correction pass (final PR #5 governance pass, same day): both fusion rulesets'
+`pull_request` rule set to `required_approving_review_count=0` (+
+`require_extra_approval_for_unattributed_changes=false`) per owner decision —
+PR still required, zero mandatory GitHub approving reviews; mechanism verified
+expressible before applying. Master rulesets, defaults, refs unchanged
+(re-verified by fresh GETs). Details: github-settings-before-after.md
+("Correction pass" section).
 
 ## J. Local origin/HEAD
 
@@ -103,9 +110,11 @@ rewritten. Details: local-origin-head-before-after.md, active-worktrees.md.
   head `docs/branch-policy`, opened 2026-10-11, **left open (not merged)** per Gate 1.
   Initial content commit: `87f224f2dc5b1285280cfae61c6fe9a686737c84` (12 files,
   +678 lines: AGENTS.md, docs/DECISIONS.md, docs/branch-policy.md, 9 evidence files);
-  follow-up commits on this branch record the PR identity and the blocker-only
-  review pass (D077 acceptance + tag-namespace and check.yml corrections); the
-  branch head is the latest commit of `docs/branch-policy`.
+  follow-up commits on this branch record the PR identity, the blocker-only
+  review pass (D077 acceptance + tag-namespace and check.yml corrections) and
+  the final governance pass (fusion zero-approval ruleset correction, approval
+  wording, android master residue documentation); the branch head is the latest
+  commit of `docs/branch-policy`.
 
 ## L. Confirmations
 
@@ -128,8 +137,14 @@ start. Evidence-branch inventory classifications were read as inputs only.
   local-validation-first / CI-opt-in policy — whether a fusion CI trigger should
   exist is a separate future CI decision, not decided by D076/D077 (full
   disposition: workflow-trigger-audit.md); (2) test-apk.yml push filters still
-  name 3 legacy branches (inert; Gate 2+/ci concern); (3) fusion PR rule requires
-  ≥1 approval (schema minimum for an active PR requirement); (4) gate-q3r1-worktree
+  name 3 legacy branches (inert; Gate 2+/ci concern); (3) at Gate 1 application
+  the fusion PR rule carried ≥1 approval, described then as "schema minimum for
+  an active PR requirement" — **superseded by the correction pass**: the owner
+  accepted a zero-mandatory-approval PR requirement (single-maintainer
+  operational choice; independent review + owner merge decision remain the
+  project-process rule), the schema was verified to express
+  `required_approving_review_count=0`, and both fusion rulesets were corrected
+  (see §I); (4) gate-q3r1-worktree
   branch-name drift (active-worktrees.md) — Gate 2 inventory item.
 - PR #5 review pass (2026-10-11, blocker-only, documentation-scope): two P1 review
   findings resolved — ① the draft `fusion/v<version>` release-tag namespace was
@@ -139,5 +154,20 @@ start. Evidence-branch inventory classifications were read as inputs only.
   fusion relationship is now documented precisely as a current-state fact with an
   explicit disposition instead of a "future ci/* will fix" nuance. Follow-up
   commits also add D077 and correct the D076 tag bullet.
+- PR #5 final governance pass (2026-10-11, blocker-only): ① fusion ruleset
+  correction applied to both code repos (PR required, zero mandatory approving
+  reviews; mechanism verified first — see §I and the Correction pass in
+  github-settings-before-after.md; before/after JSONs under raw/); ② approval
+  documentation corrected everywhere to separate the GitHub mechanical rule
+  (PR required, count 0) from the project process rule (independent review +
+  owner merge decision) — the earlier "owner can supply the required approval"
+  wording was inaccurate and is replaced; ③ android `master` historical residue
+  documented precisely in branch-policy.md §2 / D076: the upstream-only
+  invariant is forward-looking; the two pre-D076 fork-only CI commits
+  (`1d5deb17`, `8bd11e8b` above upstream `e6199a28`; inventory: ahead=2/
+  unique=2) are historical fact — no new fork-only commits are authorized, no
+  reset/rebase/force-push is authorized by PR #5, resolution is a future
+  independent governance item; ④ both P1 review threads verified against the
+  final diff and resolved. No workflow/source/branch/tag/CI action taken.
 - Gate 2 (branch cleanup) NOT started; prerequisites are branch-policy.md §10/§12
   plus the MUST-PROTECT list (E).

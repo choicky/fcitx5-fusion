@@ -31,6 +31,11 @@ Key Fusion-owned gitlinks at bb6f88a5:
   libime gitlink = ecd23795 (same as fusion head).
 - Confirms the topology: master carries upstream-only content (upstream addons
   gitlink), fusion head bb6f88a5 carries the Fusion product gitlink 644205f.
+  Scope note: "upstream-only" here refers to the submodule/gitlink topology of
+  commit 8bd11e8b. It does not assert that master's commit history contains no
+  pre-D076 fork-only commits — the two known historical CI-anchor commits on
+  android master (documentation: branch-policy.md §2) are outside this audit's
+  scope and do not affect gitlink reachability.
 
 ## fcitx5-chinese-addons @ 644205f6626011b37a0e1cc7fa789e00020e453d
 

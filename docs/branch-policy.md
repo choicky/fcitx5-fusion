@@ -26,6 +26,14 @@ GitHub default branch：两个 code repo 均为 `fusion`（Gate 1，2026-10-11 �
 
 - `master` 内容 = **仅上游内容**（fast-forward 同步上游）。
 - **禁止**在 master 上直接产生 Fusion-owned commit；Fusion 改动只进 `fusion`。
+- 本不变量自 D076 接受之时起**前瞻性生效**。接受时点 android `master` 上已存在
+  两个 pre-D076 的 fork-only CI 历史遗留提交（`1d5deb17`“ci: anchor Test APK
+  workflow name on the default branch”、`8bd11e8b`“ci: migrate the Test APK name
+  anchor to the test-apk.yml path”，位于上游提交 `e6199a28` 之上；清点证据：
+  branch-inventory android master ahead=2/unique=2）：它们是历史事实，保留、不重写
+  （本 policy 不授权对 master 做任何 reset/rebase/force-push），也**不构成**后续在
+  master 上产生 fork-only commit 的先例或授权；其清理属未来独立治理批次，非本
+  policy 生效条件。addons `master` 在该时点为干净上游线（ahead=0）。
 - 上游异常（上游断链、force-push、历史重写、可疑内容）＝**单独的 governance
   exception 流程**处理并记录，不得静默吸收进 master 或 fusion。
 
@@ -33,7 +41,9 @@ GitHub default branch：两个 code repo 均为 `fusion`（Gate 1，2026-10-11 �
 
 - `fusion` 是永久产品主干：**永不重写**；禁止 force-push、rebase 或任何改写已发布
   历史的操作（机械强制：ruleset `non_fast_forward`，见 §13）。
-- 产品变更一律通过 reviewed PR 进入 `fusion`（机械强制：ruleset `pull_request`）。
+- 产品变更一律通过 reviewed PR 进入 `fusion`。机械层：ruleset `pull_request` 要求
+  变更必须经 PR 合入（零强制 GitHub approving review，见 §13）；“reviewed”指项目
+  流程要求（独立评审 + owner 合并决定），不由 GitHub approval 计数机械表达。
 
 ## 4. 上游集成模型（upstream integration）
 
@@ -113,9 +123,16 @@ pin（如 workflow env `ADDON_COMMIT`）引用的 SHA，必须在该引用者存
 ## 13. 机械强制 vs 政策约束
 
 - 机械强制（GitHub repository rulesets，2026-10-11 起）：`fusion` = 禁删除、禁
-  force-push（non_fast_forward）、必须 PR（≥1 approval）；`master` = 禁删除、禁
-  force-push。id 与配置见 `evidence/branch-governance-gate1-2026-10-11/github-settings-before-after.md`。
-- 政策约束（不可由该机制机械表达，靠评审）：§2 的“master 仅上游内容”、§5 的
+  force-push（non_fast_forward）、必须经 PR 合入（`pull_request` 规则，
+  `required_approving_review_count = 0`，即**零强制 GitHub approving review**）；
+  `master` = 禁删除、禁 force-push。id 与配置（含 Gate 1 初值 ≥1 approval 及随后的
+  zero-approval 校正）见
+  `evidence/branch-governance-gate1-2026-10-11/github-settings-before-after.md`。
+- 两层要求须分开理解：**GitHub 机械规则** = fusion 变更必须是 PR、且不强制任何
+  GitHub approval 计数（单维护者仓库的操作性安排）；**项目流程规则** = 进入
+  fusion 的 PR 在判定 PASS/合并前仍必须通过独立评审（项目独立 AI review + owner
+  合并决定）。后者不由 ruleset 表达，由 AGENTS.md 评审纪律与本 policy §3 约束。
+- 其余政策约束（不可由该机制机械表达，靠评审）：§2 的“master 仅上游内容”、§5 的
   contribution 不升 trunk、§4 集成流程、§11 变更顺序、§12 清单义务。
 
 ## 14. 证据类别（本仓库内不得混读）
