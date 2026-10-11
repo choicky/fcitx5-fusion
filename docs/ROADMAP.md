@@ -721,9 +721,13 @@ VERIFIED / COMPLETE**；Android integration 属本 Phase 的 Integration 部分�
       两个可审查产品提交；实验开关/诊断/env-var 面 → 产品配置面映射见上方 productization 收口事实）；
 - [x] 按 AGENTS.md 三层验证执行：Layer A source/semantic + 机械/静态 review、Layer B 真实
       build/ctest、Layer C 行为等价（未把较低层结果冒充较高层）；
-- [ ] **Android 集成与设备验收（NEXT，尚未执行）**：本 Phase 的 Integration 部分按正常产品流程另行
-      裁定；gitlink / 产品线 / 发布 pin 至今未更新，该项是**下一道主产品线步骤**，不属于已完成的
-      productization 内容，但属于本 Phase 未完成内容（Phase 11 整体因此 IN PROGRESS）。
+- [ ] **Android 集成与设备验收（NEXT，2026-10-11 起集成批次进行中，未收口）**：Android 集成 PR
+      `choicky/fcitx5-android#1`（https://github.com/choicky/fcitx5-android/pull/1，分支
+      `integration/mixed-input-r4` @ `afb6ac28`，base 产品线
+      `f2a64da1`，addons gitlink/CI pin `19f06898`/`47401b04` → **`644205f`**，`release-apk.yml`
+      发布 pin 未动，LibIME `ecd2379` 未动；本地 Gate 3 `:app:testDebugUnitTest` 330 tests 0 failures
+      + `:app:assembleDebug` arm64-v8a 成功且 APK 实含重编译 r4 `m2psearch.cpp.o`；CI 待完成，
+      **未 merge**）。设备验收与 merge/发布裁定仍未执行；Phase 11 整体因此保持 IN PROGRESS。
 
 Phase 11 证据（不复制进总控仓库，按路径索引）：`/tmp/mixed-r4-productization/` 下
 `final-report.md`（§16 结果声明，authoritative outcome）、`validation.md`（oracle 定义与 cycles
@@ -825,6 +829,20 @@ paired punctuation 的 formatter-only repair 暴露出验证状态必须分层�
   中文上下文 English Lexicon」是独立工作流，不得回溯改动已 VERIFIED / COMPLETE 的 Phase 11
   productization 证据，也不提前冻结
   1k/3k/5k 或任何其它规模为产品 requirement。
+- （2026-10-11，Phase 11 Android integration）**Android 集成批次已提交并开 PR，未 merge、未收口**：
+  `choicky/fcitx5-android` PR **#1**，分支 `integration/mixed-input-r4` @ `afb6ac28`（单提交），base =
+  产品线 `contribution/fusion-enhanced-identity-naming-r8` @ `f2a64da1`；addons gitlink `19f06898` →
+  **`644205f`**，`test-apk.yml` CI pin `47401b04` → `644205f`（该 workflow 有意不跟随 gitlink，必须
+  随迁；`release-apk.yml` **发布 pin `47401b04` 未动**），LibIME `ecd2379` 未动，无 Android app 源改动。
+  集成前血缘核验：`dd81e1b`（MoQi/AuxiliaryFilter fusion head）是 `644205f` 祖先，`punc.mb.zh_CN`
+  与发布 pin 逐字节一致，`47401b04→644205f` 全部差异限于 `im/pinyin` mixed 产品面 + English lexicon
+  /data-licenses/tools + tests（55 files）⇒ 功能性严格超集。本地 Gate 3 先于 push：
+  `BUILD_ABI=arm64-v8a ./gradlew :app:testDebugUnitTest :app:assembleDebug` = BUILD SUCCESSFUL、
+  330 tests 0 failures、debug APK 86,458,410 B（SHA-256 `41b5c833…d205`）且实含新编译的
+  `m2psearch.cpp.o`/`libpinyin.so`；`git diff --check` clean。CI（pull_request 4 OS + develop）运行中。
+  **设备验收、merge、发布裁定仍未执行；Phase 11 整体 IN PROGRESS，本条不构成任何 CLOSED 表述。**
+  证据：`/tmp/mixed-r4-android-integration/`（`preflight.md`、`CHECKLIST.md`、`integration.diff`
+  sha256 `3fa15bb3…1d68`、`local-build.log`、`local-validation.md`、`final-report.md`）。
 - （2026-10-06，D070）混输排名终局修正 COMPLETE：blanket classical-coverage 放置规则替换为有界跨源插入类，
   `chatgpt`/`macos`/`openwrt`/`libime` 在真实产品路径全部 rank 0，MIXEDCORP MRR 1.000，两棵树 ctest 19/19；
   addons head `57d72c2`（PR #3 仍 OPEN 未 merge），发布边界与 VALIDATION DEBT 分类不变。
