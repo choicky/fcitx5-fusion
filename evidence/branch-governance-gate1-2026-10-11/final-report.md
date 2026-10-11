@@ -97,8 +97,11 @@ rewritten. Details: local-origin-head-before-after.md, active-worktrees.md.
   accepted Branch Policy is superseded, per repository evidence).
 - AGENTS.md: one added authority pointer (docs/branch-policy.md as current authority;
   evidence dirs as historical/snapshot only).
-- PR URL / head SHA: recorded in the follow-up commit of this branch (chicken-and-egg
-  with this PR's own head SHA); see `git log` for this file's next commit.
+- **PR #5: https://github.com/choicky/fcitx5-fusion/pull/5** — base `main`,
+  head `docs/branch-policy`, opened 2026-10-11, **left open (not merged)** per Gate 1.
+  Initial content commit: `87f224f2dc5b1285280cfae61c6fe9a686737c84` (12 files,
+  +678 lines: AGENTS.md, docs/DECISIONS.md, docs/branch-policy.md, 9 evidence files);
+  the follow-up commit on this branch recording these PR facts is the branch head.
 
 ## L. Confirmations
 
