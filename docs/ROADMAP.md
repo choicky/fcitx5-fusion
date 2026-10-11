@@ -599,8 +599,9 @@ candidate” 与 “下一道 gate 是另一轮 M2+ 架构决策实验” 的措
 historical/reference implementation 与证据；M3-B（proposed D073，NOT ACCEPTED）维持 deferred
 research candidate；R6 已停止，不再继续 N2/B1/B2/J/H；本 Phase 不恢复 Phase3C production
 implementation。**Next = Phase 11 r4 productization/integration，不是另一轮 PoC。**（该 Phase 11 的
-r4 productization 后续已于 2026-10-10 **VERIFIED / COMPLETE**；Phase 11 整体仍 **IN PROGRESS**，
-Next = Android integration，见 Phase 11 与「当前下一步」；本句保留为该日裁定时的路线表述。）
+r4 productization 后续已于 2026-10-10 **VERIFIED / COMPLETE**；当时 Phase 11 整体 **IN PROGRESS**，
+Next = Android integration，见 Phase 11 与「当前下一步」；本句保留为该日裁定时的路线表述，
+2026-10-11 Android integration 已完成、Phase 11 = COMPLETE。）
 
 ### HR1 Held-out 评估收口记录（2026-10-10）
 
@@ -661,15 +662,17 @@ family/inference runtime/quantization/model size/feature schema/training mixture
 不改变 D068 发布 pin `47401b04`、Android gitlink/product pin；不构建 APK/release/tag；不修改
 researching-notes 历史研究与 `/tmp` 历史 evidence。
 
-## Phase 11 — M2+/r4 Productization / Integration（IN PROGRESS）
+## Phase 11 — M2+/r4 Productization / Integration（COMPLETE）
 
-**状态：IN PROGRESS（2026-10-10：M2+/r4 Productization = VERIFIED / COMPLETE，人工独立审核接受；
-Android integration = NEXT。架构 authority 仍是 D075，本状态更正不新增 Decision）。** Architecture
-evaluation / HR1 = **CLOSED**；当前接受的 product Mixed Input 架构 baseline = **M2+/r4**。本 Phase
-把已验证的 r4 语义产品化为 addons fork 上的产品代码并已通过审核——**productization 部分已
-VERIFIED / COMPLETE**；Android integration 属本 Phase 的 Integration 部分，尚未执行，本 Phase 整体
-因此保持 IN PROGRESS。它**不是**另一轮 M2+ PoC。**下一道主产品线步骤 = Android integration
-（见「当前下一步」）。**
+**状态：COMPLETE（2026-10-11：M2+/r4 Productization = VERIFIED / COMPLETE，人工独立审核接受；
+Android integration 已经合并的 PR #4 完成；本 Phase 不再有待执行的下一步。架构 authority 仍是
+D075，本状态更正不新增 Decision）。** Architecture evaluation / HR1 = **CLOSED**；当前接受的
+product Mixed Input 架构 baseline = **M2+/r4**。本 Phase 把已验证的 r4 语义产品化为 addons fork
+上的产品代码并已通过审核——**productization = VERIFIED / COMPLETE**（addons `644205f`）；
+**Android integration = COMPLETE**：Android 持续开发线现消费 addons gitlink 与 test APK
+`ADDON_COMMIT` = **`644205f6626011b37a0e1cc7fa789e00020e453d`**，发布 pin 仍为 `47401b04`
+（见「Android 集成收口事实」）。集成批次已完成 signed D064 Debug APK 交付，并有项目所有者
+设备 smoke 回报（详见下方收口条目；不构成 exhaustive Android regression 验证）。
 
 ### Productization 收口事实（accepted productization closure facts）
 
@@ -712,7 +715,7 @@ VERIFIED / COMPLETE**；Android integration 属本 Phase 的 Integration 部分�
   本身从来不是字节可复现（LibIME 同分候选不稳定排序）；已消耗 HR1 held-out MIXED 行未被读取用于调参，
   也未运行任何新评估。
 
-### 目标与顺序（productization = VERIFIED / COMPLETE；Android integration = NEXT）
+### 目标与顺序（productization = VERIFIED / COMPLETE；Android integration = COMPLETE）
 
 - [x] **保持已验证的 r4 行为**：以 HR1 认证引擎配置（bounded mixed search、path LM state、集中式
       `transitionAcrossEnglish`、当前验证策略 ENG_STATE=reset）为行为参照；产品化改动未静默偏离，
@@ -721,13 +724,30 @@ VERIFIED / COMPLETE**；Android integration 属本 Phase 的 Integration 部分�
       两个可审查产品提交；实验开关/诊断/env-var 面 → 产品配置面映射见上方 productization 收口事实）；
 - [x] 按 AGENTS.md 三层验证执行：Layer A source/semantic + 机械/静态 review、Layer B 真实
       build/ctest、Layer C 行为等价（未把较低层结果冒充较高层）；
-- [ ] **Android 集成与设备验收（NEXT，2026-10-11 起集成批次进行中，未收口）**：Android 集成 PR
-      `choicky/fcitx5-android#1`（https://github.com/choicky/fcitx5-android/pull/1，分支
-      `integration/mixed-input-r4` @ `afb6ac28`，base 产品线
-      `f2a64da1`，addons gitlink/CI pin `19f06898`/`47401b04` → **`644205f`**，`release-apk.yml`
-      发布 pin 未动，LibIME `ecd2379` 未动；本地 Gate 3 `:app:testDebugUnitTest` 330 tests 0 failures
-      + `:app:assembleDebug` arm64-v8a 成功且 APK 实含重编译 r4 `m2psearch.cpp.o`；CI 待完成，
-      **未 merge**）。设备验收与 merge/发布裁定仍未执行；Phase 11 整体因此保持 IN PROGRESS。
+- [x] **Android 集成与设备验收（COMPLETE，2026-10-11 收口）**：集成批次最初以 PR
+      `choicky/fcitx5-android#1`（分支 `integration/mixed-input-r4` @ `afb6ac28`，base 产品线
+      `f2a64da1`，addons gitlink/CI pin `19f06898`/`47401b04` → `644205f`，`release-apk.yml`
+      发布 pin 未动，LibIME `ecd2379` 未动）提交，本地 Gate 3 `:app:testDebugUnitTest` 330 tests
+      0 failures + `:app:assembleDebug` arm64-v8a 成功且 APK 实含重编译 r4 `m2psearch.cpp.o`；
+      最终收口路径如下：
+      - **PR #3 先行 merge**（`choicky/fcitx5-android` merge commit `d1d77212`，2026-10-11）：
+        `docs(agents)` 确立本仓库本地验证 + signed-APK 交付现行策略；
+      - **PR #4 = 最终集成**：`consolidate/pr1-pr2-on-r8-baseline` 把此前已审核的 PR #2 + PR #1
+        变更整合到 PR #3 之后的 r8 基线上，独立审核 **PASS** 后 **merged**（merge commit
+        `bb6f88a5`，2026-10-11）；旧 PR #1 / PR #2 以 superseded-by-PR-#4 关闭；
+      - 由此 Android 开发线现消费 addons gitlink `644205f6626011b37a0e1cc7fa789e00020e453d`、
+        `test-apk.yml` `ADDON_COMMIT` `644205f6626011b37a0e1cc7fa789e00020e453d`；
+        `release-apk.yml` **发布历史 pin `47401b04` 保持不变**（D068 发布事实不改写）；
+      - **signed D064 Debug APK 交付完成**：集成批次本地构建的 arm64-v8a debug APK
+        （86,458,410 B，unsigned SHA-256 `41b5c833…d205`）以既有 D064 Fusion Enhanced Debug 身份
+        （`CN=Fcitx5 Fusion Enhanced Debug`，证书 SHA-256 `DC497182…A56A`）签名，`apksigner`
+        验签通过；最终签名产物 86,590,455 B、SHA-256 `53e2e4781aa3b0e9af08b021642c2172685559f9
+        98c6be5797c7f798d97bb501`，逐字节一致地上传到既有临时 prerelease
+        `integration-mixed-input-r4-afb6ac28-apk`，原 unsigned 资产已删除；
+      - **项目所有者设备 smoke 回报**：安装使用该签名 Debug APK 后回报工作基本正常
+        （owner-reported device smoke acceptance；保守记录，**不构成** exhaustive Android
+        regression 验证，也不改动 D068 发布证据）。
+      Phase 11 整体 = **COMPLETE**。
 
 Phase 11 证据（不复制进总控仓库，按路径索引）：`/tmp/mixed-r4-productization/` 下
 `final-report.md`（§16 结果声明，authoritative outcome）、`validation.md`（oracle 定义与 cycles
@@ -745,6 +765,10 @@ Phase 11 证据（不复制进总控仓库，按路径索引）：`/tmp/mixed-r4
 - 发布边界不变：D060 current-state 权威、D068 发布 pin `47401b04`、Android 产品线
   `contribution/fusion-enhanced-identity-naming-r8` @ `f2a64da1` 不因本 Phase 自动更新；不构建
   APK/release/tag。
+  （**2026-10-11 收口补注**：上述约束限定 productization 批次自身；后续 Android integration 按
+  正常 PR 流程完成（r8 开发线 tip 经 PR #3/PR #4 推进至 `bb6f88a5`）并交付了非发布用途的
+  D064 签名 Debug 测试 APK。D068 **发布** pin `47401b04`、发布源 `f2a64da1`、正式发布 APK 与
+  发布证据均为历史事实，未因本 Phase 改写；未构建 release APK、未创建 release/tag。）
 - **English lexicon 规模不冻结**：当前随包词库 = 已验证 r4 baseline 所属词库，其状态随本
   productization 收口一并接受；未来「面向中文上下文的更小 English Lexicon」是**独立工作流**，属正常
   产品/维护裁定（D075 §4），**不得回溯改动已 VERIFIED / COMPLETE 的 Phase 11 r4 产品化证据**，也不
@@ -790,8 +814,9 @@ paired punctuation 的 formatter-only repair 暴露出验证状态必须分层�
   gitlink、生产线或 APK。
   （**2026-10-10 更正：** 该 M2+ PoC/HR1 已执行并收口；“implementation candidate/待架构决定”表述不再
   规范。当前 accepted baseline = **M2+/r4**，Next = **r4 productization（Phase 11）**，见 D075 与
-  下方 2026-10-10 条目（D075 与 Phase 11：其 r4 productization 已于同日 VERIFIED / COMPLETE，Phase 11
-  整体 IN PROGRESS，主线下一步现为 Android integration）。本段其余内容保留为 2026-10-09 历史记录。）
+  下方 2026-10-10 条目（D075 与 Phase 11：其 r4 productization 已于同日 VERIFIED / COMPLETE，主线下一步
+  为 Android integration；**2026-10-11 进一步收口：Android integration 已经 PR #4 merge 完成，
+  Phase 11 = COMPLETE**，见 Phase 11 与 2026-10-11 条目）。本段其余内容保留为 2026-10-09 历史记录。）
 - （2026-10-10，D075）Mixed Input 架构基线终局 COMPLETE：HR1 held-out 评估**有效**（determinism
   48/48 EQUIVALENT），中文回归门 **PASS**，冻结选择规则下 **r4（而非 r3）成为 M2+ 代表**，主质量指标
   **A′ vs r4 = INCONCLUSIVE**（不得写作 r4 质量统计性胜 A′ 或 M2+ 质量上限更高）；owner 基于完整
@@ -803,9 +828,11 @@ paired punctuation 的 formatter-only repair 暴露出验证状态必须分层�
   产品化必须首先保持已验证 r4 行为。发布边界不变（D068 pin `47401b04`、Android 产品线、gitlink、
   APK 均不更新）。
   （**2026-10-10 后续：** Phase 11 的 r4 productization 已执行并于同日 **VERIFIED / COMPLETE**，
-  Phase 11 整体 IN PROGRESS（Next = Android integration），见下条；本条保留为 D075 裁定当时的状态记录。）
-- （2026-10-10，Phase 11）**M2+/r4 Productization = VERIFIED / COMPLETE**（Phase 11 整体 IN
-  PROGRESS，Android integration = NEXT；人工独立审核接受；不新增
+  当时的主线下一步为 Android integration（**2026-10-11 收口：Android integration 已经完成，
+  Phase 11 = COMPLETE**，见下条与 Phase 11）；本条保留为 D075 裁定当时的状态记录。）
+- （2026-10-10，Phase 11）**M2+/r4 Productization = VERIFIED / COMPLETE**（当时状态：Phase 11 整体
+  IN PROGRESS，Android integration = NEXT——2026-10-11 已收口：Android integration 完成，
+  Phase 11 = COMPLETE，见下条；人工独立审核接受；不新增
   Decision，架构 authority 仍为 D075）。产品化基于 D075 accepted M2+/r4 baseline，base
   `010b1eb`；HR1-tested r4 provenance 已确认（recovered `er4-work/src/im` 与 HR1 评估的 r4 产品代码
   逐字节一致）。最终 addons 产品分支 `feature/mixed-input-r4-productization`（`8b55f82` English
@@ -823,7 +850,10 @@ paired punctuation 的 formatter-only repair 暴露出验证状态必须分层�
   `layerc/`、`conflict-audit.md`、`CHECKLIST.md`、`provenance.md`、`productization.diff`）；细则见
   ROADMAP Phase 11 productization 收口事实。
   **Main product path next = Android integration** of the accepted M2+/r4 productized addons
-  implementation（集成基线 / gitlink / APK / 设备验收另行按正常产品流程裁定；本轮未执行）。发布边界
+  implementation（集成基线 / gitlink / APK / 设备验收另行按正常产品流程裁定；本轮未执行。
+  **2026-10-11：该 Android integration 已按正常产品流程完成——PR #3 先 merge、最终集成经审核
+  PASS 的 PR #4 merge，gitlink/test APK pin 现为 `644205f`，signed D064 Debug APK 已交付并有
+  owner-reported device smoke；Phase 11 = COMPLETE**，见下条与 Phase 11 收口条目）。发布边界
   不变（D060 current-state 权威、D068 pin `47401b04`、Android 产品线 `f2a64da1`、gitlink 均未因本
   Phase 更新）。**English lexicon 分离**：当前随包词库 = 已验证 r4 baseline 所属词库；未来「更小
   中文上下文 English Lexicon」是独立工作流，不得回溯改动已 VERIFIED / COMPLETE 的 Phase 11
@@ -843,6 +873,15 @@ paired punctuation 的 formatter-only repair 暴露出验证状态必须分层�
   **设备验收、merge、发布裁定仍未执行；Phase 11 整体 IN PROGRESS，本条不构成任何 CLOSED 表述。**
   证据：`/tmp/mixed-r4-android-integration/`（`preflight.md`、`CHECKLIST.md`、`integration.diff`
   sha256 `3fa15bb3…1d68`、`local-build.log`、`local-validation.md`、`final-report.md`）。
+  （**2026-10-11 同日收口，取代本条中的未收口表述：** PR #3（`docs(agents)` 本地验证/signed-APK
+  交付现行策略）先 merge；最终集成经 **PR #4** 将已审核的 PR #2 + PR #1 变更整合到 post-PR-#3 基线，
+  独立审核 PASS 后 merged（merge commit `bb6f88a5`），旧 PR #1 / PR #2 以 superseded 关闭；Android
+  开发线现消费 addons gitlink 与 test APK pin `644205f6626011b37a0e1cc7fa789e00020e453d`，发布
+  历史 pin `47401b04` 不变；集成批次 Debug APK 已以 D064 身份签名、验签并把签名产物（86,590,455 B，
+  SHA-256 `53e2e478…b501`）上传既有 prerelease `integration-mixed-input-r4-afb6ac28-apk`（原
+  unsigned 资产已删除）；项目所有者随后实机 smoke 使用回报基本正常——按保守口径记为
+  **owner-reported device smoke acceptance，非 exhaustive Android regression 验证**。
+  **Phase 11 = COMPLETE**，详见 Phase 11 收口条目。）
 - （2026-10-06，D070）混输排名终局修正 COMPLETE：blanket classical-coverage 放置规则替换为有界跨源插入类，
   `chatgpt`/`macos`/`openwrt`/`libime` 在真实产品路径全部 rank 0，MIXEDCORP MRR 1.000，两棵树 ctest 19/19；
   addons head `57d72c2`（PR #3 仍 OPEN 未 merge），发布边界与 VALIDATION DEBT 分类不变。

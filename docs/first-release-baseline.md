@@ -9,6 +9,16 @@
 DECISIONS.md D066 更正——D061 的“首发接受 D051”被 supersede、发布 pin `9b3448e6`→`47401b04`、
 **RC.1 = REJECTED**（draft/资产不得发布或修改，修复以新 RC / 新 SHA-256 承载）。其余冻结边界不变。
 
+**Post-D068 开发态定位（2026-10-11）：** 本文件的 current-state 权威范围是**已冻结/已发布的 D068
+First Fusion Enhanced Release** 基线（Android 产品线 `f2a64da1` + addons 发布 pin `47401b04`）及其
+发布证据；其中发布 pin、APK SHA-256、签名身份与设备验收结论均为历史发布事实，不得被误读为当前
+开发 HEAD，也不得因发布后的继续开发被回溯改写。**D068 之后的持续开发状态**——包括 Phase 11
+M2+/r4 Android integration（Android 开发线经 PR #3 / PR #4 推进，addons gitlink 与 `test-apk.yml`
+pin = `644205f6626011b37a0e1cc7fa789e00020e453d`，D064 签名 Debug 测试 APK 交付与
+owner-reported device smoke，Phase 11 = COMPLETE）——由 `docs/ROADMAP.md`（Phase 11 与「当前下一步」）
+及后续 accepted decisions/evidence 跟踪。发布 pin `47401b04` 保持历史事实，**不得**被改写为
+`644205f`。
+
 ## 0. 唯一当前产品基线（source-verified 2026-10-05）
 
 | 维度 | 权威值 | 核验方式 |
