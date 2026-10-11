@@ -1,0 +1,317 @@
+=== refs.txt — combined raw refs snapshot (Stage A, read-only; includes per-repo state + branch/worktree/tag dumps) ===
+################################################################
+### REPO: /home/choicky/coding-projects/fcitx5-fusion
+## abs path: /home/choicky/coding-projects/fcitx5-fusion
+## current branch: docs/phase11-complete-current-state-sync
+## HEAD: ad58d57c0c376ab9c6aa3dc35bbc7aefeead3705
+## HEAD describe: dictionary-v1.0.0-51-gad58d57
+## status (porcelain, count then truncated list)
+## dirty entries: 0
+## content filters (may affect cleanliness reporting):
+filter.lfs.smudge git-lfs smudge -- %f
+filter.lfs.clean git-lfs clean -- %f
+filter.lfs.clean git-lfs clean -- %f
+filter.lfs.smudge git-lfs smudge -- %f
+## remotes:
+origin	git@github.com:choicky/fcitx5-fusion.git (fetch)
+origin	git@github.com:choicky/fcitx5-fusion.git (push)
+## GitHub default branch:
+main
+## remotes/HEAD symbolic:
+origin/HEAD: refs/remotes/origin/main
+=== fetched Sun Oct 11 02:58:26 AM UTC 2026 ===
+################################################################
+### REPO: /home/choicky/coding-projects/fcitx5-android
+## abs path: /home/choicky/coding-projects/fcitx5-android
+## current branch: consolidate/pr1-pr2-on-r8-baseline
+## HEAD: 6d6c0c93616af87c6cb9b2ccce70442d2b9a9201
+## HEAD describe: v0.1.3.8-rc.2-5-g6d6c0c93
+## status (porcelain, count then truncated list)
+## dirty entries: 0
+## content filters (may affect cleanliness reporting):
+filter.lfs.smudge git-lfs smudge -- %f
+filter.lfs.clean git-lfs clean -- %f
+filter.lfs.clean git-lfs clean -- %f
+filter.lfs.smudge git-lfs smudge -- %f
+## remotes:
+origin	git@github.com:choicky/fcitx5-android.git (fetch)
+origin	git@github.com:choicky/fcitx5-android.git (push)
+## GitHub default branch:
+master
+## remotes/HEAD symbolic:
+origin/HEAD: refs/remotes/origin/master
+=== fetched Sun Oct 11 02:58:27 AM UTC 2026 ===
+################################################################
+### REPO: /home/choicky/coding-projects/fcitx5-chinese-addons
+## abs path: /home/choicky/coding-projects/fcitx5-chinese-addons
+## current branch: feature/mixed-input-arch-a
+## HEAD: 57d72c20f40f7269a65483d493a1bb2c77447b23
+## HEAD describe: 5.1.15-26-g57d72c2
+## status (porcelain, count then truncated list)
+## dirty entries: 0
+## content filters (may affect cleanliness reporting):
+filter.lfs.smudge git-lfs smudge -- %f
+filter.lfs.clean git-lfs clean -- %f
+filter.lfs.clean git-lfs clean -- %f
+filter.lfs.smudge git-lfs smudge -- %f
+## remotes:
+origin	git@github.com:choicky/fcitx5-chinese-addons.git (fetch)
+origin	git@github.com:choicky/fcitx5-chinese-addons.git (push)
+upstream	https://github.com/fcitx/fcitx5-chinese-addons.git (fetch)
+upstream	https://github.com/fcitx/fcitx5-chinese-addons.git (push)
+## GitHub default branch:
+master
+## remotes/HEAD symbolic:
+origin/HEAD: refs/remotes/origin/master
+upstream/HEAD: none
+=== fetched Sun Oct 11 02:58:28 AM UTC 2026 ===
+################################################################
+### REPO: /home/choicky/coding-projects/researching-notes
+## abs path: /home/choicky/coding-projects/researching-notes
+## current branch: main
+## HEAD: 550c429c6a5ec6590cb78f1cd67a201ae74b4b12
+## HEAD describe: 550c429
+## status (porcelain, count then truncated list)
+## dirty entries: 0
+## content filters (may affect cleanliness reporting):
+filter.lfs.smudge git-lfs smudge -- %f
+filter.lfs.clean git-lfs clean -- %f
+filter.lfs.clean git-lfs clean -- %f
+filter.lfs.smudge git-lfs smudge -- %f
+## remotes:
+origin	git@github.com:choicky/researching-notes.git (fetch)
+origin	git@github.com:choicky/researching-notes.git (push)
+## GitHub default branch:
+main
+## remotes/HEAD symbolic:
+origin/HEAD: refs/remotes/origin/main
+=== fetched Sun Oct 11 02:58:29 AM UTC 2026 ===
+
+################################################################
+### REPO fcitx5-fusion
+## LOCAL BRANCHES:
++ contribution/dictionary-build-upstream   508e93d (/tmp/fcitx5-extract-dict-build) [origin/contribution/dictionary-build-upstream] fix: require verified Phase 5B toolchain provenance
+* docs/phase11-complete-current-state-sync ad58d57 [origin/docs/phase11-complete-current-state-sync] docs(phase11): sync current state — Phase 11 COMPLETE via merged Android PR #4
+  docs/phase11-r4-productization-closure   467b14c [origin/docs/phase11-r4-productization-closure: ahead 2] docs(phase11): record Android integration batch — addons 644205f, PR fcitx5-android#1 open
+  main                                     467b14c [origin/main: behind 2] docs(phase11): record Android integration batch — addons 644205f, PR fcitx5-android#1 open
+## REMOTE-TRACKING BRANCHES:
+origin 483470c   Merge pull request #3 from choicky/docs/phase11-complete-current-state-sync
+origin/contribution/dictionary-build-upstream 508e93d   fix: require verified Phase 5B toolchain provenance
+origin/docs/dictionary-manager-plan ff0fc08   Document simplified dictionary manager plan
+origin/docs/phase11-complete-current-state-sync ad58d57   docs(phase11): sync current state — Phase 11 COMPLETE via merged Android PR #4
+origin/docs/phase11-r4-productization-closure 9531854   docs(phase11): lifecycle wording correction — Phase 11 IN PROGRESS, productization VERIFIED / COMPLETE, next Android integration
+origin/feature/x-asr-model-integration 342a467   docs: record X-ASR archive download lifecycle
+origin/main 483470c   Merge pull request #3 from choicky/docs/phase11-complete-current-state-sync
+origin/phase5a-dictionary-closure f8eda41   Complete Phase 5A dictionary closure
+origin/phase5b-dictionary-build db1267e   docs: record Phase 5B remediation CI closure
+origin/phase5c-dictionary-manager 4a05d61   docs: codify machine-verifiable facts and correct punctuation counts
+origin/tools/wanxiang-libime-build 0294bd3   Correct Rime code detection and Ice import conversion
+## WORKTREES:
+/home/choicky/coding-projects/fcitx5-fusion ad58d57 [docs/phase11-complete-current-state-sync]
+/tmp/fcitx5-extract-dict-build              508e93d [contribution/dictionary-build-upstream]
+## TAGS (3 total):
+dictionary-v1.0.0
+dictionary-v1.1.0
+dictionary-v1.1.1
+
+################################################################
+### REPO fcitx5-android
+## LOCAL BRANCHES:
+  ci/pr-heavy-builds-manual-only                  251e9c58 [origin/contribution/fusion-enhanced-identity-naming-r8: ahead 1, behind 6] ci: gate heavy Release builds behind manual dispatch
+* consolidate/pr1-pr2-on-r8-baseline              6d6c0c93 [origin/consolidate/pr1-pr2-on-r8-baseline] ci(addons): integrate M2+/r4 productized mixed input for Phase 11
++ contribution/asr-core-system-upstream           c2a3a537 (/tmp/fcitx5-asr-core-system) [origin/contribution/asr-core-system-upstream] Complete ASR core System provider boundary
++ contribution/asr-full-upstream                  b6f458f8 (/tmp/fcitx5-asr-full) test: align ASR model catalog expectations
+  contribution/asr-local-focused                  b6f458f8 test: align ASR model catalog expectations
+  contribution/asr-no-local                       b6f458f8 test: align ASR model catalog expectations
++ contribution/asr-upstream                       b6f458f8 (/tmp/fcitx5-extract-asr) [origin/contribution/asr-upstream] test: align ASR model catalog expectations
++ contribution/debug-signing-identity             531e80b9 (/tmp/fcitx5-debug-signing) [origin/contribution/debug-signing-identity] ci: repin addons to 47401b04, the upstream punctuation baseline
+  contribution/dictionary-manager                 7b446375 [origin/contribution/dictionary-manager] Fix dictionary manager view lifecycle
++ contribution/dictionary-manager-upstream-v2     0c3b32c9 (/tmp/fcitx5-extract-dictionary) [origin/contribution/dictionary-manager-upstream-v2] fix: make dictionary extraction independent of voice
++ contribution/fusion-enhanced-identity-naming-r8 f2a64da1 (/tmp/fcitx5-asr-product) [origin/contribution/fusion-enhanced-identity-naming-r8: behind 6] fix(toolbar): start the idle bar on the expanded page
++ contribution/signed-rc-workflow                 5f50c64c (/tmp/fcitx5-signed-rc-workflow) [origin/contribution/signed-rc-workflow] ci: repin addons to 47401b04, the upstream punctuation baseline
++ contribution/toolbar-upstream                   cf9a45b7 (/tmp/fcitx5-extract-toolbar) [origin/contribution/toolbar-upstream] fix: keep toolbar extraction generic to upstream
+  docs/agents-local-validation-apk-delivery       fe4a7cfb [origin/docs/agents-local-validation-apk-delivery] docs(agents): require signed, verified APKs as the deliverable
+  feature/android-runtime-diagnostics             dc5b6c15 [origin/feature/android-runtime-diagnostics] ci(diag): pin addons to Phase 3A-2 closure 010b1eb for device round 2
+  feature/mixed-input-arch-a                      fb9f16d5 [origin/feature/mixed-input-arch-a] ci(mixed): retarget device-acceptance workflow to the fused addons head
+  integration/mixed-input-r4                      afb6ac28 [origin/integration/mixed-input-r4] ci(addons): integrate M2+/r4 productized mixed input for Phase 11
+  master                                          8bd11e8b [origin/master] ci: migrate the Test APK name anchor to the test-apk.yml path
+## REMOTE-TRACKING BRANCHES:
+origin 8bd11e8b   ci: migrate the Test APK name anchor to the test-apk.yml path
+origin/ci/pr-heavy-builds-manual-only 251e9c58   ci: gate heavy Release builds behind manual dispatch
+origin/consolidate/pr1-pr2-on-r8-baseline 6d6c0c93   ci(addons): integrate M2+/r4 productized mixed input for Phase 11
+origin/contribution/asr-core-system-upstream c2a3a537   Complete ASR core System provider boundary
+origin/contribution/asr-upstream b6f458f8   test: align ASR model catalog expectations
+origin/contribution/debug-signing-identity 531e80b9   ci: repin addons to 47401b04, the upstream punctuation baseline
+origin/contribution/dictionary-manager 7b446375   Fix dictionary manager view lifecycle
+origin/contribution/dictionary-manager-upstream-v2 0c3b32c9   fix: make dictionary extraction independent of voice
+origin/contribution/fusion-enhanced-identity-naming-r8 bb6f88a5   Merge pull request #4 from choicky/consolidate/pr1-pr2-on-r8-baseline
+origin/contribution/signed-rc-workflow 5f50c64c   ci: repin addons to 47401b04, the upstream punctuation baseline
+origin/contribution/toolbar-upstream cf9a45b7   fix: keep toolbar extraction generic to upstream
+origin/docs/agents-local-validation-apk-delivery fe4a7cfb   docs(agents): require signed, verified APKs as the deliverable
+origin/feat/edit-text-playground 76c22ec0   EditTextPlaygroundFragment to inspect IME behavior
+origin/feat/fcitx5-emoji-module 11bd1ec6   Build fcitx5 emoji module and use it in androidkeyboard
+origin/feat/native-plugin-ipc 077b6d1a   migrate clipboard-filter to new plugin api
+origin/feat/speech-recognizer-voice-input cd5c60e2   [WIP] SpeechRecognizer voice input
+origin/feature/android-runtime-diagnostics dc5b6c15   ci(diag): pin addons to Phase 3A-2 closure 010b1eb for device round 2
+origin/feature/mixed-input-arch-a fb9f16d5   ci(mixed): retarget device-acceptance workflow to the fused addons head
+origin/feature/x-asr-model-integration f09e5922   fix: restore pinyin dictionary settings entry
+origin/integration/mixed-input-r4 afb6ac28   ci(addons): integrate M2+/r4 productized mixed input for Phase 11
+origin/m17n 4cf4f23d   m17n [skip ci]
+origin/master 8bd11e8b   ci: migrate the Test APK name anchor to the test-apk.yml path
+origin/moqi-test-apk 59efbf54   Pin the release workflow to the final addon commit
+origin/mozc 9e250a72   update submodule [skip ci]
+origin/new-theme f56b753f   Merge branch 'master' into new-theme
+origin/ol 3b92b4c3   Add opentelemetry
+origin/phase4-voice-poc b9f34b0a   fix: remove local ASR model display prefixes
+origin/phase5c-dictionary-manager 9163ec96   docs: align post-release evidence with v0.1.3.7
+origin/playground def68379   Update submodules
+origin/playground-wengxt 890da55e   Update fcitx5-chinese-addons
+origin/renovate/configure f797e3d4   Add renovate.json
+origin/test 888289da   fix ThemeSerializationTest
+upstream/master e6199a28   Update fcitx5 submodules and prebuilt
+## WORKTREES:
+/home/choicky/coding-projects/fcitx5-android 6d6c0c93 [consolidate/pr1-pr2-on-r8-baseline]
+/tmp/fcitx5-asr-core-system                  c2a3a537 [contribution/asr-core-system-upstream] prunable
+/tmp/fcitx5-asr-full                         b6f458f8 [contribution/asr-full-upstream] prunable
+/tmp/fcitx5-asr-product                      f2a64da1 [contribution/fusion-enhanced-identity-naming-r8] prunable
+/tmp/fcitx5-asr-upstream-base                e6199a28 (detached HEAD) prunable
+/tmp/fcitx5-debug-signing                    531e80b9 [contribution/debug-signing-identity] prunable
+/tmp/fcitx5-extract-asr                      b6f458f8 [contribution/asr-upstream] prunable
+/tmp/fcitx5-extract-dictionary               0c3b32c9 [contribution/dictionary-manager-upstream-v2]
+/tmp/fcitx5-extract-toolbar                  cf9a45b7 [contribution/toolbar-upstream]
+/tmp/fcitx5-signed-rc-workflow               5f50c64c [contribution/signed-rc-workflow]
+## TAGS (23 total):
+0.0.2
+0.0.3
+0.0.4
+0.0.5
+0.0.6
+0.0.7
+0.0.8
+0.0.9
+0.1.0
+0.1.1
+0.1.2
+0.1.3
+integration-mixed-input-r4-afb6ac28-apk
+v0.1.3-fusion.6
+v0.1.3-moqi-test.1
+v0.1.3-moqi.1
+v0.1.3-moqi.2
+v0.1.3-moqi.3
+v0.1.3-moqi.4
+v0.1.3-moqi.5
+v0.1.3.7
+v0.1.3.8-rc.1
+v0.1.3.8-rc.2
+
+################################################################
+### REPO fcitx5-chinese-addons
+## LOCAL BRANCHES:
++ contribution/moqi-upstream-v2         ad4398c (/tmp/fcitx5-extract-moqi) [origin/contribution/moqi-upstream-v2] Add configurable MoQi auxiliary filtering
++ experimental/gate-q2-m2plus           010b1eb (/home/choicky/android-native/gate-q2-worktree) test(pinyin): cover mixed search with persisted user model
++ experimental/gate-q3-s0               010b1eb (/home/choicky/android-native/gate-q3-s0-worktree) test(pinyin): cover mixed search with persisted user model
+  experimental/gate-q3r1                010b1eb test(pinyin): cover mixed search with persisted user model
+  experimental/gate-q3r2                010b1eb test(pinyin): cover mixed search with persisted user model
+  experimental/gate-q3r3                010b1eb test(pinyin): cover mixed search with persisted user model
+  experimental/gate-q3r4                010b1eb test(pinyin): cover mixed search with persisted user model
+  experimental/gate-q3r5                010b1eb test(pinyin): cover mixed search with persisted user model
+  experimental/gate-q3r5b               010b1eb test(pinyin): cover mixed search with persisted user model
++ experimental/gate-q3r5c               010b1eb (/home/choicky/android-native/gate-q3r1-worktree) test(pinyin): cover mixed search with persisted user model
++ experimental/gate-q3r6                010b1eb (/home/choicky/android-native/gate-q3r6-worktree) test(pinyin): cover mixed search with persisted user model
++ experimental/m2p                      010b1eb (/home/choicky/android-native/gate-m2p-worktree) test(pinyin): cover mixed search with persisted user model
++ feature/android-runtime-diagnostics   010b1eb (/home/choicky/coding-projects/fcitx5-mixed-moqi) [origin/feature/android-runtime-diagnostics] test(pinyin): cover mixed search with persisted user model
+* feature/mixed-input-arch-a            57d72c2 [origin/feature/mixed-input-arch-a] test(mixed): fixed product-path ranking corpus (groups A-F)
++ feature/mixed-input-r4-productization 644205f (/home/choicky/android-native/r4prod-worktree) [origin/feature/mixed-input-r4-productization] feat(pinyin): add the validated M2+ mixed input search path
+  feature/mixed-moqi-fusion-regression  dd81e1b feat(mixed): keep the literal surface beside canonical respellings
+  master                                61474bd [origin/master] Fix test after disable partial final by default
+## REMOTE-TRACKING BRANCHES:
+origin 61474bd   Fix test after disable partial final by default
+origin/contribution/moqi-upstream 4c1a93d   Add configurable MoQi auxiliary filtering
+origin/contribution/moqi-upstream-v2 ad4398c   Add configurable MoQi auxiliary filtering
+origin/feature/android-runtime-diagnostics 010b1eb   test(pinyin): cover mixed search with persisted user model
+origin/feature/mixed-input-arch-a 57d72c2   test(mixed): fixed product-path ranking corpus (groups A-F)
+origin/feature/mixed-input-r4-productization 644205f   feat(pinyin): add the validated M2+ mixed input search path
+origin/feature/mixed-moqi-fusion-regression dd81e1b   feat(mixed): keep the literal surface beside canonical respellings
+origin/feature/moqi-filter 0220285   Translate the remaining Auxiliary Filter strings into Simplified Chinese
+origin/fix/punctuation-candidate-pairs 47401b0   punctuation: restore upstream zh_CN profile
+origin/master 61474bd   Fix test after disable partial final by default
+origin/probe/shuangpin-cursor-boundary 8ea2ec0   Add a throwaway probe comparing upstream and fork Shuangpin selection
+upstream 61474bd   Fix test after disable partial final by default
+upstream/action 44c6233   Implement action for pinyin
+upstream/candidate 4ebacd8   Generate symbol and call lua on all candidates
+upstream/context b4722f2   bump version
+upstream/dedup 2e0b5ca   Display full pinyin in comment if it is an duplicate candidate.
+upstream/empty-selected 45d85b6   Protect against invalid access to empty selected segment.
+upstream/filter 737be6f   Allow single char filter and pinyin filter to be applied separately and add separator.
+upstream/letter 7a3aa95   Add new letter option support and refactor candidate sorting
+upstream/master 61474bd   Fix test after disable partial final by default
+upstream/multi-gitter-branch 01a9477   Update README
+upstream/pagesize0 6eb62ea   Allow page size to be set to 0
+upstream/punc 15743e2   split HalfWidthPuncAfterLetterOrNumber
+upstream/qp d944fca   Only select default candidate if typing any character producing key doesn't commit the current input.
+upstream/quickphrase-regex 2e2b27f   Remove the old string based trigger and replace everything with regex
+upstream/space 4d9bd7e   Add SpaceBeforeHint option to table engine with new candidate word API
+upstream/split-factory d0c83f6   Split AddonFactory into a separate file for pinyin/table
+upstream/spv 2949d97   Use upper case "V" for shuangpin's quickphrase triggering.
+upstream/str a4eb272   Update strings in Chinese addons
+upstream/stroke fb9380a   Refactor stroke state handling
+upstream/stroken 33804ca   Allow disable direct stroke typing
+upstream/tab e86c658   Add cache for bestMatchPinyin
+upstream/uppercase-pinyin f2663c6   Improve ordering and spell checking in pinyin for upper case input
+upstream/wengxt-patch-1 666f8d0   Add dependency for shuangpin.conf
+upstream/wip f0ad0b3   WIP
+## WORKTREES:
+/home/choicky/coding-projects/fcitx5-chinese-addons 57d72c2 [feature/mixed-input-arch-a]
+/home/choicky/android-native/gate-m2p-worktree      010b1eb [experimental/m2p]
+/home/choicky/android-native/gate-q2-worktree       010b1eb [experimental/gate-q2-m2plus]
+/home/choicky/android-native/gate-q3-s0-worktree    010b1eb [experimental/gate-q3-s0]
+/home/choicky/android-native/gate-q3r1-worktree     010b1eb [experimental/gate-q3r5c]
+/home/choicky/android-native/gate-q3r6-worktree     010b1eb [experimental/gate-q3r6]
+/home/choicky/android-native/hr1-work/aprime-src    010b1eb (detached HEAD)
+/home/choicky/android-native/r4prod-worktree        644205f [feature/mixed-input-r4-productization]
+/home/choicky/coding-projects/fcitx5-mixed-moqi     010b1eb [feature/android-runtime-diagnostics]
+/tmp/fcitx5-extract-moqi                            ad4398c [contribution/moqi-upstream-v2]
+## TAGS (34 total):
+5.0.12
+5.0.13
+5.0.14
+5.0.15
+5.0.16
+5.0.17
+5.0.2
+5.0.3
+5.0.4
+5.0.5
+5.0.6
+5.0.7
+5.0.8
+5.0.9
+5.1.0
+5.1.1
+5.1.10
+5.1.11
+5.1.12
+5.1.13
+5.1.14
+5.1.15
+5.1.2
+5.1.3
+5.1.4
+5.1.5
+5.1.6
+5.1.7
+5.1.8
+5.1.9
+
+################################################################
+### REPO researching-notes
+## LOCAL BRANCHES:
+* main 550c429 [origin/main] docs(windows-ime): record Stage L and hand Windows authority to fcitx5-fusion
+## REMOTE-TRACKING BRANCHES:
+origin 550c429   docs(windows-ime): record Stage L and hand Windows authority to fcitx5-fusion
+origin/main 550c429   docs(windows-ime): record Stage L and hand Windows authority to fcitx5-fusion
+## WORKTREES:
+/home/choicky/coding-projects/researching-notes 550c429 [main]
+## TAGS (0 total):
+
