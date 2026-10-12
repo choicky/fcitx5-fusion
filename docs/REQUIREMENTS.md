@@ -22,6 +22,16 @@
 
 ### 2.1 Mixed Input architecture boundary (D074 / D075)
 
+> **澄清注记（2026-10-11；澄清既有措辞，不改变规范强度、不改变任何裁定）：** 本条 unified
+> bounded mixed search 的规范范围是混输候选 **generation**（Layer 1）。最终组装（Layer 2）中
+> PinyinEngine 经既有排序/组装机制（customCandidateMap / CandidateOrder / inplace_merge）把混输
+> 候选与 LibIME classical 候选及其他既有来源做**候选级 composition**。“非 late merge”禁止的是
+> **两个独立整句 decoder 各自产出最终句后在末端朴素合并**的架构，不得被读为禁止或否定上述
+> 候选级 composition。另：classical 路径对大写/raw literal（如用户键入的 “Apple”）的保留，不使
+> 这些候选成为 English Core 拥有的词汇假设（无 English sourcing / lexicon ownership /
+> learning ownership）。以上读法经产品基线源码复核确认（fcitx5-chinese-addons @ 644205f：
+> im/pinyin/pinyin.cpp:816-993、im/pinyin/pinyincandidate.h/.cpp；LibIME 只读核实）。
+
 中英混输保持 Architecture A 上位结构：Pinyin/Shuangpin Chinese hypotheses（LibIME-derived，
 含 Chinese LM、UserDict/history 能力）与 English Core hypotheses 进入**同一个 bounded mixed
 hypothesis graph / bounded search**，产出统一候选表示并排序后进入 CandidateList；
