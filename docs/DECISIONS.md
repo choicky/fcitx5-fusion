@@ -2040,6 +2040,14 @@ Expected Behavioral Delta = NONE。输入：M2+/r4 已接受产品基线（D075�
 - **Known Limitation / Unresolved Capability：**小写 OOV 的混输 composition，如
   `yongkubernetesbushu → 用kubernetes部署`，**未被建立为受支持能力**，属当前已知限制/
   未解决能力。
+
+  > **澄清（2026-10-12，English Lexicon V1 产品化审计）**：对 `644205f` 基线源码复核确认
+  > `kubernetes` 是 ~95k 词库中的既有 curated 条目（`technical.allow`：`kubernetes → Kubernetes`，
+  > tier 9，flag `t`），**不是**严格意义的真 OOV；本条示例仅用于说明现象形态。本条 Known
+  > Limitation 的规范对象是**词库缺失的小写真 OOV 词**（如任意未收录字母串）的混输
+  > composition，对该类输入的定性不变；“不添加 generic 小写 raw-OOV arc”的裁定不变。对
+  > 词库已覆盖的小写词，English-Core 按既有词库机制产生 arc（与 `iphone` 同构）；本澄清
+  > 不宣称任何具体词的混输输出已获回归证据支持。
 - 两层管线源码审计确认的 classical 路径**大写/大小写相关** Latin 材料行为（LibIME 强制
   uppercase 边 → unknown-node carrying → classical 候选；见 REQUIREMENTS §2.1 / D075 澄清注记）
   **不得泛化到任意小写 OOV 字符串**；**不得**声称 classical 候选路径已被证明提供
