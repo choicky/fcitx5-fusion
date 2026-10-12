@@ -4,7 +4,7 @@
 
 ## 事实来源与设计核对
 
-- 开始设计或实现前，先阅读相关需求、技术决策、路线图、研究记录，以及所涉及上游仓库的最新源码、公开接口和现有测试。
+- 开始设计或实现前，先按任务分类，识别相关需求/决策/当前路线图章节或主题专属权威，再阅读这些相关章节、指针及所涉及上游仓库的最新源码、公开接口和现有测试。完整历史决策、证据或研究仅在需要溯源、冲突仲裁或验证时按需读取；不得将本条机械解释为每个任务都必须读完整 `REQUIREMENTS.md`、`DECISIONS.md`、`ROADMAP.md` 与全部研究历史。
 - 判断当前预期行为时，按以下权威顺序读取：`REQUIREMENTS.md` 当前有效需求、`DECISIONS.md` 中最新且未被 superseded 的 Accepted decision、`ROADMAP.md` 当前 Phase/checkpoint，最后才参考历史记录。首个 Fusion Enhanced 发布的**当前产品基线 / 范围 / 功能状态矩阵以 `docs/first-release-baseline.md`（D060）为唯一 current-state 权威**；它与其指针取代任何旧的“当前实现/开发基线”表述。
 - Windows 线的当前规范性架构权威为 `docs/windows-architecture.md`（D072）；`researching-notes` 中的 Windows 架构文档仅为研究叙述与历史，不作为当前权威。
 - 分支治理（canonical branches、命名空间、上游集成模型、gitlink 可达性与删除前置条件）的当前规范性权威为 `docs/branch-policy.md`（D076）；`evidence/branch-inventory-2026-10-11/` 与 `evidence/branch-governance-gate1-2026-10-11/` 仅为历史清点与迁移时点证据，不作为当前 policy 权威。
