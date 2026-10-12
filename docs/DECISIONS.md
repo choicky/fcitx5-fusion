@@ -2139,3 +2139,110 @@ Expected Behavioral Delta = NONE。输入：M2+/r4 已接受产品基线（D075�
   评审裁定字段/迁移表达；
 - §6：新的源码事实或已确认证据与本条冲突。
 “还能测更多”、未穷尽矩阵或额外 instrumentation 本身不构成重开理由（AGENTS 分类规则不变）。
+
+## D079 — English Lexicon P1 Closure：单一词库产品政策、最小覆盖补充、失败职责矩阵与 Android Spell 边界收口
+
+**状态：Accepted（2026-10-12）。** 分类：**authority closure = Accepted Decision（架构/政策收口）
++ Confirmed Fact（P1 覆盖审计与最小补充）+ clarification（curated 合并碰撞规则文档更正）**；
+不 supersede D071/D075/D078，不修订 D069/D070/D074 的裁定。本条是 D078 权限收口之后的
+P1 执行收口批次：配套 addons 数据批次把词库从 94,530 条改为 94,540 条，其余运行时代码零改动。
+Expected Behavioral Delta：仅词库数据（10 个新 curated 键 + `copilot` 行在原位被 curated
+显示/tier 替换）；无运行时语义、ranking、搜索或架构变化。
+
+### 1. 单一词库架构（Accepted Decision）
+
+- English Core 消费的英文词汇资源**有且只有一个**：`im/pinyin/english_lexicon.tsv`
+  （含 curated allow-list 合并结果），经 English Core 进入 M2+/r4。
+- SCOWL ~94.5k 广覆盖基线保持不变（D078 §1 重申），curated `proper.allow` /
+  `technical.allow` 是**最小补充材料**：只在覆盖审计证明存在真实缺口（键缺失）或
+  canonical 显示错误（大小写/拼写）时增加条目；它们是构建期输入，经生成器进入同一条
+  TSV，**不是**第二个运行时词库。
+- 产品政策以此收口为最简架构。**不**加入：中文上下文元数据/词类/salience、第二词库或
+  第二 decoder、外部 raw frequency、臆造数值 prior、新 ranking 维度。
+
+### 2. Android Spell 职责边界（Confirmed Fact + 边界）
+
+- Android 既有英文路径 = fcitx5 Spell 模块 + `en_dict.fscd`（约 122,905 条 general-English
+  2012 词表，运行时不读频度）服务**纯英文** Spell/hint 提示（androidkeyboard
+  `hintForDisplay`）。它与 Fusion 混输词库职责不同，**不替代** Fusion 英文词库
+  （独立复用研究结论：KEEP FUSION RESOURCE；证据记录于该研究报告，非本条权威载体）。
+- 禁止项（维持现状）：不合并/导入 `en_dict.fscd`（其数据许可未声明，不满足再分发门），
+  不恢复混输 Spell sidecar（addons `pinyin.cpp` 已退役；`SpellEnabled` 现为 Architecture A
+  开关，语义按 D078 引用不变），M2+/r4 不调用 Spell 接口。
+
+### 3. 中文上下文词库元数据：不采纳（Accepted Decision）
+
+- 中文上下文元数据、词类标记、salience 信号**不属于当前架构**。先前
+  Chinese-Context Evidence Study 提出的“Model-2-as-annotation”方向按规则 F
+  （无现有机制无法解决的具体观测失败，就不新增元数据/排序层）**不予采纳**，仅作研究
+  记录保留。若未来出现设备/语料级失败证据，须以新 Decision 重开。
+
+### 4. 失败职责矩阵（边界记录）
+
+观测到的英文失败必须先归入实际负责机制，不得越界用词库“修复”：
+
+- 缺词 → 词库覆盖（curated allow-list 或 SCOWL pin 更新，走 AUDIT.md §6 评审）；
+- 显示/大小写错误 → canonical 数据（allow-list 条目本身）；
+- 拼音碰撞、候选排位 → search/context/ranking（D069/D070 机制）；
+- 短 Latin 接受 → admission policy（D069 emission floor；addons PR #4 的
+  ARM_A=ARM_B=REJECT 记录不变）；
+- 英文词间空格/多词连输 → composition/search（分段图职责，D078 §6）；
+- 用户反复自造词 → 用户学习（`mixed_english_user.tsv`，D069 learning seam）。
+
+已收录词的可疑 placement 按上表归责记录，**不**回改词库条目。
+
+### 5. P1 覆盖审计与最小补充（Confirmed Fact）
+
+- 对**当前生成词库**（基线 SHA-256 `ed36694f…`）执行场景审计（AI 产品/服务、开发者平台、
+  语言/框架、云/devops、OS、消费品牌、计算缩写；含强制最小清单）。结果：**10 个键缺失**
+  （k8s、vercel、asr、css、deepseek、qwen、sora、midjourney、huawei、xiaomi），
+  **1 个 canonical 错误层级**（`copilot` 仅为 SCOWL 普通名词 tier 7 小写）。其余强制与
+  探测条目均已正确收录。逐项证据见 addons 批次随附
+  `data-licenses/english/coverage-audit-2026-10.tsv`。
+- 补充 = 8 proper（Vercel、DeepSeek、Qwen、Sora、Midjourney、Huawei、Xiaomi、Copilot）+
+  3 technical（CSS、ASR、K8s）。provenance = 官方 vendor/product 拼写或既定缩写惯例
+  （逐项记录于 addons AUDIT.md §6.1 维护日志）；未从 Rime Ice/Frost/Wanxiang/cn_en/
+  Android Spell 批量拷贝任何数据。
+- 词库 94,530 → 94,540（copilot 原位替换，不增行）；两次独立重生成字节一致，
+  manifest/NOTICE 同步更新，configure-time SHA 门通过；English Lexicon/混输回归
+  （testenglishlexicon、testenglishcorrection、testmixedpipeline、testmixedengine）与
+  生产词库 D071 探针全部通过。
+
+### 6. curated 合并碰撞规则：文档更正（clarification，非行为变更）
+
+- 实现语义（一直如此）：curated 条目总以 canonical 显示收录——与 SCOWL 词折叠键碰撞时
+  在 tier 9 替换其显示，与哪些字母大写无关（Apple、GitHub、PDF 同理）；小写字面形态由
+  D071 parallel literal arc 保留，用户键入大小写仍权威（D069）。此前 AUDIT.md §3、
+  `proper.allow` 头注释与 TSV 头注释中“首字母大写形态永不覆盖常见词”的描述**从未实现、
+  从未进入已发布数据**，本批次将文档更正为与实现/已发布数据一致（先例：`apple→Apple`、
+  `google→Google`、`go→Go`）。
+- 同语境修正：生成器 curated 键过滤器放宽为文档化运行时 surface alphabet（AUDIT.md §1，
+  含数字），使 `K8s` 可收录；SCOWL 抽取保持 letters-only；运行时加载器/arc 代码零改动
+  （`EnglishLexicon::foldKey` 早已允许数字键）。
+- 本更正**不**改变 D071/D069 语义，**不**删除或重解释既有 uppercase/短 Latin/classical
+  literal 行为。
+
+### 7. cn_en 类表达式内容政策（Accepted Decision）
+
+- `cn_en` 类词典中的中英对照表达式（翻译对、短语、标点混合形态）**不得**被枚举为英文
+  系统词库条目。这是 D078 §6 “cn_en 是辅助证据来源、不是主 decoder”边界在**词库内容
+  政策**上的延伸：任何词库内容变更必须逐条满足本条 §1 的最小补充证据要求。
+
+### 8. Supersession 核查
+
+- 本条不 supersede 任何决定；相对 D078 的关系是执行收口与边界补充（§2/§3/§4/§7 扩展
+  D078 §6 的职责边界记录，§6 更正属文档一致性修复）。D071/D075/D078 原文与效力不变。
+- addons PR #4（ARM_A=ARM_B=REJECT，CLOSED 未 merge）的历史描述维持既有正确记录，
+  本条不改动。fusion PR #9（D078 §2 kubernetes 示例澄清）与本条独立，仍待其自身评审。
+- 本条**不**修改 κ、λ、Gate D、mixed scoring、CandidatePool、M2+/r4 search、短 token
+  admission、spacing、用户学习的任何语义；**不**授权中文上下文批次、ranking 实验、
+  词库规模研究、OOV 工程、short-Latin 策略变更或 Phase 5D。
+
+### 9. Reopen conditions
+
+- §1/§5：出现现有机制无法解决的具体观测失败（规则 F 重审）；
+- §2：`en_dict` 数据许可问题解决且出现明确产品价值证据；
+- §3：中文上下文收益获得设备/语料级失败证据（须新 Decision）；
+- §6：curated 合并语义若要变更，须显式重开 D071/D069 相关裁定；
+- §7：新的词库内容批次逐条按 §1 最小补充证据评审。
+“还能补更多词”、未经审计的词表直觉或额外 instrumentation 本身不构成重开理由。
