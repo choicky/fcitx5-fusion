@@ -104,14 +104,16 @@
 **性质：** 实现批次记录。证据等级：**SOURCE+TESTS（本机 JVM/编译）,DEVICE-PENDING**;
 不新建决定,不把本批次写成 Accepted Decision。
 
-**交付：** Android `fcitx5-android` 分支 `feature/voice-session-reliability`（由 `feat/…`
-按 D076 分支政策更名）@ 本记录的 HEAD 见 PR **#9**
+**交付：** Android `fcitx5-android` 分支 `feature/voice-session-reliability` @ `e1913eb9`
 （base `origin/fusion` `b4f26741`;未合并、未触发 CI;评审后由 owner 决定合并）。
+分支与 PR 编号：原分支名 `feat/…` 不符合 D076 前缀政策,已更名为 `feature/…`;GitHub 无法
+就地改 PR head,故 PR **#9**（`feat/…`）关闭并交叉引用,由 PR **#10**（`feature/…`,同一
+`30547996` + 修复提交 `e1913eb9`,祖先关系已验证、历史保留）取代。本记录以 **#10** 为准。
 改动文件：`VoiceInputFlow.kt`（watchdog 核心）、新文件 `VoiceSessionTiming.kt`
 （`VoiceTrigger`/`VoiceEndpointPolicy`/`VoiceSessionScheduler`/`autoTerminated` 事件）、
 `VoiceBackend.kt`（新增 provider-neutral `onSpeechStarted` 事件）、`SystemAsrBackend.kt`
 （`onBeginningOfSpeech` 接入该事件）、`VoiceInputComponent.kt`（trigger 接线 + 闭集标签 debug 日志）、
-`VoiceInputFlowTest.kt`（18 个新生命周期测试）。
+`VoiceInputFlowTest.kt`（19 个新生命周期测试;该套件 28 → 47 项,全套 JVM 365 项 0 失败）。
 
 **行为：**
 1. **Establish（30 s,全部 trigger）**：后端在 30 s 内未交付 `onSessionEstablished` 即产生
@@ -167,4 +169,6 @@ android.diff / validation.md）。
 新增无定时 Active 阶段）;(2) `Stage.Establish` 只能经建立/终态/显式 stop-cancel/自身超时
 离开（建立前证据不再替换 30 s D035 边界）;(3) 上文 NoSpeech 隐私/数据流口径改为如实
 （不声称“未上传”）;(4) 分支名 `feat/*` → `feature/*`（D076 允许的临时分支前缀）。
-测试 13→18 项,全套 JVM/编译复验通过。
+Android 侧最终 HEAD `e1913eb9`。生命周期测试由 13 增至 19 项（套件 41 → 47,全套 365 项
+0 失败）,JVM 全套/`compileDebugAndroidTestKotlin`/arm64 `assembleDebug` 在最终状态复验通过;
+设备验收仍需独立 re-review 后由 owner 放行。
