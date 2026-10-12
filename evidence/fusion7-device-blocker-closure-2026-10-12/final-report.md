@@ -70,8 +70,11 @@ redesign was introduced.
 
 ## 6. Pending gates (NOT claimed as complete)
 
-Per AGENTS.md and the task's own hard gates, the following are **open** and require actions an
-agent session must not take unilaterally:
+Per AGENTS.md and the task's own hard gates, the following were **open** at batch time and required
+actions an agent session must not take unilaterally. **Status update (2026-10-12): items 2 and 3 are
+closed by the owner-authorized local release recorded in §8; item 1 is the owner's post-install
+device acceptance on the published `v0.1.3-fusion.8` release APK (the device-test vehicle is now the
+signed release APK, not a separate debug build).**
 
 1. **Physical-device verification** of A–C keyboard behavior and the D UI is **pending**. It needs
    an **installable, established-identity-signed** debug APK. The local build is unsigned (per
@@ -95,4 +98,52 @@ Frost-supplement vocabulary decision unchanged; no SCOWL; no new English-vocabul
 English Core stays out of LibIME. Phase 5D behavior (catalog-version identity, update detection,
 staged download, size/hash/free-space validation, atomic replacement, failure preserves the old
 verified dictionary, enable/disable, migration, Base compatibility, interrupted-update recovery) is
-untouched. No new signing key created; no secret read. No irreversible or data-moving action taken.
+untouched. No new signing key created; no secret material was read, printed or exported. The
+owner-authorized merge and the public `v0.1.3-fusion.8` release recorded in §8 are the intended,
+authorized state-changing actions; no other irreversible or data-moving action was taken.
+
+## 8. Release `v0.1.3-fusion.8` — executed locally (2026-10-12)
+
+The owner issued an explicit directive overriding §6(3): build and sign the release **locally** on
+Mini S with the established Fusion release identity, upload that exact artifact to the GitHub
+Release, and **do not** rebuild it in CI. Per **D077** the version is `v0.1.3-fusion.8`; per
+**D063 / D058 / D064** the signing identity is reused unchanged — no new key, no private key material
+read/printed/exported. This closes §6 items 2 (merge) and 3 (release); item 1 (device acceptance) is
+the owner's post-install step on this release APK.
+
+**Merge / trunk state** (merge commits preserve SHAs, so the submodule gitlink `f18dbb9` stays
+reachable — no squash, no trunk reset):
+- fcitx5-chinese-addons `fusion`: PR #7 merged → head `99d08a47` (contains `f18dbb9`).
+- fcitx5-android `fusion`: PR #7 merged → head `b4f26741` (`Merge pull request #7`); its tree carries
+  the submodule gitlink `f18dbb9` and the release-prep commit `1125efb7` (`baseVersionCode` 12→13;
+  `release-apk.yml` + release notes pinned to `f18dbb9`).
+
+**Established signing identity** (local, reused): `~/.signing/fusion-enhanced-release.p12`, alias
+`fusion-enhanced-release`; certificate SHA-256 `A5:15:B7:4A:C4:C3:84:51:54:E1:7C:AD:D1:3D:02:75:BE:70:01:DD:CF:2B:97:2A:4F:2F:06:1A:FD:26:89:0C` = D058 `Fcitx5 Fusion Enhanced Release`.
+Invoked through `SIGN_KEY_FILE` / `SIGN_KEY_ALIAS` / `SIGN_KEY_PWD` (password read from the companion
+`.pwd` into the build environment only, never echoed).
+
+**Local build + verification** (canonical native build host; addons submodule checked out to `f18dbb9`):
+- `BUILD_ABI=arm64-v8a :app:testDebugUnitTest` → BUILD SUCCESSFUL, **346 tests, 0 failures** (incl.
+  `EnglishLexiconResourceTest`, `DictionaryPresentationTest`).
+- `BUILD_ABI=arm64-v8a :app:assembleRelease` → BUILD SUCCESSFUL (R8-minified, like CI), signed with D058.
+- APK `org.fcitx.fcitx5.android-v0.1.3-fusion.8-0-gb4f26741-arm64-v8a-release.apk`; size `67977343`;
+  SHA-256 `018287a08513becf583313016e3e9c49a34bd67268f5055a14dc5268fdb48785`.
+- package `org.fcitx.fcitx5.android.fusionenhanced`; versionCode `132`; versionName
+  `v0.1.3-fusion.8-0-gb4f26741`; ABI `arm64-v8a`; `apksigner verify` OK; cert SHA-256 `A515B74A…` (D058).
+- APK contents: `lib/arm64-v8a/libpinyin.so` carries `AuxiliaryFilter` (blockers A–C build);
+  `assets/…/pinyin/english_lexicon.tsv` SHA-256 `2506539f…`, **22477** entries (blocker D source);
+  `assets/…/pinyinhelper/moqima_gb18030.txt` SHA-256 `66deab4a…`; manifest package id `…fusionenhanced`.
+
+**Publication without CI**:
+- `release-apk.yml` is the only workflow triggered by a `v*` tag push. It was disabled
+  (`disabled_manually`), then the release was created with
+  `gh release create v0.1.3-fusion.8 <apk> --target b4f26741 …`, uploading the **exact** locally
+  built/signed APK, then re-enabled (state `active`).
+- Verified **zero** workflow runs for the tag / `b4f26741`; the published asset is the exact APK
+  (name `…v0.1.3-fusion.8-0-gb4f26741-arm64-v8a-release.apk`, size `67977343`, content-type
+  `application/vnd.android.package-archive`); the release body carries the full traceability block.
+- Release: https://github.com/choicky/fcitx5-android/releases/tag/v0.1.3-fusion.8
+
+The current `fusion` trunks (`99d08a47` / `b4f26741`) and the published `v0.1.3-fusion.8` are
+authoritative; no trunk was reset to a prior baseline.
