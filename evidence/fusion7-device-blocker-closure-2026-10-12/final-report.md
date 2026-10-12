@@ -4,8 +4,12 @@ Date: 2026-10-12. Machine: Mini S Ubuntu. This is an **evidence** record for a d
 closure batch; it creates **no new Accepted Decision** and does not rewrite any prior evidence.
 Version naming for the eventual release follows **D077** (canonical `<upstream>-fusion.<N>`);
 the next unused D077-compliant version after the published `v0.1.3-fusion.7` is **`v0.1.3-fusion.8`**.
-Signing routing follows **D063 / D058 / D064** (release + MoQi-Debug-CI identities are Actions
-secrets; an agent session uses the CI fallback and must not create or read key material).
+Signing routing follows **D063 / D058 / D064**: the two established identities are **D058
+`Fcitx5 Fusion Enhanced Release`** and **D064 `Fcitx5 Fusion Enhanced Debug`** (alias
+`fusion-enhanced-debug`; D064 retired the earlier `CN=MoQi Debug CI` debug identity, which this
+report's §6 batch-time snapshot still calls by its then-current name "MoQi-Debug-CI"). Both are
+available to CI as Actions secrets, and D063/D064 additionally allow an owner-supplied local key
+file; an agent session uses the CI fallback and must not create or read key material.
 
 Authority baseline before this batch:
 - fcitx5-chinese-addons `fusion` @ `b7f1db5` (5.1.15-82-gb7f1db5)
@@ -68,28 +72,45 @@ redesign was introduced.
 
 `git diff --check` clean on both worktrees; no temporary instrumentation remains.
 
-## 6. Pending gates (NOT claimed as complete)
+## 6. Pending gates at batch time — **historical snapshot, not current release guidance**
 
 Per AGENTS.md and the task's own hard gates, the following were **open** at batch time and required
-actions an agent session must not take unilaterally. **Status update (2026-10-12): items 2 and 3 are
-closed by the owner-authorized local release recorded in §8; item 1 is the owner's post-install
-device acceptance on the published `v0.1.3-fusion.8` release APK (the device-test vehicle is now the
-signed release APK, not a separate debug build).**
+actions an agent session must not take unilaterally.
 
-1. **Physical-device verification** of A–C keyboard behavior and the D UI is **pending**. It needs
-   an **installable, established-identity-signed** debug APK. The local build is unsigned (per
-   D063: `fromProjectEnv("debug")` → null without `DEBUG_SIGN_KEY_*`), and the MoQi-Debug-CI
-   identity is an Actions secret; the generic `~/.android/debug.keystore` is a **different signature
-   island** (D063: cross-island `-r` reinstall is rejected with data loss). So the device-test APK
-   must come from the established **CI fallback** (`test-apk.yml`) or from an owner-signed local key.
-2. **Merge** of PR #7 (both repos) is gated on the **independent review** the task requires; not
-   self-merged.
-3. **Release `v0.1.3-fusion.8`** is pending (1)+(2). The established release identity is D058
-   `SIGN_KEY_*` (cert `A515B74A…`), available only as Actions secrets; D063 §6 forbids an agent from
-   reading/creating key material, and D063 also establishes that signing/`gh release create` run in
-   the same `release-apk.yml` job triggered by the tag push. The task's "build/sign locally, upload
-   the exact artifact, no CI rebuild" instruction therefore cannot be satisfied by an agent session
-   on this machine without the owner-supplied local identity.
+> **Snapshot boundary.** Everything in this section describes the gates *as they stood when the
+> batch ran*, including the then-planned routing (CI fallback for a device-test APK; tag-push
+> `release-apk.yml` for the release). That pending routing was **later superseded and closed by the
+> owner-authorized actual execution recorded in §8**, which is the authoritative record of what
+> really happened for this batch. The items below are preserved as history — they are not rewritten
+> and must not be followed as instructions.
+>
+> **Status update (2026-10-12): items 2 and 3 are closed by the owner-authorized local release
+> recorded in §8; item 1 is the owner's post-install device acceptance on the published
+> `v0.1.3-fusion.8` release APK (the device-test vehicle is now the signed release APK, not a
+> separate debug build).**
+
+1. **Physical-device verification** of A–C keyboard behavior and the D UI was **pending** at batch
+   time; it needed an **installable, established-identity-signed** debug APK. The batch-time local
+   build was unsigned (per
+   D063: `fromProjectEnv("debug")` → null without `DEBUG_SIGN_KEY_*`), and the established debug
+   signing identity — **D064 `Fcitx5 Fusion Enhanced Debug`**, named "MoQi-Debug-CI" in this
+   batch-time snapshot — was held as an Actions secret at the time; the generic
+   `~/.android/debug.keystore` is a **different signature island** (D063: cross-island `-r`
+   reinstall is rejected with data loss). So the device-test APK had to come from the established
+   **CI fallback** (`test-apk.yml`) or from an owner-supplied local key.
+   *Superseded by §8: the owner supplied the local D058 release identity, the release APK itself was
+   built and signed locally, and it — not a separate debug build — became the device-test vehicle.*
+2. **Merge** of PR #7 (both repos) was gated on the **independent review** the task requires and was
+   not self-merged at batch time. *Closed by §8 (owner-authorized merge).*
+3. **Release `v0.1.3-fusion.8`** was pending (1)+(2). The established release identity is D058
+   `SIGN_KEY_*` (cert `A515B74A…`), available only as Actions secrets at the time; D063 §6 forbids an
+   agent from reading/creating key material, and D063 also establishes that signing/`gh release
+   create` run in the same `release-apk.yml` job triggered by the tag push. The task's "build/sign
+   locally, upload the exact artifact, no CI rebuild" instruction therefore could not be satisfied by
+   an agent session on this machine without the owner-supplied local identity.
+   *Superseded by §8: with the owner's explicit directive and owner-supplied local identity, the
+   release was built/signed on Mini S and published directly with `gh release create` — no tag push,
+   no CI rebuild. The CI/tag-push routing described above is history, not the route this batch took.*
 
 ## 7. Hard boundaries preserved
 
@@ -104,12 +125,17 @@ authorized state-changing actions; no other irreversible or data-moving action w
 
 ## 8. Release `v0.1.3-fusion.8` — executed locally (2026-10-12)
 
-The owner issued an explicit directive overriding §6(3): build and sign the release **locally** on
-Mini S with the established Fusion release identity, upload that exact artifact to the GitHub
-Release, and **do not** rebuild it in CI. Per **D077** the version is `v0.1.3-fusion.8`; per
-**D063 / D058 / D064** the signing identity is reused unchanged — no new key, no private key material
-read/printed/exported. This closes §6 items 2 (merge) and 3 (release); item 1 (device acceptance) is
-the owner's post-install step on this release APK.
+**This section is the authoritative record of what actually happened for this batch**; §6 is only the
+batch-time snapshot of the gates that were still open before it.
+
+The owner issued an explicit directive overriding the §6 snapshot's pending release and device-test
+routing (items 1 and 3): build and sign the release **locally** on Mini S with the established Fusion
+release identity, upload that exact artifact to the GitHub Release, and **do not** rebuild it in CI.
+Per **D077** the version is `v0.1.3-fusion.8`; per **D063 / D058 / D064** the signing identities are
+reused unchanged — D058 `Fcitx5 Fusion Enhanced Release` for this release APK (D064
+`Fcitx5 Fusion Enhanced Debug` stays the separate debug identity and was not used here) — no new key,
+no private key material read/printed/exported. This closes §6 items 2 (merge) and 3 (release);
+item 1 (device acceptance) remains the owner's post-install step, now performed on this release APK.
 
 **Merge / trunk state** (merge commits preserve SHAs, so the submodule gitlink `f18dbb9` stays
 reachable — no squash, no trunk reset):
