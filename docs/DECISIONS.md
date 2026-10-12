@@ -2147,3 +2147,169 @@ Expected Behavioral Delta = NONE。输入：M2+/r4 已接受产品基线（D075�
   评审裁定字段/迁移表达；
 - §6：新的源码事实或已确认证据与本条冲突。
 “还能测更多”、未穷尽矩阵或额外 instrumentation 本身不构成重开理由（AGENTS 分类规则不变）。
+
+## D079 — English Lexicon 收口：单一系统词库、Ice 主词表/Frost 补充的词库替换、最小覆盖审计、失败职责矩阵与 Android Spell 边界
+
+**状态：Accepted（2026-10-12，同日修订并含库存替换批次）。** 分类：**authority closure =
+Accepted Decision（架构/政策收口）+ Confirmed Fact（P1 覆盖审计、库存替换批次）+
+clarification（curated 合并碰撞规则文档更正）**；除本条 §1/§10 明确记载的对 D078 §1
+“SCOWL 基线”表述的 supersede 外，不 supersede D071/D075/D078，不修订 D069/D070/D074 的
+裁定。本条包含两个 addons 配套批次：P1 最小补充（94,530 → 94,540，后被替换批次整体取代）
+与同日执行的**词库替换**（SCOWL ~94.5k 库存退役，改为 Rime Ice 主词表 + Rime Frost 补充 +
+小而审的 curated allow-list，22,477 条）；除数据与文档外运行时代码零改动。
+Expected Behavioral Delta：仅词库数据（最终交付 = 替换后的 22,477 条库存；P1 补充批次为其
+历史中间态）；无运行时语义、ranking、搜索或架构变化。
+
+### 1. 单一词库架构与词汇来源政策（Accepted Decision）
+
+- 混输 English Core 消费的**唯一打包系统词库**（single bundled system lexicon）：
+  `im/pinyin/english_lexicon.tsv`（含 curated allow-list 合并结果），经 English Core
+  进入 M2+/r4。（Android Spell 的 `en_dict.fscd` 属另一职责路径，见 §2，不在此列。）
+- 词汇来源政策（2026-10-12 修订，替换原“SCOWL 基线”表述）：**主词表 = Rime Ice
+  `en_dicts/en.dict.yaml` + `en_ext.dict.yaml`（人工策展的常用英文核心）；Rime Frost
+  同名文件仅补充 Ice 缺失的折叠键；本仓库小而审的 `proper.allow` / `technical.allow`
+  curated 条目保留，用于 canonical 显示覆盖与上游缺失的少量键。** 这些是构建期输入，
+  经生成器进入同一条 TSV，**不是**第二个运行时词库。
+- SCOWL ~94.5k 拼写检查库存**不是产品需求**：不再为其保留、不再对其做进一步比较/基准/
+  研究；本批次已将其从运行时库存退役。历史记录（D071–D078 相关字节 pin、P1 审计表、
+  旧 NOTICE）保持原样，不回写。
+- 本条 §1 明确 supersede D078 §1 中“SCOWL ~94.5k 为广覆盖基线、保持不变”的词库来源
+  表述；D078 §1 的单一词库/单一 pipeline 结论与其余裁定不变。
+- 产品政策以此收口为最简架构。**不**加入：中文上下文元数据/词类/salience、第二词库或
+  第二 decoder、外部 raw frequency、臆造数值 prior、新 ranking 维度、逐词频度导入
+  （tier 仅按表来源成员关系粗分：Ice-en 9 / Ice-ext 8 / Frost-en 7 / Frost-ext 6）。
+- **不**手工裁决数千词：Ice 即策展来源；Frost 补充仅作最小判断；curated 列表只按 §5
+  审计证据增删。
+- 不可达键（如含数字的 `K8s`）**跳过**，不为使其可达而改动 LibIME、PinyinEngine 数字
+  处理或 M2+/r4 admission/search。
+
+### 2. Android Spell 职责边界（Confirmed Fact + 边界）
+
+- Android 既有英文路径 = fcitx5 Spell 模块 + `en_dict.fscd`（约 122,905 条 general-English
+  2012 词表，运行时不读频度）服务**纯英文** Spell/hint 提示（androidkeyboard
+  `hintForDisplay`）。它与 Fusion 混输词库职责不同，**不替代** Fusion 英文词库
+  （独立复用研究结论：KEEP FUSION RESOURCE；证据记录于该研究报告，非本条权威载体）。
+- 禁止项（维持现状）：不合并/导入 `en_dict.fscd`（其数据许可未声明，不满足再分发门），
+  不恢复混输 Spell sidecar（addons `pinyin.cpp` 已退役；`SpellEnabled` 现为 Architecture A
+  开关，语义按 D078 引用不变），M2+/r4 不调用 Spell 接口。
+
+### 3. 中文上下文词库元数据：不采纳（Accepted Decision）
+
+- 中文上下文元数据、词类标记、salience 信号**不属于当前架构**。先前
+  Chinese-Context Evidence Study 提出的“Model-2-as-annotation”方向按规则 F
+  （无现有机制无法解决的具体观测失败，就不新增元数据/排序层）**不予采纳**，仅作研究
+  记录保留。若未来出现设备/语料级失败证据，须以新 Decision 重开。
+
+### 4. 失败职责矩阵（边界记录）
+
+观测到的英文失败必须先归入实际负责机制，不得越界用词库“修复”：
+
+- 缺词 → 词库覆盖（curated allow-list 或 Ice/Frost pin 更新，走 AUDIT.md §6 评审；
+  仅在该键按 §1 可达字母表可输入时有效）；
+- 显示/大小写错误 → canonical 数据（allow-list 条目本身）；
+- 拼音碰撞、候选排位 → search/context/ranking（D069/D070 机制）；
+- 短 Latin 接受 → admission policy（D069 emission floor；addons PR #4 的
+  ARM_A=ARM_B=REJECT 记录不变）；
+- 英文词间空格/多词连输 → composition/search（分段图职责，D078 §6）；
+- 用户反复自造词 → 用户学习（`mixed_english_user.tsv`，D069 learning seam）。
+
+已收录词的可疑 placement 按上表归责记录，**不**回改词库条目。
+
+### 5. P1 覆盖审计与最小补充（Confirmed Fact）
+
+- 对**当前生成词库**（基线 SHA-256 `ed36694f…`）执行场景审计（AI 产品/服务、开发者平台、
+  语言/框架、云/devops、OS、消费品牌、计算缩写；含强制最小清单）。结果：**10 个键缺失**
+  （k8s、vercel、asr、css、deepseek、qwen、sora、midjourney、huawei、xiaomi），
+  **1 个 canonical 错误层级**（`copilot` 仅为 SCOWL 普通名词 tier 7 小写）。其余强制与
+  探测条目均已正确收录。逐项证据见 addons 批次随附
+  `data-licenses/english/coverage-audit-2026-10.tsv`。
+- 补充 = 8 proper（Vercel、DeepSeek、Qwen、Sora、Midjourney、Huawei、Xiaomi、Copilot）+
+  3 technical（CSS、ASR、K8s）。provenance = 官方 vendor/product 拼写或既定缩写惯例
+  （逐项记录于 addons AUDIT.md §6.1 维护日志）；未从 Rime Ice/Frost/Wanxiang/cn_en/
+  Android Spell 批量拷贝任何数据。
+- 词库 94,530 → 94,540（copilot 原位替换，不增行）；两次独立重生成字节一致，
+  manifest/NOTICE 同步更新，configure-time SHA 门通过；English Lexicon/混输回归
+  （testenglishlexicon、testenglishcorrection、testmixedpipeline、testmixedengine）与
+  生产词库 D071 探针全部通过。
+- 同日记录更正与历史定位：上述被审计的 SCOWL 库存随即被 §10 的替换批次整体退役，因此
+  本节的键缺失/canonical 结论是针对**当时已发布数据**的历史事实，保留不回写；其中
+  `K8s` 补充因数字键在输入路径不可达而被撤回（见 §6 更正与 §10）。其余 10 个可输入
+  curated 键（vercel、asr、css、deepseek、qwen、sora、midjourney、huawei、xiaomi、
+  copilot）在替换库存中继续成立。
+
+### 6. curated 合并碰撞规则：文档更正（clarification，非行为变更）
+
+- 实现语义（一直如此）：curated 条目总以 canonical 显示收录——与上游词（原 SCOWL，
+  现为 Ice/Frost，见 §10）折叠键碰撞时在 tier 9 替换其显示，与哪些字母大写无关（Apple、
+  GitHub、PDF 同理）；小写字面形态由
+  D071 parallel literal arc 保留，用户键入大小写仍权威（D069）。此前 AUDIT.md §3、
+  `proper.allow` 头注释与 TSV 头注释中“首字母大写形态永不覆盖常见词”的描述**从未实现、
+  从未进入已发布数据**，本批次将文档更正为与实现/已发布数据一致（先例：`apple→Apple`、
+  `google→Google`、`go→Go`）。
+- 同语境更正（P1 批次曾把生成器 curated 键过滤器放宽到含数字的 surface alphabet 以收录
+  `K8s`；同日替换批次**已回退**该放宽）：运行时加载器 `EnglishLexicon::foldKey` 一直允许
+  数字键且零改动，但产品输入路径 `PinyinEngine::keyEvent` 只接受字母与撇号（数字被候选
+  选择提前消费），因此数字/连字符/空格键在混输中不可达、属死数据。替换批次的生成器对
+  上游与 curated 键统一施加可达字母表过滤（`[A-Za-z]` + 撇号，AUDIT.md §1/§3），
+  `K8s` 按 §1 规则跳过。运行时代码零改动。
+- 本更正**不**改变 D071/D069 语义，**不**删除或重解释既有 uppercase/短 Latin/classical
+  literal 行为。
+
+### 7. cn_en 类表达式内容政策（Accepted Decision）
+
+- `cn_en` 类词典中的中英对照表达式（翻译对、短语、标点混合形态）**不得**被枚举为英文
+  系统词库条目。这是 D078 §6 “cn_en 是辅助证据来源、不是主 decoder”边界在**词库内容
+  政策**上的延伸：任何词库内容变更必须逐条满足本条 §1 的最小补充证据要求。
+
+### 8. Supersession 核查
+
+- 本条唯一的 supersede 是 §1/§10 记载的 D078 §1 词库来源表述（“SCOWL ~94.5k 为广覆盖
+  基线、保持不变”）；除此之外不 supersede 任何决定。相对 D078 的关系是执行收口与边界
+  补充（§2/§3/§4/§7 扩展 D078 §6 的职责边界记录，§6 更正属文档一致性修复）。
+  D071/D075/D078 其余原文与效力不变。
+- addons PR #4（ARM_A=ARM_B=REJECT，CLOSED 未 merge）的历史描述维持既有正确记录，
+  本条不改动。fusion PR #9（D078 §2 kubernetes 示例澄清）与本条独立，已于 2026-10-12
+  merge。
+- 本条**不**修改 κ、λ、Gate D、mixed scoring、CandidatePool、M2+/r4 search、短 token
+  admission、spacing、用户学习的任何语义；**不**授权中文上下文批次、ranking 实验、
+  词库规模研究、OOV 工程或 short-Latin 策略变更。Phase 5D（Dictionary Manager 安装目录
+  版本身份与失败安全更新）按主任务授权另行实施，属产品既有规划而非本条词库批次范围。
+
+### 9. Reopen conditions
+
+- §1/§5：出现现有机制无法解决的具体观测失败（规则 F 重审）；
+- §2：`en_dict` 数据许可问题解决且出现明确产品价值证据；
+- §3：中文上下文收益获得设备/语料级失败证据（须新 Decision）；
+- §6：curated 合并语义若要变更，须显式重开 D071/D069 相关裁定；
+- §7：新的词库内容批次逐条按 §1 最小补充证据评审；
+- §10：替换库存的来源、许可位置或 tier 规则若要变更，须以新 Decision 重开本条 §1/§10。
+“还能补更多词”、“还能覆盖更广”、未经审计的词表直觉或额外 instrumentation 本身不构成
+重开理由；SCOWL 退役不构成重开理由（不是产品需求，也不再对其做比较/基准/研究）。
+
+### 10. 词库替换批次：Ice 主词表 + Frost 补充（Accepted Decision + Confirmed Fact）
+
+- 2026-10-12 同日执行、随 addons `8a5ee8a`（PR #6）交付的词库替换，把运行时英文库存
+  从 SCOWL ~94.5k 拼写检查词表切换为**人工策展的常用英文核心**：
+  - 主词表 = Rime Ice `en_dicts/en.dict.yaml` + `en_ext.dict.yaml`，pin
+    `github.com/iDvel/rime-ice@da1fbe602e38f26db846fa10120ee64c2b0324c0`；
+  - 补充 = Rime Frost 同名两文件，**只收录 Ice 缺失的折叠键**，pin
+    `github.com/gaboolic/rime-frost@f1bc68b308adcca916c51bcaad25a267876e6efe`；
+  - curated `proper.allow` / `technical.allow` 保留（canonical 显示覆盖 + §5 审计键）；
+  - tier = 来源成员关系粗分：Ice-en 9 / Ice-ext 8 / Frost-en 7 / Frost-ext 6 /
+    curated 9；无逐词频度导入。
+- 交付事实：`im/pinyin/english_lexicon.tsv` = **22,477 条**（Ice 22,364 + Frost-only
+  150 + curated-only 9 − 46 severe-profanity 排除），SHA-256
+  `2506539f4f96a4603507a11ba23d7f4291346b08e1551d6e64cc7ac9fc6571b1`；两次独立重生成
+  字节一致；manifest/NOTICE 同步；configure-time SHA 门通过。生成器对上游与 curated
+  键统一施加可达字母表过滤（§6），`K8s` 因此被从 curated 列表移除。
+- 许可位置（Accepted Decision）：rime-ice 与 rime-frost 均为 GPL-3.0-only；派生 TSV 作为
+  **可分离数据资源**（mere aggregate）以 GPL-3.0-only 再分发，addon 代码保持
+  LGPL-2.1-or-later，与 D040 已随包分发 Frost 中文词典的先例一致；D040 当时排除 Ice
+  仅针对中文拼音自动注解用途，不构成对本英文词表来源的禁止。`en_dict.fscd` 维持 §2
+  禁令。
+- 验证（Confirmed Fact）：容器（gcc 16.2.1）内 testenglishlexicon、
+  testenglishcorrection、testmixedpipeline、testmixedengine 与生产词库探针
+  （22,477 加载、curated 显示、D071 canonical+literal 平行弧、数字 raw 无弧、
+  completion/correction/短词守卫）全部通过。
+- 测试口径变更：testmixedcorpus 生产库存下限 50,000 → 20,000，按本条政策更新
+  （库存定义改变，非削弱行为断言；所有语义断言原样保留并通过）。
