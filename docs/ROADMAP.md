@@ -460,7 +460,7 @@ B. 由源码推断、需实机确认的风险：
 
 ## Phase 5-D — 词库管理方案（文档轨）
 
-**状态：PHASE 5B COMPLETE；Android Dictionary Manager 已实现；设备验收和后续产品边界仍待完成**
+**状态：PHASE 5B COMPLETE；Android Dictionary Manager 已实现（5A–5D 已合入 `fusion` 主干，5D 随 `v0.1.3-fusion.7` 发布，见 D080）；设备验收和后续产品边界仍待完成**
 
 词库管理方案已落档于 [`docs/dictionary-manager-plan.md`](dictionary-manager-plan.md)。该文档对应独立的词库工作流，不能与本节 ASR Provider Phase 5 的实现状态混写，也不改变现有 Voice/ASR 路线。
 
@@ -928,7 +928,7 @@ invocation 后处理。`preferredVoiceInput` 保留 Android voice-input IME/subt
 性质必须分开记录：
 
 - **Current development baseline**：唯一值为 `first-release-baseline.md`（D060）冻结的 Android `contribution/fusion-enhanced-identity-naming-r8` @ `2ba3a999`；不得仅因某个工作树当前 checkout 在某个 SHA，就把它升级为跨仓库权威事实。
-- **Release reproducibility baseline**：已发布 `v0.1.3-fusion.6` 的 Android `e48896accb8c6f85ccee6006cfb689c1419ec227`（tag）+ addons `9b3448e6b3889e4281ea39e334c7e5714f8a8b12`（release workflow 固定 pin）。这组 SHA 只用于复现该 Release，不是当前开发 HEAD；release evidence 仍保留在下节及 `docs/repository-rename.md`。
+- **Release reproducibility baseline**：已发布 `v0.1.3-fusion.6` 的 Android `e48896accb8c6f85ccee6006cfb689c1419ec227`（tag）+ addons `9b3448e6b3889e4281ea39e334c7e5714f8a8b12`（release workflow 固定 pin）。这组 SHA 只用于复现该 Release，不是当前开发 HEAD；release evidence 仍保留在下节及 `docs/repository-rename.md`。后续 `v0.1.3-fusion.7` 的对应基线为 Android `f7f2cc3dfa64baeb5816e8f0ea1b9f5c6488467c`（tag）+ addons `b7f1db540bb1127b586539c8144060fdc12c145b`（gitlink 与 release pin 同步；本地产物精确交付，见 D080）。
 - **Historical phase checkpoint**：Android `phase4-voice-poc` 的 `7ed0fa780bb367b4602c432e830a3006b8717b9c` 只表示 Phase 4C 当时的实现/验收 checkpoint。它已被后续 Android 连续提交超越，不要求当前 checkout 回退；相关验收记录保持历史性质。
 
 addons 的 `9b3448e6` 位于用于发布固定的 punctuation 分支线上，不能因它晚于 `61474bd3` 就替代当前 `master` 开发基线。以上判定同时依据分支/远端状态、提交祖先关系、现有 release evidence 和后续连续开发历史；不是依据单次 checkout 猜测。
@@ -944,6 +944,26 @@ addons 的 `9b3448e6` 位于用于发布固定的 punctuation 分支线上，不
 - 已发布 [`v0.1.3.8-rc.2`](https://github.com/choicky/fcitx5-android/releases/tag/v0.1.3.8-rc.2)（release id `403830061`）：**FIRST FUSION ENHANCED RELEASE = PUBLISHED**。产品源 `contribution/fusion-enhanced-identity-naming-r8` @ `f2a64da1`；addons 发布 pin `47401b04681615024e4cf87c4797005b26e202ff`。
 - 发布方式 = **精确产物晋升（D063）**：owner 对 RC.2 完成 8 项设备验收全 PASS（FINAL RELEASE = GO）后，仅将 D067 生产的既有 draft 置为 `draft=false`（2026-10-06T01:06:19Z）；**未 rebuild / resign / 替换资产 / 新建 tag**。
 - 正式 APK：`org.fcitx.fcitx5.android.fusion-enhanced-v0.1.3.8-rc.2-0-gf2a64da1-arm64-v8a-release.apk`，67,728,186 B，SHA256 `93a42897f0d053436f113f32ca88aac539eb0f18e8034f6f130309356e8deb9b` == `ACCEPTANCE_APK_SHA256`；签名证书 SHA-256 == D058 canonical（`A5:15:B7:4A:…:89:0C`）。RC.1（`403658765`）维持 REJECTED 历史证据，未触碰。
+
+#### v0.1.3-fusion.7 发布（2026-10-12，D080）
+
+- 已发布 [`v0.1.3-fusion.7`](https://github.com/choicky/fcitx5-android/releases/tag/v0.1.3-fusion.7)：
+  Android `f7f2cc3dfa64baeb5816e8f0ea1b9f5c6488467c`（`fusion` 主干，PR #6），
+  addons `b7f1db540bb1127b586539c8144060fdc12c145b`；`release-apk.yml` 的旧 D068 归档
+  pin `47401b04` 前进至该提交（旧 pin 树 == merge-base `0220285` + 一处纯缩进差异，
+  不含 M2+/r4 与新词库，前进为发布所必需）。
+- 交付方式 = **本地产物精确交付**：arm64 release APK 本地构建、既有 D058 身份本地签名
+  （apksigner v1+v2 PASS，证书 SHA-256 == D058 canonical），tag 提交含 `[skip ci]`
+  未触发 CI 重建，发布资产 SHA-256 与本地文件一致
+  `d28fe8c28b39dc655352a87902cb6c1d87cff62104376fbafcf5265ceb929c62`；
+  versionCode 122（fusion.6 可直接覆盖升级），versionName
+  `v0.1.3-fusion.7-0-gf7f2cc3d`（D054 describe 机制）。
+- 内容批次：English 词库换代（Ice 主 + Frost 补充 + curated，22,477 条，
+  包内 SHA-256 `2506539f…571b1` == D079 §10）+ Dictionary Manager Phase 5D
+  （安装版本身份、可更新检测、原子替换与失败保留、状态保留、旧安装迁移、中断恢复、
+  基线兼容门禁；Android PR #5 `b5b83da8`）；Mixed Input/MoQi/Voice 保持不变。
+- 性质：JVM 全量套件与编译验证通过 + 资源逐字节核验 = 已验证；**真机 TBV 未执行**，
+  由所有者按交付说明验收，本节不将单测写成设备 PASS。
 
 以下 Phase 4C 列表是历史进度快照；其中 Local 模型集、顺序和发布下载口径已由 D050 部分替代，保留用于追溯，不作为当前状态唯一来源。
 
