@@ -1997,3 +1997,139 @@ Behavioral Delta = NONE。
 
 未来上游版本形态命中规则 10 的解析歧义、或发布基础设施出现与本条冲突的真实需求时，按
 Hard Stop 报告并通过新的 Accepted Decision 解决。
+
+## D078 — English Lexicon Authority Closure：~95k 基线保持、lowercase OOV 能力定性、D071 语义分层与未来 English 资源分发前向兼容要求
+
+**状态：Accepted（2026-10-12）。** 分类：**authority closure = 复核 + 澄清 + 前向需求记录；
+不 supersede 任何先前 Accepted Decision**，D069/D070/D071/D074/D075/D076/D077 的裁定、pin、
+证据与历史表述逐项核查后全部不变（见 §7）。本条为 docs/governance batch：不实现产品行为、
+不运行或授权任何实验/benchmark、不改词库生成、不实现 Dictionary Manager/OOV/资源框架；
+Expected Behavioral Delta = NONE。输入：M2+/r4 已接受产品基线（D075）、两层候选管线源码
+审计（2026-10-11，REQUIREMENTS §2.1 / D075 澄清注记）、被拒绝的 short-Latin PoC
+（fcitx5-chinese-addons PR #4：ARM_A/ARM_B = REJECT，CLOSED 未 merge）、D071 既有裁定、
+最新独立架构评审意见。
+
+### 1. English Lexicon 产品基线（Accepted Decision：reaffirm + Confirmed Fact 补记）
+
+- **Confirmed Fact：** 当前随包产品词库 = addons 已接受基线 `644205f` 的
+  `im/pinyin/english_lexicon.tsv`，**94,530 条词库条目**（≈95k；另有 10 行头部注释，不计入），
+  来源 SCOWL v2 tag `rel-2026.02.25`、American spellings、variant level ≤1、deaccented；
+  文件 SHA-256 前缀 `ed36694f`。
+- **保持该 ~95k 词库为产品基线；词库缩减不是当前产品目标。** 与 ROADMAP Phase 11 收口条目
+  （“English lexicon 规模不冻结…不提前把 1k/3k/5k 或任何其它规模写成产品 requirement”）及
+  D075 §4（词库增强回到正常产品/维护裁定）一致：本条**不**规定 1k/3k/5k 或任何 tier 实验。
+- **词库规模相关裁定仅在下列具体证据下重开**：可测的显著 search/latency/内存/磁盘资源成本
+  （真实产品路径证据）、ranking 回归或 false English admission（语料/设备证据）、
+  provenance 或许可证问题。
+- **不得**声称“更小的词库对中文输入天然更安全”：现有中文保护来自结构性裁定——English
+  3-byte emission floor（D069）、有界跨源插入类与单音节 Han 护栏（D070）——与词库规模无因果绑定。
+
+### 2. lowercase OOV：能力三分类与 Known Limitation
+
+讨论混输 OOV 必须区分三件事，不得笼统合并：
+
+1. **raw input commit**（原始串作为输入的 commit/回退路径）；
+2. **literal candidate availability**（字面串是否作为候选出现）；
+3. **OOV 参与连续中英 mixed composition**（OOV 词作为英文段参与连续混输句的生成与放置）。
+
+- **Known Limitation / Unresolved Capability：**小写 OOV 的混输 composition，如
+  `yongkubernetesbushu → 用kubernetes部署`，**未被建立为受支持能力**，属当前已知限制/
+  未解决能力。
+- 两层管线源码审计确认的 classical 路径**大写/大小写相关** Latin 材料行为（LibIME 强制
+  uppercase 边 → unknown-node carrying → classical 候选；见 REQUIREMENTS §2.1 / D075 澄清注记）
+  **不得泛化到任意小写 OOV 字符串**；**不得**声称 classical 候选路径已被证明提供
+  “kubernetes” 级别的小写 OOV 完整候选。
+- 该限制**当前不**构成向 M2+/r4 添加 generic raw-OOV arc 的理由：现 ~95k 词库仍是基线，且
+  当前没有要求修改混输架构的证据。short-Latin PoC 的 ARM_B（raw/OOV literal 假设）已被
+  REJECT 并随 addons PR #4 关闭；该实验历史不派生任何产品行为。
+- 未来真实设备失败语料或明确产品需求可重开本裁定。**本条不运行、不授权任何 OOV 实验。**
+
+### 3. D071 保持与语义分层澄清
+
+- **D071（canonical + 字面双形态共存）继续 Accepted；本条不 supersede、不弱化、不扩大其适用。**
+- 澄清两层语义，避免把词库身份与搜索输出混为一谈：
+  - **SYSTEM LEXICON IDENTITY**：normalized key → 默认 canonical 显示形态（如
+    `github → GitHub`）。属词库身份/默认显示语义（D069 仍有效部分：用户键入大写权威、
+    默认显示形态为 canonical）。
+  - **SEARCH OUTPUT ARCS**：当前接受行为 = 候选集**同时**保留 canonical 输出与
+    用户键入/字面输出（D071 parallel literal arc，canonical 可排位在前）。
+- **不**新增“canonical 与 literal 形态必须共享有界搜索预算”的冻结规则。“surface variants
+  浪费 diversity/search budget”仍是 **UNVERIFIED 假设**（无已接受证据支持）。
+- 修改共存行为本身需要**显式重开 D071 的单独决定**（其 Reopen condition (b) 的 beam/topK
+  截断证据要求同样适用）。
+
+### 4. 未来可下载/可更新 English Lexicon：compatibility gate（前向需求，非实现授权）
+
+- 架构要求：未来独立分发（下载/更新）的 English Lexicon **不得绕过 compatibility gate
+  改变 ranking 语义**。
+- 机制依据（已确认）：英文词库资源可能包含或暗示 prior/tier 分布（如 D069 tier-ordered
+  completions / tier-driven completionEvidence），会与已校准的 mixed-search scoring 行为直接
+  交互；REQUIREMENTS §2.1 的未经校准 heterogeneous raw score 不可比较/相加禁令同样约束
+  资源侧。
+- 因此未来可下载 English Lexicon 必须携带显式的 **runtime/scoring compatibility
+  generation/version 标记**（具体字段名与编码属实现细节，本条不规定）；应用只启用与其所支持
+  的 scoring/runtime contract 兼容的资源版本。
+- 新发布的、改变 ranking 相关数据的 English Lexicon artifact 在分发前必须通过相应的
+  mixed-input 回归门（现有固定语料/排名门体系）。
+- **本条是未来 English 资源需求，不是当前实现 English Lexicon 下载/更新的授权**（与 D059
+  对 ASR 模型分发权利的独立权威记录相互独立，互不扩张）。REQUIREMENTS §2.1 已按同口径
+  记录该 forward requirement。
+
+### 5. Dictionary Manager 边界与最小前向兼容原则
+
+- **本条不把现有 Dictionary Manager 泛化为 generic LexicalResourceManager。** 后续
+  Dictionary Update / Migration Closure 批次保持窄范围 = 现有中文/拼音词典产品行为（与
+  `docs/dictionary-manager-plan.md` §1/§8 的窄边界一致）。
+- 因既有 authority 已讨论持久 catalog/update schema 演进（plan M3 目录字段），记录最小
+  前向兼容原则：
+  - 持久 schema **不得**永久假设所有资源同为 Pinyin-dictionary 类型；
+  - 未来 resource type / namespace 与 compatibility-version 概念必须可在**不引入另一次
+    可避免的破坏性迁移**的前提下表达。
+- 除上述原则外，本条**不规定、不实现任何 generic loader/provider/resource framework**。
+
+### 6. 既有职责边界（已权威者引用，未记录者在本条层级记录）
+
+- 中文词库资源与中文学习 = **LibIME-owned**（REQUIREMENTS §2.1 ownership 分离规范）。
+- 英文词库资源与英文学习 = **English-Core-owned**（D069 English-learning-on-commit seam，
+  `mixed_english_user.tsv`）。
+- **cn_en 类数据是辅助证据/来源材料，不是主混输 decoder**（D074 的“不加入新 English/CN-EN
+  dictionary”是实验控制条件；本条把能力定位记为长期边界）。
+- 一般英文-英文 spacing 是 composition/search（segmentation/graph）职责，**不是**靠词库枚举
+  全部 mixed/multi-word phrases 来解决。本仓库当前**没有**已冻结的 multi-word spacing 质量
+  测量证据；“当前 multi-word English spacing 质量是实现/产品 gap”作为独立评审观察记录，
+  定性保持为 reported observation，待专项证据补充后方可升格为 Confirmed Evidence——本条
+  不代为断言。
+- **不得**把系统英文词库机械扩充为大量猜测的 morphology families（派生/屈折家族）；任何
+  词库内容变更走正常产品/维护裁定并命中 §4 门。
+- raw heterogeneous source frequencies 与中文分数**不可直接比较**；英文证据进入 mixed ranking
+  前必须归一化/校准（REQUIREMENTS §2.1 禁令；D070 “没有任何分数比较”的插入类设计同向）。
+- Pinyin/Shuangpin 碰撞语义（如 1–2 字母英文条目与拼音音节重合）**主要属混输
+  search/context 逻辑**（emission floor、placement、护栏；D069/D070 先例），**不**固化为
+  英文词库资源的永久 schema。
+- **CustomPhrase 保持为独立的既有 source of truth**（用户确认词经 learning 进入候选，D070
+  插入类 provenance 含 CustomPhrase；不与系统英文词库身份混同）。
+- 用户已学习的英文 surface/casing 偏好**不得**仅因系统词库后续改变 canonical 显示而被静默
+  覆盖（本条记录为边界要求；具体实现语义在相关批次经源码/设备证据确认）。
+
+### 7. Supersession 与历史证据核查
+
+- 本条 **不 supersede 任何决定**：D069（emission floor/tier completions/learning seam/大写
+  权威）、D070（插入类/护栏/语料门）、D071（双形态共存——§3 仅澄清读法）、D074/D075
+  （架构基线与 lexicon 增强裁定——§1 引用而非修改）、D076/D077（治理，与本题无交集）全部
+  维持原文与效力。
+- 历史证据（D069–D071 语料门与 PINS、HR1 评估、两层管线审计、addons PR #4 的 closure
+  记录）原样保留；本条固化的是解读与边界，不把旧证据改写成匹配新结论。
+- 分类标注：§1 = Accepted Decision（reaffirm）+ Confirmed Fact；§2 = Known Limitation /
+  Unresolved Capability；§3 = clarification（D071 不变）；§4/§5 = forward requirement /
+  边界（Accepted Decision，非实现授权）；§6 = 边界记录与引用。
+
+### 8. Reopen conditions
+
+- §1：命中 §1 所列规模相关具体证据；
+- §2：真实设备失败语料或明确产品需求指向小写 OOV 混输 composition；
+- §3：beam/topK 截断使字面形态在产品路径不可达的真实证据（沿用 D071 Reopen (b)），或显式
+  重开 D071 的决定；
+- §4/§5：进入 English 资源分发或 Dictionary Manager 后续批次设计时，按本条边界细化并由
+  评审裁定字段/迁移表达；
+- §6：新的源码事实或已确认证据与本条冲突。
+“还能测更多”、未穷尽矩阵或额外 instrumentation 本身不构成重开理由（AGENTS 分类规则不变）。
