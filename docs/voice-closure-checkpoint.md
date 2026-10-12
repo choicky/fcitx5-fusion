@@ -104,28 +104,38 @@
 **性质：** 实现批次记录。证据等级：**SOURCE+TESTS（本机 JVM/编译）,DEVICE-PENDING**;
 不新建决定,不把本批次写成 Accepted Decision。
 
-**交付：** Android `fcitx5-android` 分支 `feat/voice-session-reliability` @ `30547996`
-（base `origin/fusion` `b4f26741`）,PR **#9**（未合并、未触发 CI;评审后由 owner 决定合并）。
+**交付：** Android `fcitx5-android` 分支 `feature/voice-session-reliability`（由 `feat/…`
+按 D076 分支政策更名）@ 本记录的 HEAD 见 PR **#9**
+（base `origin/fusion` `b4f26741`;未合并、未触发 CI;评审后由 owner 决定合并）。
 改动文件：`VoiceInputFlow.kt`（watchdog 核心）、新文件 `VoiceSessionTiming.kt`
 （`VoiceTrigger`/`VoiceEndpointPolicy`/`VoiceSessionScheduler`/`autoTerminated` 事件）、
 `VoiceBackend.kt`（新增 provider-neutral `onSpeechStarted` 事件）、`SystemAsrBackend.kt`
 （`onBeginningOfSpeech` 接入该事件）、`VoiceInputComponent.kt`（trigger 接线 + 闭集标签 debug 日志）、
-`VoiceInputFlowTest.kt`（13 个新生命周期测试）。
+`VoiceInputFlowTest.kt`（18 个新生命周期测试）。
 
 **行为：**
 1. **Establish（30 s,全部 trigger）**：后端在 30 s 内未交付 `onSessionEstablished` 即产生
    早期 `VoiceError.Service`,走既有 D035 单次 fallback 守卫——这正是 D035 V1 早已列入范围但
    此前未实现的“可用识别会话建立前的早期超时”一项;本记录不替代 D035。
-2. **NoSpeech（10 s,仅 Mic）**：会话建立后 10 s 内无任何语音证据 → **cancel** 空闲会话,
-   不落定、不识别、不上传缓冲。
-3. **Silence（1.5 s,仅 Mic）**：出现语音证据后持续静音 1.5 s → 自动完成,等同第二次点击;
-   final 仍经 token 过滤,只提交一次。
-4. **SpaceHold 不变**：建立后 watchdog 解除,静音绝不落定;松手完成/上滑取消语义原样。
+2. **NoSpeech（10 s,仅 Mic）**：会话建立后 10 s 内无任何语音证据 → **cancel** 空闲会话：
+   不落定、不产生 transcript,并按各 backend 的取消语义停止后续采集/传输;已流式发出的
+   PCM 无法撤回（对流式远端 provider 而言）,本条不声称“未上传”。
+3. **Silence（1.5 s,仅 Mic）**：**连续活动信号（Fcitx 自有采集的 `AudioLevel`）**之后
+   持续静音 1.5 s → 自动完成,等同第二次点击;final 仍经 token 过滤,只提交一次。
+   离散证据（`onSpeechStarted`/非空 partial）只把会话从 NoSpeech 解禁为无定时的 Active
+   状态,**绝不**单独触发静音估计——无连续电平流的 provider（System ASR）由其自身的
+   `onEndOfSpeech`/final 端点事件收口,不会被“猜测的静音”强制停止。
+4. **Establish 边界不可被证据替换**：`onSessionEstablished` 之前收到的任何
+   `AudioLevel`/`onSpeechStarted`/partial 均不解除或替换 30 s Establish watchdog;
+   Establish 只能由建立、终态失败、显式 stop/cancel 或自身超时离开（D035 边界保持）。
+5. **SpaceHold 不变**：建立后 watchdog 解除,静音绝不落定;松手完成/上滑取消语义原样。
    Establish 超时是 provider 健康界,不是静音界,因此对 Space 同样生效。
-5. **D035 fallback 视为全新窗口**：回落后重新进入 Establish（回落 toast 已提示用户可能需要重说）。
+6. **D035 fallback 视为全新窗口**：回落后重新进入 Establish（回落 toast 已提示用户可能需要重说）。
 
-**语音证据（不引入第二套 VAD/模型）**：`onSpeechStarted`（System）/ 非空 `onPartial` /
-既有 `AudioLevel ≥ 0.30` 门限。数值集中为命名策略并附证据理由：`ESTABLISH 30s`（okhttp 连接
+**语音证据（不引入第二套 VAD/模型）**：两类信号,职责分离——**离散语音证明**
+（`onSpeechStarted`（System）/ 非空 `onPartial`）只解除 NoSpeech 语义,转入无定时 Active;
+**连续活动信号**（既有 `AudioLevel ≥ 0.30` 门限,仅 Fcitx 自有采集提供）才能启动/刷新
+1.5 s 尾部静音窗口。数值集中为命名策略并附证据理由：`ESTABLISH 30s`（okhttp 连接
 超时通常先触发;实测首次模型加载 1425 ms 量级,见 `local-asr-checkpoint.md`,保留 ~20× 余量,
 并把原先无界的开麦收紧为确定边界;FunASR Nano 冷加载最坏情形列入设备验收）;
 `NO_SPEECH 10s` 自**建立**起算而非点击起算（慢加载不吞掉用户窗口）;
@@ -134,7 +144,7 @@
 
 **设计来源与权威边界**：参考项目 `Mesong21/LocalVoiceInputForAndroid`
 （rev `37754ec2…`）仅作设计参考（Silero VAD 参数与“完成句”信号;其“60 s 停止并识别”的
-空闲行为被有意拒绝,改为无上传的 cancel）;参考项目不是 Fusion 权威。新增数值为
+空闲行为被有意拒绝,改为不产生 transcript 的 cancel）;参考项目不是 Fusion 权威。新增数值为
 **实现级策略值**（无既有权威数值可援引,理由如上）,须待设备验收后经正常评审升格,
 当前不构成也未替代任何 Accepted Decision。无新增用户设置;`VoiceAudit` 内容面不变
 （仅新增闭集 Timber.d 标签,不含用户内容）。调试用 `CaptureProbeBackend` 现在在 30 s
@@ -148,5 +158,13 @@ android.diff / validation.md）。
 
 **设备验收（待做,阻断本批次升格）**：Mic 空闲 ~10 s 自动取消;说话→~1.5 s 静音自动上屏一次;
 第二次点击完成;上滑取消;Space 长按跨静音不落定;冷 FunASR Nano 加载远小于 30 s;
-外部服务早期失败→回落 Local 恰好一次（含 Establish 超时触发路径）;日志出现
+外部服务早期失败→回落 Local 恰好一次（含 Establish 超时触发路径）;System ASR 长句
+（>1.5 s 连续讲话,无电平流）不得被静音猜测截断,由服务自身端点收口;日志出现
 `Voice session auto-terminated: …`。
+
+**评审修复（2026-10-12 单轮 blocker-only pass）**：独立评审发现四项阻断,均已修复并随本
+记录反映——(1) System 风格 provider 的尾部静音正确性（离散证据不再单独触发 1.5 s 定时,
+新增无定时 Active 阶段）;(2) `Stage.Establish` 只能经建立/终态/显式 stop-cancel/自身超时
+离开（建立前证据不再替换 30 s D035 边界）;(3) 上文 NoSpeech 隐私/数据流口径改为如实
+（不声称“未上传”）;(4) 分支名 `feat/*` → `feature/*`（D076 允许的临时分支前缀）。
+测试 13→18 项,全套 JVM/编译复验通过。
