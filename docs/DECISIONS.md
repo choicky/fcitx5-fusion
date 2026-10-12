@@ -2313,3 +2313,67 @@ Expected Behavioral Delta：仅词库数据（最终交付 = 替换后的 22,477
   completion/correction/短词守卫）全部通过。
 - 测试口径变更：testmixedcorpus 生产库存下限 50,000 → 20,000，按本条政策更新
   （库存定义改变，非削弱行为断言；所有语义断言原样保留并通过）。
+
+## D080 — v0.1.3-fusion.7 发布执行：本地签名精确交付、addons 发布 pin 前进与 Dictionary Manager Phase 5D 收口
+
+**状态：Accepted（2026-10-12）。** 分类：**Confirmed Fact（发布执行与验证数值）+
+Accepted Decision（本次发布的交付方式）**；不 supersede D054/D058/D063/D077/D079，
+不修改 `release-apk.yml` 的 CI 发布机制（仅前进其固定 pin）。本条为 documentation batch：
+不修改 Android/addons 源码语义；Expected Behavioral Delta = NONE。
+
+### 1. 发布事实（Confirmed Fact）
+
+- 版本：`v0.1.3-fusion.7`（D077 canonical：下一未用 revision；上一发布为
+  `v0.1.3-fusion.6`）。Android tag `v0.1.3-fusion.7` → `f7f2cc3dfa64baeb5816e8f0ea1b9f5c6488467c`
+  （`fcitx5-android` `fusion` 主干，PR #6 合并提交，其 message 含 `[skip ci]`）。
+- 交付方式 = **本地产物精确交付**：arm64-v8a release APK 在所有者机器上以既有 D058
+  签名身份（keystore 路径引用，口令未回显）本地构建并签名，apksigner 验证 v1+v2 PASS，
+  签名证书 SHA-256 == D058 canonical（`A5:15:B7:4A:…:89:0C`）；随后将**同一文件**上传为
+  GitHub Release `v0.1.3-fusion.7` 的唯一资产。tag 推送未触发 `release-apk.yml`
+  （`[skip ci]`），CI 未重建该 APK；发布资产 digest 与本地文件 SHA-256 一致：
+  `d28fe8c28b39dc655352a87902cb6c1d87cff62104376fbafcf5265ceb929c62`。
+- 正式 APK：`org.fcitx.fcitx5.android-v0.1.3-fusion.7-0-gf7f2cc3d-arm64-v8a-release.apk`，
+  67,969,674 B；versionName `v0.1.3-fusion.7-0-gf7f2cc3d`（D054 describe 机制），
+  versionCode 122（`baseVersionCode` 11→12，D077 规则 8）；包名
+  `org.fcitx.fcitx5.android.fusionenhanced`（可由 fusion.6 的 112 直接覆盖升级）。
+- 包内资源核验：`assets/usr/share/fcitx5/pinyinhelper/moqima_gb18030.txt` SHA-256
+  `66deab4a…7923` == addon pin 文件记录；`assets/usr/share/fcitx5/pinyin/english_lexicon.tsv`
+  SHA-256 `2506539f…571b1` == D079 §10 替换库存（22,477 条）。
+- release 构建日志：`BUILD SUCCESSFUL in 2m12s`（273 tasks，arm64 单 ABI）。
+
+### 2. addons 发布 pin 前进与形态刻画（Confirmed Fact）
+
+- `release-apk.yml` `env.ADDON_COMMIT`：`47401b04681615024e4cf87c4797005b26e202ff` →
+  `b7f1db540bb1127b586539c8144060fdc12c145b`（addons `fusion` 主干，PR #6 合并提交：
+  M2+/r4 混输 + Ice/Frost 词库替换）；Android gitlink 同步前进（`644205f6` → `b7f1db54`）。
+- 旧 pin `47401b04` 形态：D068 时代归档 pin（tag `archive/d068-release-pin-47401b04`），
+  不在 `fusion` 祖先线上（`git branch --contains` 为空）；其树内容 == 与 `fusion` 的
+  merge-base `0220285` 仅差 `im/pinyin/customphrase.cpp` 一处纯缩进重排；
+  `modules/punctuation` 与 `b7f1db5` 逐字节一致；`moqima-gb18030.cmake` blob 同一
+  （`9ee7903c`），故 pin 前进不丢失任何标点/墨奇状态，且为发布所必需（旧 pin 不含
+  混输与新词库）。
+- `test-apk.yml` 的 `ADDON_COMMIT` 保持 `644205f6`（M2+/r4 真机 TBV 构建线），仅更新
+  其注释中对发布 pin 的陈述；该 workflow 的触发面（旧分支 + dispatch）不变。
+
+### 3. Phase 5D 收口（Confirmed Fact）
+
+- Android PR #5（`feat/dict-manager-phase-5d`，实现提交 `b5b83da8`，合并 `1957b5f9`）
+  进入 `fusion` 主干并随 `v0.1.3-fusion.7` 发布。范围与主任务授权一致：安装版本身份
+  记录（`catalog_state.tsv`，内容 SHA-256 为比较基准）、可更新检测与详情级“更新”动作、
+  复用既有 staged 下载/校验（size+SHA+可用空间）/原子替换、失败/取消/中断保留旧词库、
+  enabled/disabled 状态跨更新保留、旧安装迁移补记、中断替换恢复、
+  `MIN_BASE_VERSION = "0.1.3"` 基线兼容门禁。未引入历史回滚、远端可变 catalog 服务、
+  通用 Resource Manager、词库排序或全局配额（排除清单遵守）。
+- 验证（本地 JVM）：`PinyinDictionaryInstallStateTest` 7、`PinyinDictionaryInstallerTest` 10
+  （含 disabled 状态跨更新保留与 `.disable` 拼写识别）、`DictionaryPresentationTest` 7
+  （identity/update 事实）、`PinyinDictionaryCatalogTest` 6；全量 `:app:testDebugUnitTest`
+  52 套件 0 失败；`:app:compileDebugAndroidTestKotlin` 通过。**真机 TBV 未执行**，
+  延后给所有者按交付说明验收；本条不把编译/单测写成设备 PASS。
+
+### 4. Supersession 核查
+
+- D054（describe 版本号）/ D058（签名身份）/ D063（精确产物晋升思想）/ D077（命名与
+  versionCode 解耦）：均不变；本次是该思想在**本地构建**产物上的执行记录，非新管线。
+- `release-apk.yml` 与其 tag 触发机制原样保留；未来发布可继续选择 CI 或本方式，各自的
+  SHA/资产按 Confirmed Fact 记录。
+- D079 词库替换与 Phase 5D“另行实施”的前向声明由本条闭环；不重开 §10 已定事项。
