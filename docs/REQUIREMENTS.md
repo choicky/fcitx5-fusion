@@ -66,6 +66,13 @@ HR1/M2+ 各轮实验参数（beam B、English LM state 测试策略含 reset 默
 语料规模、评测矩阵与 ASan 子集等）属于 experimental decision rule，**不是永久产品需求**，
 只在 ROADMAP 实验记录中管理；reset 本身也不因此升级为永久 Requirement。
 
+未来独立分发的英文词库资源（D078 §4，forward requirement）：引入可下载/可更新的 English
+Lexicon 时，该资源必须携带显式的 runtime/scoring compatibility generation/version 标记
+（字段名与编码属实现细节），应用只启用与其所支持的 scoring/runtime contract 兼容的资源
+版本；改变 ranking 相关数据的资源 artifact 分发前必须通过相应的 mixed-input 回归门；不得
+绕过 compatibility gate 改变 ranking 语义（英文词库的 prior/tier 分布与已校准 mixed-search
+scoring 直接交互）。本条不是当前实现 English Lexicon 下载/更新能力的授权。
+
 ## 3. Auxiliary Filter
 
 Auxiliary code 是候选过滤手段，不是主输入编码。
