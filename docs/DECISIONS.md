@@ -2011,11 +2011,16 @@ Expected Behavioral Delta = NONE。输入：M2+/r4 已接受产品基线（D075�
 
 ### 1. English Lexicon 产品基线（Accepted Decision：reaffirm + Confirmed Fact 补记）
 
-- **Confirmed Fact：** 当前随包产品词库 = addons 已接受基线 `644205f` 的
-  `im/pinyin/english_lexicon.tsv`，**94,530 条词库条目**（≈95k；另有 10 行头部注释，不计入），
+- **Confirmed Fact：** 当前 M2+/r4 **development/productization baseline**（addons 已接受基线
+  `644205f`，post-D068 产品化收口所接受）的英文词库 = `im/pinyin/english_lexicon.tsv`，
+  **94,530 条词库条目**（≈95k；另有 10 行头部注释，不计入），
   来源 SCOWL v2 tag `rel-2026.02.25`、American spellings、variant level ≤1、deaccented；
   文件 SHA-256 前缀 `ed36694f`。
-- **保持该 ~95k 词库为产品基线；词库缩减不是当前产品目标。** 与 ROADMAP Phase 11 收口条目
+- **发布历史区分（不改写 D068 / `docs/first-release-baseline.md`）：** 已发布的 D068 First
+  Fusion Enhanced Release 历史 pin 为 addons `47401b04`；本条**不**得被读作该已发布 release
+  的 APK 已随包携带 `644205f` 词库——`644205f` 词库是当前 development/test/productization
+  baseline，非对已发布 bundle 的重述。
+- **保持该 ~95k 词库为当前 M2+/r4 产品开发/产品化基线；词库缩减不是当前产品目标。** 与 ROADMAP Phase 11 收口条目
   （“English lexicon 规模不冻结…不提前把 1k/3k/5k 或任何其它规模写成产品 requirement”）及
   D075 §4（词库增强回到正常产品/维护裁定）一致：本条**不**规定 1k/3k/5k 或任何 tier 实验。
 - **词库规模相关裁定仅在下列具体证据下重开**：可测的显著 search/latency/内存/磁盘资源成本
@@ -2039,9 +2044,12 @@ Expected Behavioral Delta = NONE。输入：M2+/r4 已接受产品基线（D075�
   uppercase 边 → unknown-node carrying → classical 候选；见 REQUIREMENTS §2.1 / D075 澄清注记）
   **不得泛化到任意小写 OOV 字符串**；**不得**声称 classical 候选路径已被证明提供
   “kubernetes” 级别的小写 OOV 完整候选。
-- 该限制**当前不**构成向 M2+/r4 添加 generic raw-OOV arc 的理由：现 ~95k 词库仍是基线，且
-  当前没有要求修改混输架构的证据。short-Latin PoC 的 ARM_B（raw/OOV literal 假设）已被
-  REJECT 并随 addons PR #4 关闭；该实验历史不派生任何产品行为。
+- 该限制**当前不**构成向 M2+/r4 添加 generic 小写 raw-OOV arc 的理由，该决定基于：
+  (a) 已接受的 ~95k English lexicon 作为 M2+/r4 development/productization 基线（§1）；
+  (b) 当前没有要求修改混输架构的证据。short-Latin PoC（addons PR #4）的 ARM_B = ARM_A
+  之上的**大写短 span `[A-Z]{1,2}` raw/OOV literal 假设**实验，其 REJECT 只针对该大写短
+  span 实验机制；PR #4 **没有**测试、也**没有**拒绝针对 “kubernetes” 类输入的 generic
+  小写 OOV 机制，本条不得被读为其已实验性否决了后者。
 - 未来真实设备失败语料或明确产品需求可重开本裁定。**本条不运行、不授权任何 OOV 实验。**
 
 ### 3. D071 保持与语义分层澄清
@@ -2094,11 +2102,9 @@ Expected Behavioral Delta = NONE。输入：M2+/r4 已接受产品基线（D075�
   `mixed_english_user.tsv`）。
 - **cn_en 类数据是辅助证据/来源材料，不是主混输 decoder**（D074 的“不加入新 English/CN-EN
   dictionary”是实验控制条件；本条把能力定位记为长期边界）。
-- 一般英文-英文 spacing 是 composition/search（segmentation/graph）职责，**不是**靠词库枚举
-  全部 mixed/multi-word phrases 来解决。本仓库当前**没有**已冻结的 multi-word spacing 质量
-  测量证据；“当前 multi-word English spacing 质量是实现/产品 gap”作为独立评审观察记录，
-  定性保持为 reported observation，待专项证据补充后方可升格为 Confirmed Evidence——本条
-  不代为断言。
+- 一般英文-英文 spacing（相邻多英文词的分词）是 composition/search（segmentation/graph）
+  职责，**不是**靠词库枚举全部 mixed/multi-word phrases 来解决。（本条只记录该职责边界；
+  不对当前 multi-word spacing 的质量状态作任何断言。）
 - **不得**把系统英文词库机械扩充为大量猜测的 morphology families（派生/屈折家族）；任何
   词库内容变更走正常产品/维护裁定并命中 §4 门。
 - raw heterogeneous source frequencies 与中文分数**不可直接比较**；英文证据进入 mixed ranking
