@@ -83,6 +83,29 @@ CI 只能作为 source review、actual diff review 和可用本地验证之后�
 - 提交或推送前重新检查状态与完整 diff，并确认目标远端分支未发生未处理的前移；不得强推，除非用户明确要求并已核对风险。
 - 交付时报告实际修改、验证结果、未运行或失败项目、剩余风险，以及准确的提交号和推送状态。
 
+## Workspace artifact lifecycle
+
+Choose storage by the artifact's lifecycle, not by historical habit. This
+section supersedes any active rule that describes `/tmp` as a combined raw
+evidence and recovery workspace; historical evidence and reports are not
+rewritten.
+
+- `~/worktmp/<project>/<task>/` is the durable recovery workspace for
+  CHECKLIST/recovery state, important raw evidence, diffs, patches, reports,
+  results, or release evidence that must survive reboot, session loss,
+  interruption, or loss of disposable scratch. It is not a permanent evidence
+  repository and does not replace Git, a PR, or authoritative project docs.
+- `/tmp/<project>/<task>/` is for disposable or regenerable build scratch,
+  extraction, inspection copies, intermediate generation, diagnostics, and
+  other short-lived material. Persistent NVMe does not make `/tmp` a recovery
+  authority.
+- `/dev/shm/<project>/<task>/` is only for small, short-lived,
+  fully-disposable material when RAM-backed storage is specifically useful; it
+  is not the default workspace.
+- The Git repository, commit, PR, and accepted project documents remain the
+  durable authority and normal code-review handoff. Source review uses the
+  real pushed branch/PR/diff, not scratch artifacts.
+
 ## Execution Policy
 
 - 对已批准且范围明确的工作，agent 应自主完成逻辑批次：源码/文档与完整 diff review、适用验证、必要修复、commit、push 及 CI/status 检查；不因 commit 或 push 另行请求许可。
