@@ -51,18 +51,18 @@ owner-reported device smoke，Phase 11 = COMPLETE）——由 `docs/ROADMAP.md`�
 
 | Area | First release | IMPL | VERIF | BLK | Authority |
 |---|---|---|---|---|---|
-| MoQi Auxiliary Filter | YES | IMPLEMENTED（发布 pin `47401b04`（原 `9b3448e6` 内容 + 标点回退）统一辅助筛选 Disabled/Stroke/MoQi；downstream-only） | SOURCE/TEST VERIFIED；设备有界回归=VALIDATION DEBT（RC.1 验收 MoQi PASS；因 pin 变更 RC.2 需 MoQi smoke 复测） | NONE | D052；§3；D066 |
+| MoQi Auxiliary Filter | YES | IMPLEMENTED（发布 pin `47401b04`；统一辅助筛选 Disabled/Stroke/MoQi；downstream-only） | DEVICE VERIFIED / product path accepted；Pinyin/Shuangpin、composition、continued typing and selection-frontier boundaries preserved | NONE | D002–D008；D052–D053；D066 |
 | Paired Punctuation（D051 扩展，§6 耦合，非第五家族） | **NO（D066 supersede D061：移出首发；实验 PAUSED）** | 发布 pin 更正为 `47401b04`，随包 `punc.mb.zh_CN` = upstream 41 行基线（逐字节一致）；不含任何成对扩展行 | D062 设备验收两项 FAIL = **INVALID FIRST-RELEASE SCOPE**（验证目标本不属首发承诺；处置 = 恢复 upstream 基线，非修复 D051） | NONE | D051；D066；§6 |
-| Dictionary Manager | YES | IMPLEMENTED（`84b7f571`+`583a525a`） | SOURCE/TEST VERIFIED（`DictionaryPresentationTest`、androidTest `DictionaryManagerLayoutTest`、CI `36906187024`）；完整设备导航=VALIDATION DEBT | NONE | D049 |
-| Toolbar | YES | IMPLEMENTED（`172ac602`+`5af093c4`，inline edit）+ 首显修复 `f2a64da1`（D066：`IdleUi` 构造页对齐逻辑默认） | SOURCE/TEST VERIFIED（`ToolbarActionTest` 23/23）；全新安装首次呈现回归已源码级 root-cause + 最小修复；触摸/拖放/窄屏/字体/无障碍/teardown=VALIDATION DEBT；首显设备验证 = RC.2 清单第 1–2 项 | NONE | D047/D048；D066 |
+| Dictionary Manager | YES | IMPLEMENTED / productized release line (D080) | COMPLETE for accepted product scope; catalog identity, staged update, atomic replacement, failure safety, migration and enabled-state boundaries retained | NONE | D039–D040；D080 |
+| Toolbar | YES | IMPLEMENTED (inline edit + first-display repair) | DEVICE VERIFIED / regression and defect closure accepted; current semantics and boundaries retained | NONE | D047/D048；D066 |
 | Voice core（provider 单一真源 / flow / session / Mic+Space 触发） | YES | IMPLEMENTED | DEVICE VERIFIED（vivo X100 Pro；见 voice-closure-checkpoint §3） | NONE | D055；voice-closure-checkpoint |
 | External Android Voice Input | YES | IMPLEMENTED（顶层 provider；`preferredVoiceInput` 从属；走 IME-switch，不走 VoiceInputFlow） | SOURCE/TEST VERIFIED；真机 handoff=VALIDATION DEBT | NONE | D055 |
 | Android System ASR | YES | IMPLEMENTED（D057：ERROR_CLIENT(5) 可见；NO_MATCH/TIMEOUT 仍 Silent；不改默认 RecognitionService） | DEVICE VERIFIED（D057 CLOSED） | NONE | D057 |
-| Local ASR（三模型） | YES | IMPLEMENTED（X-ASR Offline INT8 → X-ASR 960 ms 流式 INT8 → FunASR Nano；生产/推荐资格均 true；R8 JNI 保留 `-keep class com.k2fsa.sherpa.onnx.** { *; }`） | DEVICE VERIFIED（D056 三引擎端到端 vivo；所有者另报告 release product path 已完成三模型 download/pause/resume/cancel/enable/actual recognition）；长语音/RTF/资源测量/所有中断与许可审计=VALIDATION DEBT | NONE | D050/D056 |
-| Managed ASR（Doubao/Qwen/Tencent） | YES | IMPLEMENTED（可选择 provider + Keystore BYOK） | DEVICE VERIFIED（Doubao 历史双机 Direct E2E；Qwen/Tencent 所有者报告真实服务、真实凭据、Android 设备成功）；配额/认证失败/网络中断/取消时序/重试等扩展矩阵=VALIDATION DEBT | NONE | D033；voice-closure-checkpoint |
-| Self-hosted ASR | YES | IMPLEMENTED（非 settings-only）：sherpa-onnx Server / FunASR 2-pass / Fun-ASR-Nano **server** / OpenAI-compatible whole-utterance | SOURCE/TEST VERIFIED（协议/互通/仿真）；真实自建 endpoint/设备矩阵=VALIDATION DEBT | NONE | network-asr-checkpoint；§8 |
-| Local Model Manager | YES | IMPLEMENTED（下载/导入/安装/就绪/暂停-续传-取消-任务生命周期/SHA-256 完整性/原子安装/noBackup） | SOURCE/TEST VERIFIED；扩展设备用例（断网/续传/校验失败/删除/迁移）=VALIDATION DEBT | NONE | D059（资格）；voice-closure-checkpoint（实现） |
-| D035 运行时 fallback | YES | IMPLEMENTED（单槽；consume-once；至多一次；仅已启用+installed+runtime-ready+production 的 Local；System/External 不作回落目标；既有会话边界不变） | DEVICE VERIFIED（所有者报告：外部早期技术/服务失败 → 正式 Local 继续本次操作）；扩展边界矩阵=VALIDATION DEBT | NONE | D035 |
+| Local ASR（三模型） | YES | IMPLEMENTED（X-ASR Offline INT8 → X-ASR 960 ms 流式 INT8 → FunASR Nano；生产/推荐资格均 true；R8 JNI 保留 `-keep class com.k2fsa.sherpa.onnx.** { *; }`） | COMPLETE / DEVICE VERIFIED（release lifecycle and abnormal/error Model Manager paths accepted）；provenance/license/NOTICE closure CLOSED | NONE | D050/D056/D059 |
+| Managed ASR（Doubao/Qwen/Tencent） | YES | IMPLEMENTED（可选择 provider + Keystore BYOK） | DEVICE VERIFIED for current three-provider scope (Doubao baseline; Qwen/Tencent real-service/device recognition accepted) | NONE | D028–D033 |
+| Self-hosted ASR | YES | IMPLEMENTED（非 settings-only）：sherpa-onnx Server / FunASR 2-pass / Fun-ASR-Nano **server** / OpenAI-compatible whole-utterance | SOURCE/TEST VERIFIED（协议/互通/仿真）；真实自建 endpoint/设备 checkpoint = DEFERRED / non-blocking | NONE | network-asr-checkpoint；§8 |
+| Local Model Manager | YES | IMPLEMENTED（下载/导入/安装/就绪/暂停-续传-取消-任务生命周期/SHA-256 完整性/原子安装/noBackup） | COMPLETE / DEVICE VERIFIED for core lifecycle and abnormal/error paths; D059 provenance/NOTICE closure CLOSED | NONE | D050; D059; D080 |
+| D035 运行时 fallback | YES | IMPLEMENTED（单槽；consume-once；至多一次；仅已启用+installed+runtime-ready+production 的 Local；System/External 不作回落目标；既有会话边界不变） | COMPLETE / DEVICE VERIFIED for core early-failure behavior; bounded semantics retained | NONE | D035 |
 | F1 审计 / 隐私 | YES | IMPLEMENTED（仅控制流元数据；无 audio/transcript/committed/keys/request-body/敏感自建 endpoint 细节；无默认 transcript 内容日志） | SOURCE/TEST VERIFIED（`VoiceAuditTest` leaksNothing；`session-audit.log` noBackup） | NONE | D018（内容级有意未做，见 §5） |
 | LLM / Text Post Processor | NO（具体 processor/provider） | OPTIONAL SEAM IMPLEMENTED；configured processor = NONE / null / disabled；当前路径 `ASR → Raw Transcript → IME` | SOURCE/TEST VERIFIED（Android merged PR #15）；Local-LLM route STOPPED；未来具体实现需独立决定 | NONE | D017；Android PR #15 |
 
@@ -80,8 +80,6 @@ RELEASE = GO；验收由 owner 提供，D068 任务未重跑设备测试）。RC
 SHA-256 `93a42897f0d053436f113f32ca88aac539eb0f18e8034f6f130309356e8deb9b`，签名 == D058。
 **FIRST FUSION ENHANCED RELEASE = PUBLISHED**（DECISIONS.md D068）。RC.1 维持 REJECTED 历史证据；
 上条真值表中“RC.2 需复测”类条目以本次 8 项清单验收结果收口，扩展矩阵类 VALIDATION DEBT 口径不变。
-
-**Voice/ASR/LLM reconciliation（2026-10-13）：** 本节补充 D068 之后的 owner-reported product-path evidence，不改写历史 checkpoint。Local 三生产模型的核心 release-device lifecycle（下载、暂停、继续、取消、启用、实际识别）已接受；Managed Cloud 的 Qwen 与 Tencent 已在真实凭据、真实服务、Android 设备上成功识别；D035 已完成核心早期外部失败 → 已安装/启用/runtime-ready 正式 Local 的设备验证。上述事实只关闭对应核心 gate，不关闭长会话、穷举错误/竞态、性能/资源、Self-hosted 或许可/来源审计等扩展债务。Android PR #15 的当前 LLM 状态为：可选 seam 已实现，具体 processor 为 null/disabled，Local-LLM 路线已停止，Cloud LLM 未实现且当前不在开发方向；历史“NOT IMPLEMENTED / FUTURE”表述仅在具体实现层面仍适用。
 
 ## 3. Voice provider 架构（冻结；source 与 D055 一致）
 

@@ -1,2383 +1,295 @@
-# Architecture Decisions
-
-本文件只记录已经接受的重要技术决策。决策可随源码研究和 PoC 结果被明确修订或替代，但不得无记录改变。
-
-## D001 — Android 为第一目标平台
-
-**状态：Accepted**
-
-优先完成 Android 输入体验和架构验证。其他平台后续研究。
-
-## D002 — Pinyin/Shuangpin 为主，MoQi 为辅助码
-
-**状态：Accepted**
-
-正常输入由 Pinyin/Shuangpin、词库和语言模型完成；MoQi 仅在需要消除歧义时按需筛选候选。
-
-## D003 — 采用早期墨奇逐字/词交互
-
-**状态：Accepted**
-
-不复制新版“输入完整句子后通过句中任意辅助码选择并立即提交整句”的模式。MoQi 不应天然触发整句 commit，过滤/选择后应能继续 composition 并再次使用辅码。
-
-## D004 — 将现有 Stroke Filter 最小泛化为 Auxiliary Filter 基础设施
-
-**状态：Accepted**
-
-复用 `fcitx5-chinese-addons` 已有 Stroke Filter 的 trigger handling、mode lifecycle、CandidateList filter、Backspace/Escape、selection 和 composition 协作。
-
-不继续维护独立平行的 Stroke/MoQi trigger 与 mode 状态机。Stroke-specific 与 MoQi-specific filtering algorithm 保持独立。
-
-## D005 — Auxiliary Filter Trigger 与 Filter 实现解耦
-
-**状态：Accepted**
-
-反引号 `` ` `` 为默认 Auxiliary Filter Trigger，仅表达“进入当前配置的 Filter”。
-
-Configured Auxiliary Filter 至少支持：
-
-- Disabled
-- Stroke
-- MoQi
-
-Trigger 不得硬编码为 Stroke 或 MoQi。
-
-## D006 — MoQi 使用 selection-frontier target semantics
-
-**状态：Accepted**
-
-MoQi V1 过滤 current selection frontier 后的目标字符，不复制 Stroke 当前“候选 phrase 中任意字符匹配即可保留”的语义。
-
-## D007 — MoQi V1 复用 LibIME partial selection，不修改 LibIME
-
-**状态：Accepted for V1**
-
-复用 `selectedLength()`、`candidatesToCursor()`、`selectCandidatesToCursor()` 等现有能力保留 composition。只有 Phase 2 PoC 证明上层接口不足时才重新评估 LibIME 修改。
-
-## D008 — 固定 MoQi table 来源和版本
-
-**状态：Accepted**
-
-使用 `gaboolic/moqima-tables`，固定 commit `6d8ba8f1c57466f358e682baefe11bbd0fe389ab`，当前使用 `moqima_gb18030.txt`。测试不得猜测 MoQi code。
-
-## D009 — Rime 是参考与备选，不是硬依赖
-
-**状态：Accepted**
-
-当前优先 Fcitx5 Pinyin/Shuangpin + LibIME + Auxiliary Filter；Rime/rime-frost 保留为成熟参考和 fallback。
-
-## D010 — 优先复用 Android generic Fcitx configuration UI
-
-**状态：Accepted**
-
-Auxiliary Filter selection 优先通过 Fcitx config descriptor 暴露，复用 `fcitx5-android` 现有 ConfigEnum/ConfigKey UI。除非验证不足，不增加 MoQi-specific settings UI。
-
-## D011 — 词库更新与用户数据上传解耦
-
-**状态：Accepted**
-
-允许联网更新词库，但不得把词库更新与上传用户输入历史绑定。
-
-## D012 — 默认 Voice Trigger 为麦克风按钮
-
-**状态：Accepted**
-
-独立麦克风按钮为默认 Voice Trigger：点击开始录音，再次点击停止录音并等待识别结果。Trigger 不绑定任何 ASR Provider；停止与取消是不同操作。
-
-## D013 — 长按 Space 可选触发同一个 Voice Input
-
-**状态：Accepted**
-
-`SpaceLongPressBehavior.VoiceInput` 已在 Phase 4B.2 实现：按住空格达到长按阈值后开始录音，正常松开停止录音并等待 final；按住期间上滑越过阈值进入 cancel-armed，松开取消。取消不得提交本次语音文本，迟到结果由统一 Voice session/token 语义丢弃。
-
-麦克风按钮与长按 Space 共用同一个 `VoiceInputSession` / Voice Input flow，不建立两套 pipeline。未显式保存该偏好的新安装默认使用 VoiceInput；已有用户已保存的选择保持不变。Phase 4B.2 follow-up commit `8accd92f` 又将 Listening、Release-to-finish、Release-to-cancel、Recognizing 等反馈映射到同一 session state，并使 Space 在长按后继续接收 Move 以实时显示 cancel-armed 状态。代码与 CI 已通过；双机 follow-up 真机复测状态见 ROADMAP。
-
-## D014 — 优先复用 Fcitx5 Android SpeechRecognizer 工作
-
-**状态：Accepted**
-
-未来 Voice PoC 先研究和复用 upstream Fcitx5 Android 已有麦克风能力及 WIP SpeechRecognizer voice-input 工作，不从零重写 Android speech client。
-
-## D015 — SpeechRecognizer / RecognitionService 为 Android System ASR backend 的优先边界
-
-**状态：Accepted；2026-09-27 由 D026/D027 收窄范围**
-
-Android System ASR backend 优先采用：
-
-`Fcitx5 Android -> SpeechRecognizer -> RecognitionService`
-
-其中 RecognitionService 是 Android speech implementation 标准边界，不等同于项目内部 ASR Provider abstraction。
-
-范围说明：本决策最初表述为整个 Android Voice 的优先 speech boundary。Phase 4 真机结果（D026）后收窄为 **System ASR backend** 的边界；它不是正式版 Voice 的整体架构，也不是 Direct/Fcitx-controlled ASR 路径的边界（见 D027）。
-
-## D016 — ASR backend/Provider 独立可插拔
-
-**状态：Accepted；2026-09-27 按 D027 修订**
-
-Voice Input flow 之后保持独立的 ASR backend/Provider 层；Android System ASR（`SpeechRecognizer -> RecognitionService`）只是其中一个实现，该层不必位于 RecognitionService 之后。更换云端、本地、自建或 OpenAI-compatible Provider 不改变基本 Voice Trigger 交互。
-
-修订说明：原文为"RecognitionService / Voice Service 后保持独立 ASR Provider 层"。按 D027，该层位于 app 内部 Voice Input flow 之后，而不是 RecognitionService 之后。
-
-## D017 — ASR 与 LLM 后处理解耦
-
-**状态：Accepted；2026-10-13 部分 supersede 当前实现状态表述**
-
-ASR 只负责 Audio → Raw Transcript。LLM/Text Post Processor 独立、可关闭，ASR Provider 与 LLM Provider 分别配置。
-
-**当前实现状态（Android merged PR #15，merge `c3421263`，基于 `fusion`）：** provider-neutral optional `TextPostProcessor` seam 与 VoiceInputFlow 的异步 pending-result ownership/lifecycle 已实现并保留；具体 postprocessor/provider 当前为 **NONE / null / disabled**，所以当前产品路径仍为 `ASR → Raw Transcript → IME`。旧的“LLM / Text Post Processor = NOT IMPLEMENTED”只对“没有任何 seam”这一含义不再规范；具体 Local LLM 运行时已因未通过保守质量门禁而停止，llama.cpp/JNI/GGUF 运行时已移除；Cloud LLM 当前未实现，也不是当前开发方向。未来若实现具体 processor，须另行接受决定和任务。本段不接受任何 Local LLM、Cloud LLM、self-hosted LLM、provider registry 或 vendor integration。
-
-## D018 — Voice 数据流必须透明可审计
-
-**状态：Accepted**
-
-必须能够确定录音开始/停止、ASR Provider、endpoint、上传数据、Raw Transcript、是否进入 LLM、LLM endpoint 和最终提交文本。
-
-实现记录（2026-10-04，Android commit `5f97e23d`；不改变本决定的意图）：F1 落地了本条的**控制/数据流**部分——`VoiceAudit` 在 `VoiceInputComponent` 观察既有行为，记录 start/stop/cancel、实际选中的 provider 及其 backend 标签、音频接收方（on-device / managed cloud / self-hosted，`ext` 表示音频离开设备）、语言、D035 fallback 是否武装与是否发生、以及终止方式（committed / error class / cancel）到本地 no-backup 审计文件；External Android 只记 handoff。内容级项（Raw Transcript、最终提交文本、endpoint URL 与实例 ID、服务端 error detail）按隐私约束**刻意不记录**，`BuildConfig.DEBUG` 不构成记录内容的授权。因此本条的 transcript/endpoint 口径尚未闭合：若将来需要内容级捕获，必须另开显式 opt-in 设计，不得默认写入。SOURCE-LEVEL 已验证，真机验证 DEFERRED。
-
-## D019 — 总仓库与上游 fork 分离
-
-**状态：Accepted**
-
-`fcitx5-fusion` 为总控仓库（原名 `fcitx5-moqi`，2026-10-02 改名并保留原仓库身份与历史）。Phase 2 使用 `choicky/fcitx5-chinese-addons` fork。当前不 fork LibIME；是否 fork `fcitx5-android` 待 Voice PoC 实际修改边界确认。
-
-## D020 — 暂不确定总仓库 LICENSE
-
-**状态：Accepted**
-
-在确认未来纳入代码和上游/码表再分发边界前，不急于选择总仓库 LICENSE。
-
-## D021 — 最小修改、不过度抽象
-
-**状态：Accepted**
-
-Phase 2 不为未来 Filter 建立复杂 Plugin Framework；优先在 `fcitx5-chinese-addons` 完成 MoQi V1，不修改 LibIME 或 Android candidate protocol，除非 PoC 证明必要。
-
-## D022 — CI 采用批量验证策略
-
-**状态：Accepted**
-
-相关改动组成逻辑完整、可审查的批次。push 前先完成源码/API 核对、diff review、格式/静态检查和适用本地测试。验证必须区分 Gate 1 Source/Semantic Review、Gate 2 Mechanical/Static Review 与 Gate 3 Real Validation；没有实际 compiler/build 时只能记录 `STATIC REVIEW PASS; COMPILE UNVERIFIED`，人工 compile-oriented audit 不能替代 compiler。GitHub Actions 用于 source/diff/local checks 之后的阶段性集成验证，不作为逐个发现基础编译错误的猜测性试错工具；纯文档修改原则上不触发重型 CI。
-
-2026-10-02 paired punctuation formatter-only repair 暴露了这条流程风险：formatter/static review 可以证明局部机械检查完成，但不能证明声明/定义组合可编译；未完成的 addons CI 也不能提前改变 Phase A 结果。后续批次必须按三层 Gate 分别记录状态，并在缺少本地真实 toolchain 时明确标注 `COMPILE UNVERIFIED`。
-
-## D023 — Auxiliary Filter 配置持久化沿用上游路径，单元测试不覆盖
-
-**状态：Accepted**
-
-`AuxiliaryFilter` 是 `PinyinEngineConfig` 的普通 Enum option，沿用上游 `InputMethodEngine::setConfigForInputMethod()` → `PinyinEngine::setConfig()` / `reloadConfig()` 的既有持久化路径；本 fork 未修改这些函数，不新增 fork 面，也不为持久化改造测试框架。
-
-单元测试只验证 Android generic config 契约中可在进程内验证的部分：descriptor 暴露（Type / DefaultValue / Enum / EnumI18n）与 `setConfigForInputMethod()` → `getConfigForInputMethod()` 三个配置值往返。
-
-磁盘持久化与 reload 后取值必须在 Android 实机验证：测试环境以 `SkipUserPath` 构造 `StandardPaths`，`userPath(PkgConfig)` 为空，`safeSaveAsIni()` 无处可写、`readAsIni()` 读不到文件，`Configuration::load()` 会把所有选项 reset 为默认值。
-
-## D024 — 墨奇表由 addon 在 configure 阶段获取，并经其 config component 分发到 Android
-
-**状态：Accepted**
-
-`fcitx5-android` 会把 addon 的 `config` / `translation` component 安装进 APK assets，且该安装发生在 addon 原生构建**之前**。因此构建期（target）生成的文件无法经此路径进入 APK；只要文件在 **configure 阶段**已经存在，就能经 addon 自己的 `install(... COMPONENT config)` 进入 APK。
-
-决定：`fcitx5-chinese-addons` 在 configure 阶段按固定上游 commit（`6d8ba8f1c57466f358e682baefe11bbd0fe389ab`）下载 `moqima_gb18030.txt` 并由 CMake 校验 SHA256（已存在且哈希一致的文件会被复用，因此只有首次 configure 需要联网），再以 `config` component 安装。**`fcitx5-android` 侧无需任何代码改动。**
-
-pin（commit / SHA256 / URL）集中在 `modules/pinyinhelper/moqima-gb18030.cmake` 一处，避免多个消费者各写一份；更新流程写在该文件注释中。
-
-考虑过的替代方案：
-
-- 在 `fcitx5-android` 的 app CMakeLists 于 configure 阶段取表并以 `prebuilt-assets` 安装：可行且已验证（run `36131495456`），但会给 Android 侧引入 MoQi 专属改动、扩大长期 fork 面，故弃用；
-- addon 保持 `fcitx5_download` 构建期下载 + `COMPONENT config`：实测失败（run `36130867729`），安装时文件尚不存在；
-- 把表放入 `fcitx5-android/prebuilt` 的 `chinese-addons-data` 并 fork 该数据仓库：与上游既有做法最一致，但需额外 fork 一个二进制数据仓库，留作上游贡献路径；
-- 把 1.44 MB 码表提交进代码仓库：与上游“下载并校验哈希”的既有做法相悖。
-
-副作用：墨奇表的分发不再需要 fork `fcitx5-android`；stock fcitx5-android 使用本分支的 addon 子模块即可打包该表。
-
-## D025 — 自构建 Android 发布线：独立包名后缀、自有固定签名密钥、tag 触发发布
-
-**状态：Accepted；2026-10-04 由 D054 修订包名后缀一项**（release 后缀由 `.moqi` 改为
-`.fusionenhanced`）。本决策的固定签名密钥、tag 触发发布、`.debug` 测试后缀、APK 校验
-机制与独立包名共存的原则不变；`.moqi` 的具体取值作为历史发布线保留。
-
-项目需要一条可长期使用的 Android 分发线（不依赖上游官方包，也不与之冲突）。决定：
-
-- 包名后缀：release 变体固定 `.moqi`（`org.fcitx.fcitx5.android.moqi`），debug 测试包固定 `.debug`；两者都提交在 fork 的 `app/build.gradle.kts` 中，而不是由 CI 临时打补丁，便于审查；
-- 签名：使用项目自有的固定密钥（PKCS#12），保存于 `choicky/fcitx5-android` 的仓库 secrets（`SIGN_KEY_BASE64` / `SIGN_KEY_PWD` / `SIGN_KEY_ALIAS`），由上游 `build-logic` 既有的 `SIGN_KEY_*` 接口消费，因此 fork 内不含任何签名代码；
-- 发布：推送 `v*` tag 触发 `Release APK` workflow，构建 `:app:assembleRelease`，校验 APK（存在签名、`.moqi` 包名、码表路径与 SHA256），再创建 GitHub Release 并附 APK。
-
-理由：固定密钥使同一发布线之间可以覆盖升级（不会因卸载重装丢失学习词库）；独立包名可与官方包共存且不造成混淆；全部机制复用上游接口，fork 面最小。
-
-已验证的对照事实：CI runner 上临时生成的 debug 密钥每次构建都不同（同一条分支三次构建的 `META-INF/CERT.RSA` 哈希互不相同），因此早期 pre-release 之间无法覆盖安装；本条决策正是为消除该问题。
-
-Debug CI 签名的补充事实（2026-10-04 设备排查中从实际 APK 验签确认）：自 fork 提交 `c8dd4c0d`（2026-09-30）起，`Test APK` workflow 通过 `DEBUG_SIGN_KEY_*` secrets 用固定的 “MoQi Debug CI” 密钥签署 debug APK；secrets 缺失时回退 AGP 默认 Android Debug 密钥。由此 debug 安装包存在两个签名岛（Android Debug 与 MoQi Debug CI）：跨岛 `-r` 覆盖安装会被拒（`INSTALL_FAILED_UPDATE_INCOMPATIBLE`），切换只能卸载重装并丢失应用数据（学习词库、Voice 设置、`no_backup` 审计）。同包名的设备 A/B 回归必须按签名岛选择可 `-r` 的阶梯，或先按数据丢失预案卸载。release 线不受影响（仍用 D025 的固定 `SIGN_KEY_*`）。
-
-风险与约束：签名密钥一旦丢失，就无法再发布可覆盖升级的版本（用户必须卸载重装），因此密钥必须在仓库 secrets 之外另行备份；密钥与口令不得进入任何 git 仓库。
-
-## D026 — 正式 Voice 不得依赖单一 OEM/System RecognitionService
-
-**状态：Accepted**
-
-upstream PR #899 与当前 Phase 4 PoC 的 Android `SpeechRecognizer -> RecognitionService` 路径继续作为重要上游基线和 Android System ASR 实现，不因单一 OEM 失败而弃用。
-
-但正式版不得把设备默认 `RecognitionService` 作为唯一 Voice/ASR 路径。Phase 4 真机 A/B 已出现同一 PoC 在 vivo X100 Pro 可用、在 Redmi K90 Pro Max 经 Xiaomi AsrService 返回 `ERROR_INSUFFICIENT_PERMISSIONS (9)` 的差异；因此 System ASR 的存在不等于实际 session 可用。
-
-正式架构至少保留：
-
-```text
-Voice Input Flow
-├─ Android System ASR → SpeechRecognizer → RecognitionService
-└─ OEM-independent ASR path → Fcitx5-owned Audio Capture → cloud/local/self-hosted ASR
-```
-
-至少一条路径必须与 OEM/system `RecognitionService` 解耦。System ASR 不可用或运行失败时，不应导致 Voice 功能整体不可用。默认 Provider 与自动 fallback 策略暂不在本决策中确定，须由后续 Portable ASR PoC 和代表性设备矩阵验证决定。
-
-具体落地架构见 D027：上图中的 OEM-independent 路径即 `DirectAsrBackend`，是正式版可移植性的基础；System ASR 为可选 backend。
-
-## D027 — Voice 采用 app 内部 VoiceBackend 边界（Architecture A）
-
-**状态：Accepted（2026-09-27，Phase 4B Portable ASR Architecture checkpoint）**
-
-演进：Phase 4 最小 PoC 直接使用 `SpeechRecognizer`（复用 upstream PR #899 思路）→ vivo X100 Pro 通过、Redmi K90 Pro Max 的 OEM System ASR 返回 error 9 → D026 可移植性要求 → 本决策。
-
-```text
-Voice Input Flow（麦克风 / 长按 Space → 同一 VoiceInputSession）
-      ↓
-internal VoiceBackend
-├─ SystemAsrBackend → Android SpeechRecognizer → OEM/system RecognitionService
-└─ DirectAsrBackend → Fcitx-owned Audio Capture（AudioRecord）→ configured cloud/local/self-hosted ASR
-      ↓
-Raw Transcript → IME
-```
-
-- `VoiceInputSession`/Voice Input flow 负责触发入口、权限、lifecycle、start/stop/cancel、token/迟到回调丢弃、composing/commit 与 UI 状态；各 backend 只负责自身的识别会话。
-- `VoiceBackend` 是**内部最小 session/backend 边界**：以 start/stop/cancel 与 partial/final/error 事件为接口，**不是**公开插件框架，也**不是**以 PCM 为中心的 ASR 接口——System ASR 由 RecognitionService 自行采集音频，不需要 Fcitx5 提供 PCM。
-- `DirectAsrBackend`（Fcitx-controlled）是正式版可移植性的基础；`SystemAsrBackend` 保留为重要的上游复用路径（PR #899），但正式版 Voice 不得依赖它才能工作。
-- 当前 Direct-ASR PoC **不采用**自定义 `RecognitionService` 作为 Direct ASR 边界。依据（Phase 4B 研究，AOSP 源码）：framework `RecognitionService` 基类在每次 start 时对调用方 attribution 做 `RECORD_AUDIO` data-delivery 检查，失败即返回 `ERROR_INSUFFICIENT_PERMISSIONS (9)`；自定义 service 也仍需在内部再做 Provider 选择。仅当"通过 Android RecognitionService API 对外提供本项目识别器"成为真实需求时再重新评估。
-- 下一硬关口为 capture-only `AudioRecord` PoC（vivo + Redmi，须证明真实非静音采集），见 ROADMAP Phase 4B。关口通过前不选择、不接入真实 Direct ASR Provider，也不增加 `android.permission.INTERNET`；联网与隐私影响在后续 Provider selection checkpoint 决定。
-- 关口结果（2026-09-27，PASS）：capture-only `AudioRecord` 关口已在 vivo X100 Pro 与 Redmi K90 Pro Max 上验证通过——Fcitx-owned `AudioRecord` 取得真实、未被 framework 静音的麦克风 PCM（`clientSilenced=false`，说话与静音的 peak/RMS 差值 vivo 28.3/24.2 dB、Redmi 22.0/15.8 dB），stop / cancel / 连续会话正确。同一台 Redmi 上 `SystemAsrBackend → SpeechRecognizer → Xiaomi RecognitionService` 仍返回 error 9，而 Direct capture 路径可用；这一 A/B 结果是 Architecture A 的实证支持。真实 Direct ASR Provider 尚未验证；Provider、INTERNET 权限、默认 backend 与 fallback 仍按上文与 D026 后续决定。详细数据见 ROADMAP Phase 4B。
-- 本决策不确定默认 Provider 或自动 fallback 策略（仍按 D026）。
-- Provider selection 与 Phase 4B.3 设计见 D028。
-
-## D028 — ASR Provider 方向与 Phase 4B.3 设计（Provider Selection checkpoint）
-
-**状态：Accepted（2026-09-27，ASR Provider Selection + Phase 4B.3 Design checkpoint）**
-
-本决策细化 D027 中 `DirectAsrBackend → configured ASR` 的 Provider 侧；`SystemAsrBackend`（SpeechRecognizer → OEM/system RecognitionService）不变，仍为可选 backend。
-
-**Provider 逻辑分类**
-
-```text
-ASR Provider
-├── Local
-│   └── sherpa-onnx
-├── Cloud / BYOK
-│   ├── Doubao / Seed-ASR
-│   ├── Qwen
-│   ├── Tencent
-│   ├── iFlytek
-│   └── future providers
-└── Custom
-    ├── OpenAI-compatible
-    └── self-hosted / custom endpoint
-```
-
-- Local、Cloud/BYOK、Custom 是**逻辑分类**，不要求拆成三个独立的物理模块或 APK；当前不建立复杂 Provider/插件框架。
-- Trigger/UI 与所配置的 ASR Provider 保持独立；ASR 严格为 Audio → Raw Transcript；可选 LLM/Text Post Processor 是其后的独立阶段，可完全关闭（D017）。
-
-**Local**
-
-- Local ASR 是一等 Provider 候选，而不仅是离线 fallback。当前优先研究 sherpa-onnx 作为首个 Local **runtime**，但 runtime 与 model 必须分层理解：sherpa-onnx 可承载多个模型，不能因为选择 runtime 就提前冻结具体模型。
-- 4B.3b 集成前先做窄范围 runtime/model checkpoint：当前第一轮优先比较中文 streaming Zipformer INT8（输入法低延迟/资源基准）与 FunASR Nano INT8（高质量本地候选）；SenseVoice、Qwen3-ASR、whisper.cpp 等仅在第一轮证据显示必要时扩展，不做全面 ASR 横评。
-- 这**不是**最终默认 Provider 决定。定为默认前须在真机验证：中文识别质量、中英混合质量、首个 partial/final 延迟、partial 稳定性、CPU、RAM、电量/发热、模型大小、所选模型的再分发/许可条款、vivo/Redmi 设备表现、完全离线运行。
-- runtime 与模型许可须分别核对；sherpa-onnx 框架本身的许可不足以批准具体模型的商用、再分发或打包。
-
-**Cloud 凭据（BYOK）**（2026-09-27 明确正式凭据策略）
-
-- 正式云端 ASR Provider 采用 BYOK（Bring Your Own Key，用户自有凭据）。
-- 维护者持有的长期云端凭据**不得**内置于 APK、Git 仓库、CI 配置或 CI 产物，以及任何 release 构建；CI 与公开/release APK 必须在没有任何维护者云端凭据的情况下可以构建。
-- API Key/credential 是 **Provider-specific runtime configuration**：用户按 Provider 分别配置、独立安全存储、独立使用；切换 Provider 不删除其他 Provider 已保存凭据，也不得跨 Provider 复用凭据。具体 Android 安全存储实现尚未冻结，实现前须对照当前 Android 与 fcitx5-android API 核实。
-- Provider 的普通配置（如 model、endpoint、resource）与 secret storage 逻辑分离；secret 默认遮蔽，可替换/清除，不得写入日志、普通配置导出、诊断报告或 crash 信息。
-- Local Provider 不需要云端凭据。
-- 运行时 Provider 配置保持 ASR 与 LLM 分离（D017）：配置 ASR 凭据不会配置或启用任何 LLM 凭据/Provider。
-- 开发 PoC 只可通过本地、不提交的 debug 配置使用开发者测试凭据。Phase 4B.3a 的 Doubao 凭据注入（环境变量或用户级 Gradle 属性 → debug `BuildConfig`）**仅限 PoC**，不得演变为正式凭据路径。
-- 正式 BYOK 的凭据存储与 UI **不属于** Phase 4B.3a。
-
-**Custom**
-
-- 同时保留 OpenAI-compatible ASR endpoint 与 self-hosted/custom endpoint；"self-hosted" 不等同于 "OpenAI-compatible"。
-- 不设计自动 Provider 切换/fallback；以后可研究 Auto 模式（例如离线用 Local、明确允许时用云端），但不属于本决策。
-
-**Direct ASR 结果语义**
-
-- Direct ASR 边界至少须能表达：provisional/partial 结果、final/stable 结果，以及必要的 error/会话终止。
-- 规划文档不规定复杂事件框架或具体 Kotlin API；最小具体 API 在实现时依据最新 Android 源码推导。
-- 该区分同时服务于 Doubao 实时/两遍识别与后续 sherpa-onnx 流式本地识别。
-
-**Phase 4B.3 设计**
-
-- **4B.3a — Doubao Direct Cloud ASR PoC**：Fcitx-owned `AudioRecord` → PCM 流式发送 → Doubao Seed-ASR 2.0（`bigmodel_async`，`enable_nonstream=true`）→ provisional 结果 + 第二遍 stable/final 结果 → Raw Transcript → IME。
-  - 采用实时 + 第二遍（two-pass）路径，而不以 `bigmodel_nostream` 为 4B.3a 主实现；`bigmodel_nostream` 可保留为日后 benchmark/参考模式；4B.3a **不实现**自动回退到 `bigmodel_nostream`。
-  - provisional 结果须被接收、解析并可观测/验证，但**不写入** Fcitx preedit/composition；4B.3a 只有 stable/final 结果进入 Raw Transcript → IME。
-  - 若能复用已验证的 Fcitx-owned `AudioRecord` 路径并让麦克风所有权留在 Fcitx，优先直接 WebSocket 集成，而非引入 Provider SDK；编码前仍须核对最新官方 API 与最新 Android 源码。
-  - 真实云端 Provider 实现需要时可增加 `android.permission.INTERNET`（Phase 4B.1 capture-only 批次有意不含）。
-  - 通过 4B.3a 只证明 Cloud Direct ASR 端到端路径可行，**不**选定 Doubao 为正式默认 Provider。
-- **4B.3b — sherpa-onnx Local A/B PoC**：4B.3b-0 研究 checkpoint 已完成。保留 A) streaming Zipformer zh INT8 / `OnlineRecognizer` 与 B) FunASR Nano INT8 / `OfflineRecognizer` 同时进入最小真机比较；两者沿用同一 Voice flow、Fcitx-owned `AudioCapture` 与结果语义，使用尽可能相同的设备、语料和测试条件。A 仅作 research/device-evaluation，模型权重许可未澄清前不得进入正式 release/distribution；B 也只是候选，不因许可较清晰而预先成为默认。PoC 模型通过 `adb` 外置，不打包 APK、不实现 Downloader。4B.3b 之前不为覆盖面增加其他云端 Provider；若日后需要第二个云端 benchmark，Qwen 为首选。
-- **4B.3c — realtime preedit UX PoC（后续、有条件）**：provisional 结果 → Fcitx preedit → 修订 → final 替换；须单独研究 preedit 所有权、与现有 composition 及候选的交互、provisional 修订/替换、stop 到 final 的过渡、cancel 回滚/丢弃语义。收到 provisional 结果不代表应经现有 composition 路径显示或提交。
-- **Default Provider checkpoint**（4B.3a 与 4B.3b 之后）：若 sherpa-onnx 的质量、性能与模型约束可接受，可将 Local 冻结为正式默认 Provider；否则依据实测证据重新评估默认 Provider/UX。结果不预先决定。
-
-**不属于本决策**
-
-不选定 Doubao 为最终默认 Provider；不认定 sherpa-onnx 已通过验证；不选定 realtime provisional preedit；不选定自动 local/cloud fallback；不选定独立 RecognitionService APK/模块架构。长按 Space 仍是独立的 Voice Trigger 任务（D013），不阻塞 4B.3a/4B.3b。
-
-修订（2026-09-27）：上文“Provider 逻辑分类”由 D033 的 System / Local / Managed Cloud / Self-hosted 四类取代（原 Cloud/BYOK → Managed Cloud；原 Custom → Self-hosted 下的协议适配）；“不设计自动 Provider 切换/fallback”与“不选定自动 local/cloud fallback”由 D034/D035 取代。2026-09-28 D034 进一步改为首次推荐具体服务、D035 排除 System 自动回落。BYOK、Direct ASR 结果语义与 4B.3 设计不变。
-
-## D029 — 正式 ASR 设置采用 Provider-specific configuration；Local 模型独立管理
-
-**状态：Accepted（2026-09-27）**
-
-正式 Android Voice settings 必须提供一等的 ASR Provider 选择入口；Phase 4B 的 Developer debug 开关仅用于 PoC，不是正式 UX。选择 Provider 后只展示该 Provider 需要的运行时配置；Local Provider 不显示 API Key。Provider-specific 配置可复用通用 UI/descriptor 思路，但在第二个真实 Cloud Provider 出现前不建立复杂 schema/plugin framework。
-
-云端 credential 遵循 D028：按 Provider 独立配置、独立安全存储和独立使用。可提供“测试配置”，但若 Provider 没有轻量 credential-validation API，不得为了测试而未经明确告知上传用户录音。
-
-Local ASR 的 Provider、runtime、model 分层管理。正式版需要 Local Model Manager/Downloader，覆盖至少：model catalog、大小/版本/License、下载/失败重试、完整性校验、原子安装、更新和删除；暂停/断点续传等具体能力按实现阶段验证。大型模型原则上不强制内置 APK；安装后的 Local ASR 日常识别应可完全离线。Model Manager 不进入 4B.3b 最小 PoC，待实际 runtime/model 的文件布局、加载方式和许可验证后实现。
-
-## D030 — Voice Trigger 可见性跟随 configured backend，而非 System ASR
-
-**状态：Accepted / Implemented in Phase 4B.2 follow-up（2026-09-27）**
-
-麦克风/Voice Trigger 的可用性必须依据当前 configured backend 判断；只有 configured backend 为 System ASR 时，`SpeechRecognizer.isRecognitionAvailable()` 才参与可用性判断。Direct Cloud/Local backend 不得因 OEM/system RecognitionService 不可用而隐藏 Voice Trigger。
-
-该规则在 `fcitx5-android` commit `8accd92f` 中通过统一 `configuredBackend` 的 visibility/start 判断实现。它是 D026/D027 “System ASR 不得成为正式 Voice 唯一路径”的 UI/dispatch 落地，不意味着当前 debug backend selector 已是正式 Provider settings；正式配置见 D029。
-
-## D031 — Active Voice 使用共享 Voice Session Panel 与可选真实音量可视化
-
-**状态：Accepted / Implemented / DUAL-DEVICE PASS（2026-09-27）**
-
-麦克风按钮与长按 Space 继续共用一个 `VoiceInputSession` / Voice flow。active session 期间使用共享 Voice Session Panel 覆盖主键盘按键区域；不得为 Mic/Space 建立两套状态机，也不得通过移除正在持有 Space gesture 的 keyboard/gesture owner 来显示 Panel。
-
-- Mic：Panel 提供“取消 / 完成”；取消立即 discard，完成 stop 后进入 Recognizing，final 后恢复键盘并提交。
-- Space：Panel 显示“松开结束 · 上滑取消”；越过阈值显示“松开取消”，滑回阈值内必须恢复 finish 状态；松开时按当时状态 stop 或 cancel。
-- 能提供 Fcitx-owned PCM 的 backend 可通过 optional audio-level event 提供归一化 microphone level；UI 仅消费 level，不取得 PCM、不拥有或另开 `AudioRecord`。System ASR 等无 level backend 使用静态 Listening indicator，识别功能不得依赖波形。
-- 实现 commit `89e964885af14f87832a2008ca1fa9271241364e` 已通过代码审查与 CI run `36318396011`。2026-09-27 项目所有者在 Redmi K90 Pro Max 与 vivo X100 Pro 完成最终真机 gate：Mic Panel、PCM-driven 音量响应、Done/final/commit、Cancel/discard、Space overlay 后 Move/Up 连续性（越阈值→滑回→松手）、Space cancel、tap/横滑回归与连续/混合 session 均 PASS；密码输入框 Voice trigger 正确抑制。vivo 还验证了 capability fallback：System ASR 可正常识别但没有 Fcitx-owned PCM level，因此无真实波形；切换到 Doubao Direct 后由既有 AudioCapture 提供真实波形。该差异符合设计，不作为缺陷。
-
-## D032 — Local ASR 第一轮采用 A/B comparative device PoC；PoC 模型外置
-
-**部分 supersede：** D050 替代本决定关于当前模型集、推荐/D035 顺序和发布下载限制的部分；A/B PoC 外置模型、研究证据和当时的设备结论仍为历史记录。
-
-**状态：Accepted（2026-09-27）**
-
-4B.3b-0 研究后，不在纸面阶段从 A/B 中选出唯一 Local ASR，而让两者同时进入第一轮真机比较：
-
-- A：`sherpa-onnx-streaming-zipformer-zh-int8-2025-06-30`，`OnlineRecognizer`，真 streaming，约 168 MB。用于验证低延迟/实时 partial/资源基准；模型权重许可未明确，因此仅限 research/device-evaluation，在许可澄清前不得作为正式模型分发或由项目提供下载。
-- B：`sherpa-onnx-funasr-nano-int8-2025-12-30`，`OfflineRecognizer`，约 1 GB。用于验证高质量/中英混合候选在 Android IME 中的模型加载、RAM 与 stop→final 可行性。B 不是预选默认模型。
-
-A/B 均复用 D027 的 Voice flow、Fcitx-owned `AudioCapture` 与 Local ASR 边界；不得因 B 为 offline 而把公共 Local ASR abstraction 设计成 offline-only。PoC 使用固定模型文件/hash，通过 `adb` 放入测试设备，不把模型打进 APK、不实现 Downloader。正式版由 D029 的 Model Manager/Downloader 按需获取通过许可审查的模型。
-
-同设备/同语料重点比较 model load、peak/steady RAM、CPU/发热、3s/10s/30s stop→final、RTF、连续 session、中文/中英混合、Mic/Space/cancel 与完全离线；A 另测首个 partial、partial 更新与 streaming/finalization latency。A/B 均不因此被选定为正式/默认 Local ASR；若两者均不满足产品要求，再依据实测证据启动第二轮模型研究。
-
-第三方许可作为 Local ASR 引入 gate：runtime、model weights、必要时 training-data provenance 分层记录，并维护 `docs/THIRD_PARTY_LICENSES.md`。
-
-## D033 — ASR Provider 分类扩展为 System / Local / Managed Cloud / Self-hosted；所有 Provider 共用同一 Voice flow
-
-**状态：Accepted（2026-09-27；实现已在当前 Android 产品线落地，Provider 对比和真实服务验收仍进行中）**
-
-本决定最初是规划 checkpoint；后续实现状态不得回写为当时已完成。下列
-`phase5c-dictionary-manager` @ `9163ec96` 仅为该历史 checkpoint 的基线；当前产品基线由 D060/`docs/first-release-baseline.md` 管理。
-
-```text
-ASR Provider
-├─ System
-│  └─ Android SpeechRecognizer / RecognitionService
-├─ Local
-│  └─ On-device ASR
-├─ Managed Cloud
-│  ├─ Doubao / Seed-ASR
-│  ├─ Alibaba / Qwen ASR
-│  ├─ Tencent Realtime ASR
-│  └─ future providers
-└─ Self-hosted
-   ├─ FunASR 2-pass / Paraformer
-   ├─ Fun-ASR-Nano Server
-   ├─ sherpa-onnx Server
-   └─ Custom / OpenAI-compatible or future protocol adapters
-```
-
-- 这是按**部署位置/数据去向**划分的逻辑分类，不是物理模块/APK 拆分；不建立复杂 Provider 插件框架。
-- 所有 Provider 走同一逻辑流程；Self-hosted **不**建立独立 Voice pipeline：
-
-```text
-Mic / Long-press Space → VoiceInputFlow → Configured ASR Provider → Raw Transcript
-→ Optional Text Post Processor / LLM → Final Transcript → IME
-```
-
-- System 由 `SystemAsrBackend` 承载；Local、Managed Cloud、Self-hosted 均经 D027 的 Fcitx-owned Audio Capture（Direct 路径）驱动。
-- OpenAI-compatible 是协议适配，不等于 Self-hosted（沿用 D028）。
-
-**Managed Cloud 对比候选（历史 checkpoint；当前基本设备状态由 2026-10-13 reconciliation 更新）**
-
-- Cloud A：Doubao Seed-ASR 2.0 — 已有 Direct backend，4B.3a 双机 PASS，作为基线；
-- Cloud B：Alibaba Qwen ASR 系列 — checkpoint 时依据当时官方产品线核实适合流式/输入法的模型；若存在多个相关变体，不提前冻结单一模型名；
-- Cloud C：Tencent Realtime ASR；
-- iFlytek 保留为未来候选，当前不实现。
-
-Managed Cloud checkpoint 至少比较：中文识别质量、中英混合、首个 partial 延迟、partial 修订行为、stop→final 延迟、弱网/失败行为、计费模式、认证/BYOK 复杂度、隐私/数据处理影响、客户端实现边界。上述“真实 endpoint/设备对比尚未完成”是本历史 checkpoint 的时点结论；截至 2026-10-13，所有者已报告 Qwen/Tencent 使用真实凭据、真实服务在 Android 设备成功识别。该报告不关闭穷举 provider 错误、配额、取消/中断/重试或质量比较矩阵。
-
-**Self-hosted 研究候选（适配器已实现；真实服务/设备验收仍待完成）**
-
-- S1：FunASR 2-pass / Paraformer；S2：Fun-ASR-Nano Server；S3：sherpa-onnx Server。
-
-Self-hosted checkpoint 须依据当时上游源码/文档核实：实际 streaming/offline 行为、partial/final 语义、适用时的第二遍修正、协议/API、CPU/GPU 需求、延迟/吞吐预期、模型与 runtime 许可及再分发/商用状态、Android 客户端最小修改边界，以及是否值得建立共同的 `SelfHostedAsrBackend`/协议边界。当前已实现 FunASR 2-pass、Fun-ASR-Nano Server、sherpa-onnx Server 和 OpenAI-compatible 适配路径；仍不设计插件框架，真实自托管服务的设备、性能、隐私和长语音验收仍是后续 checkpoint。
-
-## D034 — 语音识别服务设置与首次推荐
-
-**状态：Accepted（2026-09-27）；2026-09-28 修订的具体服务选择、首次推荐、Voice Settings 与迁移已在当前 Android 产品线实现；设备/真实服务验收仍分层进行。**
-
-历史实现与验收记录仍按当时的 `818dc671` / `fb3b0c26` 保留，不表示修订后的实现缺失。当前实现基线为
-`phase5c-dictionary-manager` @ `9163ec96`，主要代码位于 `VoiceSettingsFragment`,
-`VoiceSettingsRows`, `AsrSelection` 和 `VoiceSelectionStore`；当前模型集和顺序由 D050
-部分替代旧记录。
-
-历史实现与验收（`fcitx5-android` `818dc671` + `fb3b0c26`，CI `36329322686` / `36330310566` PASS）：设备验收 CLOSED（2026-09-28）：vivo X100 Pro 全部通过，Redmi K90 Pro Max 可测部分通过、依赖 System ASR 的用例因设备 System ASR 不可用而不可测，无新观察到的 blocker；release 构建本地编译通过（2026-09-28，项目所有者在 Windows 上对 `fb3b0c26` 执行 arm64 `.\gradlew.bat :app:assembleRelease`：BUILD SUCCESSFUL，6m 22s，272 tasks：264 executed、8 up-to-date）；release APK 的安装与设备运行行为未测试。
-
-实现记录（2026-09-27，描述当时实现，不代表下述修订已落地）：
-
-- 已实现：“语音输入”设置页，含“语音识别服务”（自动（推荐）/ 本地语音识别 / Android 系统语音识别，默认自动）、“允许使用 Android 系统语音识别”开关（摘要即披露）与原“显示语音输入按钮”（存储键不变）；一次性披露对话框（允许/不允许均持久化，未作答则下次再问；允许后紧接着请求麦克风权限）；单一解析函数按“调试覆盖（Doubao > 采集探针）→ 正式服务”决定后端；先解析服务、后请求 RECORD_AUDIO；麦克风按钮在可启动或需授权时显示（D030）。
-- 当前 Local 可用性：仅 debug 构建带 Local runtime，且调试研究选择的模型文件齐全时视为可用；未选定任何正式 Local 模型（D036）。
-- 已验证：单元测试与 CI（debug 构建 + `:app:testDebugUnitTest`）；设备验收见 `docs/provider-settings-acceptance.md` §7——vivo 全部通过；Redmi 通过 A、B1、E，B2 按钮隐藏符合设计（System ASR 不可用），披露/System 识别路径在 Redmi 上不可测。另：release 构建本地编译通过（2026-09-28，项目所有者在 Windows 上对 `fb3b0c26` 执行 arm64 `.\gradlew.bat :app:assembleRelease`：BUILD SUCCESSFUL，6m 22s，272 tasks：264 executed、8 up-to-date）；release APK 的安装与设备运行行为未测试（这不是 release 发布，也不是 release 设备验收 PASS）。**未验证**：release APK 安装与设备运行行为。
-
-- 面向用户的术语优先使用“语音识别服务”，不要求普通用户理解“ASR Provider”。
-- 顶层 Voice 设置方向（细化 D029，不是最终 UI 规格）：
-
-```text
-语音输入
-├─ 系统自带：Android 系统语音识别
-├─ 本地集成（不联网）：已安装的正式 Local 模型
-├─ 第三方云端 ASR：豆包、Qwen 等已接入服务
-├─ 自建云端 ASR：已配置的自托管服务
-├─ 当前使用：从已启用且可用的具体服务中选一个
-└─ 语音输入按钮、本地模型管理等其他设置
-```
-
-- 按处理去向展示四类：System、Local、Managed Cloud、Self-hosted。各类列出实际已接入的具体服务；用户可分别配置并启用多个服务，但“当前使用”只选择一个已启用的具体服务，不提供长期“自动”选项。配置、启用与当前选择是不同状态；禁用当前服务后的提示/重新选择交互在实现前细化，不得静默改选另一家云服务。尚未接入的服务不得作为可选的假选项。云端凭据、endpoint、model 等放在各 Provider 自己的设置中；Local 提供模型管理而非 API 凭据（D029）。
-- 产品目标“开箱即用优先”。**首次安装/首次启用语音输入时运行一次推荐规则，选定并持久化具体服务**：
-  1. 已安装且健康的 Local 模型 → Local；
-  2. 否则 System ASR 可用：用户已授权 System ASR → System；尚未授权 → 使用前先显示一次性披露/授权（用户不授权则按第 3 步处理）；
-  3. 否则提示当前没有可用的识别服务，并给出配置入口：安装 Local 模型、配置 Managed Cloud、配置 Self-hosted。
-- 首次推荐**不得**静默选择 BYOK Managed Cloud 或用户配置的 Self-hosted endpoint；这两类只在用户显式配置、启用并选为当前服务时使用。首次选定后不因可用性变化重复运行推荐规则或静默改写“当前使用”；启动/早期故障按 D035 处理。
-- **System ASR 授权**：System ASR 与 Local ASR 在隐私上不等价（见 D035）。使用 System ASR 需要用户**事先一次性授权**。启用条目不应绕过披露；是否启用与是否授权应分别表达。该服务由 Android/设备系统服务提供；语音数据如何处理取决于该系统服务，可能涉及远程处理。用户显式选择“系统”作为当前服务时同样须完成披露；具体 UI 文案未冻结。
-- 历史上未冻结的事项包括首次使用引导、Local 模型推荐资格、“健康”的具体判定和 System 可用性判定；当前实现已落地一次性具体服务推荐和 D050 三模型顺序，仍沿用 D026/D030 的“存在 RecognitionService ≠ session 可用”边界。
-- 本决策取代此前“默认**设置**为 Auto”的产品方向；现有 `fb3b0c26` 的 Auto 设置是已验收的历史实现。当前具体服务选择/推荐实现已由 `phase5c-dictionary-manager` 的后续提交 supersede；Local A/B 未选定正式模型的历史结论仍由 D036/D050 约束。
-
-## D035 — 自动 fallback：默认开启，不得未经授权扩大语音数据接收方
-
-**状态：Accepted（2026-09-27）；2026-09-28 修订：System ASR 不参与自动 fallback；2026-10-13 核心设备行为 DEVICE VERIFIED**
-
-当前实现位于 `AsrSelection.fallbackTarget` 与 `VoiceInputFlow`：仅当前选定的
-Managed Cloud/Self-hosted 服务在会话建立前的技术失败时，回落到已启用、已安装、
-`production` 且 runtime-ready 的 Local 模型；System、研究模型和外部到外部切换均排除。
-`VoiceInputFlowTest`、`AsrSelectionTest` 覆盖该逻辑。旧的“未实现”表述仅适用于本决定
-2026-09-28 修订时点，现已 superseded。
-
-**核心隐私规则**：未经用户事先明确授权，自动 fallback 不得扩大可能接收用户语音数据的参与方/处理方集合。
-
-- **Local ASR** 是 Fcitx 控制的设备端处理。
-- **System ASR** 是独立的信任/数据处理边界：实现由 Android/OEM/system `RecognitionService` 控制，处理可能在本地也可能在远程；Fcitx 不得假定 System ASR 仅在本地处理。
-
-自动 fallback 默认开启。Managed Cloud 与 Self-hosted 属于同一回落等级；用户选定其中一个具体服务，且发生 V1 范围内的启动/早期技术失败时：
-
-```text
-当前 Managed Cloud / Self-hosted 服务
-  ↓ 启动/早期技术失败
-Local ASR（仅当正式模型已安装、启用且可用）
-  ↓ 不可用或再次失败
-识别失败
-```
-
-外部服务 → Local 可自动发生，因为它缩小了外部数据处理边界。多个已启用的云端/自托管服务不构成逐个重试列表；另一家服务须由用户显式切换。
-
-用户选择 Local 时：Local 失败 → 识别失败。用户选择 System ASR 时：System ASR 失败 → 识别失败。**System ASR 即使已授权、已启用，也不作为任何服务的自动 fallback 候选；仅在用户显式选为“当前使用”，或首次推荐经披露/授权选定为当前服务时启动。**
-
-System ASR 的一次性事先授权（D034）允许其作为当前服务使用，不构成将其加入 fallback 链的授权。
-
-同样不得静默发生：Doubao → Alibaba、Alibaba → Tencent、Managed Cloud ↔ Self-hosted、Local → 外部服务、任何服务 → System ASR 等。
-
-**V1 范围**：只处理启动/早期技术失败——Provider 不可用、无网络/连接失败、endpoint 不可用、认证/服务初始化失败、Local 模型不可用/加载失败、可用识别会话建立前的早期超时。
-
-“早期”的边界是**可用识别会话已建立**，不是现有 `onStarted`：System 在 `startListening` 后、Local 在模型加载前、Doubao 在网络握手前就可能触发 `onStarted`。实现时需要明确的会话就绪信号并过滤失效 token；用户已停止或取消时不自动切换。没有正式 Local 模型时，外部服务失败直接报告错误，不以 debug A/B 充当产品 fallback。
-
-**V1 不实现**：会话中途跨 Provider 的 PCM replay/迁移；因识别质量看起来差而自动换 Provider 重识别；双 Provider 同时识别；把已采集音频静默重放给其他第三方。会话中途失败报告识别失败/允许重试，而不迁移会话。
-
-- fallback 发生时须可观测（D018），具体提示 UI 未冻结；关闭 fallback 的设置位置未冻结。
-
-**设备验收（所有者报告，2026-10-13）：** 当前选定的外部/网络 ASR 在会话建立前发生早期技术/服务失败时，已自动回落到已安装、已启用、runtime-ready 的正式 Local ASR，并继续本次 Voice operation。`onStarted` 不作为会话建立边界；`onSessionEstablished`、单槽 consume-once、至多一次和现有排除项均保持不变。故 D035 核心产品 gate = **DEVICE VERIFIED / COMPLETE**。这不扩大为外部到外部切换、System fallback、质量错误或任意 post-establishment failure fallback；中断、授权、取消时序、重复启动、麦克风所有权和 race 的穷举矩阵仍是 validation debt。
-
-## D036 — 关闭 Local ASR A/B checkpoint：A、B 均不选为正式/默认 Local ASR
-
-**部分 supersede：** D050 替代本决定关于当前 Local 模型集和发布候选状态的部分；A 的许可风险、历史设备结果和不做兼容迁移的结论仍有效。
-
-**状态：Accepted（2026-09-27，Phase 4B.3b 关闭）**
-
-4B.3b A/B comparative device PoC 已在 Redmi K90 Pro Max 与 vivo X100 Pro 完成（测试基线 `fcitx5-android` `phase4-voice-poc` @ `a8a0e1b3`；证据见 `docs/local-asr-checkpoint.md` §10–§11）。
-
-- **A（streaming Zipformer zh INT8，约 168 MB）**：双机基础 gate PASS，真流式路径可用，RTF 约 0.10–0.18，stop→final 约 40–131 ms；中文总体可用，所测中英混说较弱。技术上适合 IME，但模型权重再分发/商用许可不明确，**仍仅限 Research / Device Evaluation**，不作为正式发布/默认候选（D032 不变）。
-- **B（FunASR Nano INT8，约 1 GB）**：DUAL-DEVICE BASIC DEVICE GATE PASS；**DUAL-DEVICE LONG-UTTERANCE GATE FAIL**——当前测试的 ONNX artifact/配置 `max_total_len` = 512，约 34–39 s 语音得到空 final。另有 Redmi 约 2 GB PSS 的重大 IME 风险。该失败只归因于此 artifact/配置，不推广到所有 FunASR Nano 导出；更大 `max_total_len` 的导出仅是研究方向，未验证。当前 artifact 不适合作为 Android IME 默认本地模型。
-- 本 checkpoint 不选定任何正式/默认 Local ASR。
-- 保留共同的 `LocalAsrBackend` / `VoiceBackend` 架构：流式（`OnlineRecognizer` → partial/final）与整段（buffer → `OfflineRecognizer` → final）两种形态均已在该边界上验证。
-- 不为这两个研究候选实现 Model Manager/Downloader（D029 的 Model Manager 仍面向通过许可审查的正式模型）。
-- 下一步：识别并验证正式发布候选——许可清晰、体积/延迟/中文与中英混说合适的其他模型，或能解决体积/上下文风险的实质改进 FunASR Nano 导出/配置；须经含长语音的双机设备 gate。除非有具体未决问题，不重开 A/B 设备测试。
-- 当时的 D033–D035（Provider 分类、默认 Auto、隐私与 fallback）不变；在没有正式 Local 模型时，当时的 Auto 按 D034 走 System（需授权）或提示配置。**2026-09-28 注**：D034/D035 此后已修订为首次推荐具体服务、System 不参与自动 fallback；不改变本 A/B checkpoint 的历史结论。
-
-## D037 — Model Manager 以研究模型身份提供 Local A/B
-
-**部分 supersede：** D050 替代本决定关于当前目录和公开下载限制的部分；本决定中的固定来源、校验、原子安装和历史研究证据仍有效。
-
-**状态：Accepted（2026-09-28，所有者指示）；修订 D036 中“不为这两个研究候选实现 Model Manager/Downloader”一条；已实现（Android `4a8f7856`/`5c71b109`，候选 C `7bc28523`）；A 下载一条由下方 2026-09-28 修订取代**
-
-- 普通用户可在 Model Manager 中选择研究模型 A 与 B 作为当前 Local 模型；二者标注为“研究模型”，不是正式/推荐模型（D036 结论不变）。
-- A、B 不参与首次推荐（D034），也不是 D035 的自动 fallback 目标：D035 只回落到正式 Local 模型。V1 不提供“把研究模型设为 fallback”的实验性开关。
-- A：权重再分发/商用许可未明确 → 只提供目录条目、文件校验与用户导入合法取得的文件；不打包、不镜像、不由项目提供下载，直到许可证据成立。
-- B：下载须来自带固定完整性元数据（逐文件 SHA-256）的可认证上游来源；UI 必须显示约 1 GB 体积、Redmi 约 2 GB PSS 与 34–39 s 空 final（`max_total_len` 512）的已测限制。
-- Model Manager 需具备：目录（许可/限制/大小/版本）、空间检查、进度、取消与重试、SHA-256 校验、临时文件与原子安装、更新/删除，以及删除与活动会话竞态的安全处理。
-- 正式 Local 候选的评估继续进行；A、B 都不是该候选。
-
-**修订（2026-09-28，所有者澄清产品范围）**：本项目目前是**未发布的个人测试项目**。为方便在 vivo X100 Pro 与 Redmi K90 Pro Max 上测试，本 checkpoint 要求 Model Manager 为 **A、B、C 三个研究模型都提供可用的下载路径**；取代上文“A 只提供导入、不由项目提供下载”一条（仅限本测试阶段）。
-
-- A、B、C 都不是正式/默认/推荐模型；都不参与首次推荐，也都不是 D035 fallback 目标（`production = false` 不变）。
-- A 的下载是**个人测试例外**，只在测试（debug）构建中提供；不构成公开发布许可，不改变 A“许可未解决、不得进入公开发布”的结论。来源：HF `csukuangfj/sherpa-onnx-streaming-zipformer-zh-int8-2025-06-30` 固定 revision `ad658fa0201659a09ea3c176129a191c77ecae8f`（公开、无访问门槛、无 license 元数据）；它转换自 `yuekai/icefall-asr-multi-zh-hans-zipformer-large`（HF 访问门槛：同意分享联系方式后自动获准；同样未声明 license），该原始仓库是 icefall PyTorch 检查点，不含与固定 SHA-256 相符的 ONNX 文件，因此不是可替代的下载来源，下载转换仓库也不绕过任何访问门槛。下载前的确认框写明上述情况与“仅限个人测试、不得分享文件”。项目不打包、不镜像、不托管 A 的权重。
-- B：下载路径保留；许可依据（上游声明 Apache-2.0，但 ONNX 导出者仓库无 LICENSE 文件）与 34–39 s 长语音空结果须在 UI 中可见。
-- C：下载路径保留；在双机设备结果之前仍为实验性候选。
-- 三者共用：固定 revision + 逐文件固定 SHA-256；暂存目录 + 原子安装（未完成/校验失败的文件永不作为已安装模型）；进度、取消、重试（HTTP Range 断点续传）、删除（含旧 adb 目录中的副本）、空间不足提示；来源/大小/状态显示；保留导入。允许用户手动填写其他下载地址（如固定 revision 的镜像或局域网电脑），仍按固定 SHA-256 校验；不会自动或静默更换来源。
-
-## D038 — 每个本地模型单独启用与选择
-
-**状态：Accepted（2026-09-28，所有者要求的设计变更）；已实现（Android `7ed0fa78`）；设备未验收**
-
-修订 D034 中“Local 是一个服务（一个启用开关 + 一个配置模型）”的做法：
-
-- A、B、C 各自是一个服务（`local:<model>`），像云端服务一样单独启用；可以同时启用多个已安装模型。
-- 安装、启用、当前使用三者分开：安装不启用也不选择；未安装（下载中、部分下载、校验失败、已删除）的模型不能启用，也不出现在“语音识别服务”列表里；列表中只出现已启用、已安装且本构建能运行的模型，每个模型一项。
-- 一次语音会话只运行当前选中的那一个模型；不同时运行多个模型，模型之间不自动回落。D035 不变：外部服务只回落到正式 Local 模型；A/B/C 都是研究/实验模型（D036/D037），不是回落目标。
-- 取消“启用本地语音识别”总开关与单独的“本地识别模型”选择。模型行上的“启用并用于语音输入”是一次明确操作（启用 + 设为当前）。
-- 停用或删除当前模型：当前选择保留，并显示“已停用”或“此本地模型未安装”；不自动改选其他服务（与 D034 对“停用当前服务”的处理一致）。删除模型同时取消其启用。
-- 迁移（一次）：原先启用本地且配置了模型 → 启用该模型；原当前服务为本地 → 当前 = 该模型；原当前为本地但无配置模型（本来无法运行）→ 不选择任何服务，推荐不再重跑；不会启用其他模型。更早的 Auto/Local/System 设置中的“本地”映射为 Developer 页选择的研究模型。
-- A/B/C 仍是测试标识，不表示已验证的正式候选；A 的下载仍仅限测试构建（D037 修订）。
-
-实现限制：没有“多个模型同时运行”或“按模型优先级回落”的机制（按设计不做）；迁移只能保留旧设置里唯一的那个模型。
-
-## D039 — 词库管理采用可复现分层发布边界
-
-**状态：Accepted（2026-09-29，Phase 5 词库方案落档）；构建发布线已完成，Android Dictionary Manager 已实现，设备/产品验收仍待完成**
-
-词库继续由 LibIME 负责运行时解码、候选、排序和用户学习；项目不重新实现拼音解码器或平行学习状态。词库管理分为官方基线、经审计的第三方/合并发布包和独立的用户学习层，词库更新不得上传或依赖用户输入历史。
-
-研究候选的构建必须固定来源 commit、原始文件 SHA-256、转换规则、工具版本、许可证结论和输出 `.dict` SHA-256，并保存拒绝行、冲突报告、manifest 和 round-trip 结果。第三方新增 pair 默认以 `0` 构建；只有 exact `(word,pinyin)` 命中官方负权重时，才可继承该负权重，且必须保留冲突审计证据。
-
-`origin/tools/wanxiang-libime-build` 上的 `8a4f1de`、`91135f8`、`1eed3bd`～`0294bd3` 及相关 workflow 仅证明研究/PoC 路径，尚未合入 `main`，不构成当前已有 workflow、业务代码或发布 artifact。任何候选进入 APK 或公开下载前，还必须通过来源 pin、许可证/再分发和双设备体验验证；未满足者只能标记为 research-only。
-
-Android Dictionary Manager 已在 `fcitx5-android` 当前产品线实现：
-`DictionaryManagerUi`、`DictionaryPresentation` 和 `PinyinDictionaryFragment` 保留
-既有导入/下载/删除路径，并增加分组列表、条件详情和删除确认。实现提交为 `84b7f571`
-及 `583a525a`，CI `36906187024` 通过；仍须使用临时文件、hash 校验、原子安装、
-失败清理和旧版本保留，且 Android 真机的导航、导入、下载、删除、无障碍和
-Pinyin/Shuangpin 回归尚未全部完成。
-
-## D040 — Phase 5B 只发布许可证和发音语义均已通过的固定候选
-
-**状态：Accepted（2026-09-29，Phase 5B）**
-
-Phase 5B 将构建/发布基础设施限制为仓库内的固定 manifest、Phase 5A
-converter、真实 `libime_pinyindict` 和受控 GitHub Release。生产集只包含
-Rime Frost（GPL-3.0-only，固定提交
-`211de1ca927b6c876e384c6de42e1cc8af868c68`）与 Wanxiang `jichu`
-（CC-BY-4.0，固定提交
-`94f1e8d7b6d1267a9c8752a2e62145705dd1fb92`）。
-
-Rime Ice（固定提交 `3aea6d3694fb3d94ec663641f021f788822897ad`）因 Phase
-5A 的 24 条可核验短语比较中有 9 条自动注音不一致，且没有已验证的权威
-短语规则，排除发布。CustomPinyinDictionary（固定提交
-`0673212e83c9db1fef24fdf950b22c994bf27e9c`）因未发现可核实的再分发许可，
-且来源说明包含多方数据，排除发布。二者保留在 manifest 中作为明确的非发布
-候选，不生成 Release artifact。
-
-workflow 不接受来源 URL、提交、Base 版本或用户矩阵；`workflow_dispatch`
-只运行仓库定义的固定构建，`dictionary-v*` maintainer tag 才创建 Release。
-## D045 — Retained Local ASR models and user-initiated recommendation
-
-**状态：Accepted；当前模型集、顺序和发布口径由 D050 部分替代。** Provider/runtime/model 分层、`current == null` 推荐入口、推荐资格与 production/D035/许可分离、具体服务持久化和 System 授权边界仍有效；旧 Zipformer 集合与研究下载限制保留为历史。
-
-## D046 — Separate Toolbar Voice configuration from Provider readiness
-
-**状态：Accepted；仅部分替代 D030/D034 的 Toolbar visibility 规则。** `ToolbarAction.Voice ∈ toolbarActions` 是持久 canonical state；Virtual Keyboard、Voice Settings、Toolbar Editor 是同一状态的 UI projection。Provider readiness 决定启动结果，不得使已配置的 Mic 静默消失；password/security context 可临时 suppress，但不得改写配置。
-
-## D047 — Toolbar physical-device repair boundary and retained upstream compatibility
-
-**状态：Accepted。** 保留 upstream-compatible Virtual Keyboard projection、Space long-press 单一 canonical state、Toolbar/Voice 配置语义和既有业务行为；真机验收要求 action icons、可操作区域及窄屏行为，不扩展到 provider 或输入业务重构。
-
-## D048 — Toolbar Editor V2 complete intent and right-end runtime projection
-
-**状态：Accepted；替代旧的 capacity gate 和 action-type-specific narrow-width policy。** `toolbarActions` 只持久化 Current membership/order；Editor 是 Cancel/OK transaction，Current 可为空或包含全部 actions；Available order 不持久化。运行时按实际宽度从配置右端临时隐藏，不改写配置。
-
-## D049 — Dictionary Manager and Voice Settings UI V2 presentation boundary
-
-**状态：Accepted。** Dictionary 使用对象列表→条件详情→既有操作的窄范围 presentation；保留 catalog/provenance、Pinyin/Shuangpin 共用 runtime/config 和下载/校验语义。Voice Settings 只做 presentation/navigation，不改变 Provider、词库、生命周期或输入行为；未完成真机项目仍不得记为 PASS。
-
-以上 D045–D049 是当前有效共识摘要；完整历史实现、验收和 supersession 关系继续保留在功能分支记录中。D050 仅替代其中明确列出的模型集、顺序和发布下载口径。
-
-## D050 — Local ASR 三模型收敛与发布线
-
-**状态：Accepted（2026-10-02；部分 supersede 旧 Local 模型集、顺序和下载限制）**
-
-当前 Local 支持 FunASR Nano、X-ASR 离线 INT8、X-ASR 960 ms 流式 INT8；旧 bilingual/Chinese-only Zipformer 不恢复，且不做兼容迁移。三款模型均 `production=true`，`recommendationEligible` 默认均为 `true`；实际推荐仍逐项检查 installed/enabled/runtime-ready。UI、推荐和 D035 候选顺序统一为 X-ASR 离线 → X-ASR 流式 → Nano。推荐资格、触发、持久化、production、installed、enabled、runtime-ready 与许可状态保持独立。
-
-debug/release 均支持应用内从固定上游按需下载三款模型，权重不内置 APK；这不表示项目托管或镜像模型。两个 X-ASR 的上游声明 Apache-2.0；Nano 保留 Apache-2.0、FunASR 模型协议 v1.1 与署名/模型名称证据。archive LICENSE/NOTICE、转换来源等缺口继续记录，不写成独立法律审计 PASS，也不笼统作为 APK 发布阻断项。旧决定中关于 Provider/runtime/model 分层、隐私、授权、fallback 资格和持久化的部分仍有效。
-
-## D051 — 成对标点固定为 19 组并复用上游机制
-
-**状态：Accepted（2026-10-03；目标行为已决定；46-row 实验已回滚，当前 Paired Punctuation work: PAUSED；runtime validation pending）**
-
-Fusion 的成对标点目标固定为 19 组，完整 authoritative list 见 docs/REQUIREMENTS.md §5.1。选择依据是此前检查的 Doubao APK 确认 18 组，再加上检查的 WeChat pair data 中存在的 ‹›；WeChat 中其他装饰性/表情导向扩展（例如 ʚɞ、⊱⊰、༺༻）不自动采用。超出这 19 组必须另行作出明确决定。
-
-实现方向复用现有 Fcitx5 Chinese Addons paired-punctuation mechanism；此前选定 mapping 曾应用于 `fcitx5-chinese-addons/modules/punctuation/punc.mb.zh_CN`，随后随 Commit B rollback 恢复为官方 upstream 41-row baseline。现有表格使用第三列/AltMapping 表达配对；已有 first-column double-quote → AltMapping curly double-quote、first-column apostrophe → AltMapping curly apostrophe 等形式。本决定不引入 structured candidate API、Pinyin/Table paired-punctuation plumbing、新 punctuation state machine、LibIME、Fcitx core 或 Android candidate protocol 改动；此前 abandoned structured-candidate implementation 已回滚。46-row 内容、Commit B 和 runtime-path audit 均作为历史证据保留，不表示当前实现。
-
-第一列是 trigger key，部分 trigger key 有多个 mapping；46-row 表的精确 mapping 已停止并回滚，当前表恢复 upstream baseline。当前仍为 **runtime validation pending**，且本项工作为 **PAUSED**：本决定不把尚未完成的编译、运行时、Pinyin/Shuangpin E2E 或 Android 真机验证写成已通过；后续实现须重新开启任务并完成 runtime PoC。
-
-**首发范围已由 D061（2026-10-05）更新：** addons 发布 pin `9b3448e6`（detached）携带 46-row 成对标点扩展（分支 tip `47401b0` 之后的恢复不影响该 pin 的构建内容），首个 Fusion Enhanced 发布**有意接受**并随 pin 一并发布，不为排除 D051 而 re-pin。上文 PAUSED / experimental table rolled back 只描述 structured-candidate 实验线与开发分支现状，**不再**意味着 D051 被排除在首发之外；其有界 runtime 回归为首发 VALIDATION DEBT（非 RELEASE BLOCKER），待 RC 验证。current-state 权威见 D061 与 `first-release-baseline.md` §2/§6。
-
-**首发范围已由 D066（2026-10-05）更正（supersede 上一段的 D061 裁定）：** D062 设备验收（RC.1 产物）中两项 D051 成对标点行为 FAIL 被裁定为 **INVALID FIRST-RELEASE SCOPE**——失败的验证目标本不属于首发承诺，`punc.mb.zh_CN` 在首发产物中必须为官方 upstream 原表。发布 pin 已由 `9b3448e6`（46-row 实验表）更正为 `47401b04`（其 `punc.mb.zh_CN` 与 upstream 41-row 基线逐字节一致）；首个 Fusion Enhanced 发布**排除** D051 标点扩展。D051 维持本条主文口径：**实验、PAUSED、非第五个顶层产品家族**；恢复须另行决定并完成 runtime PoC。上段 D061 更新文字保留为历史证据，不再作为 current-state 权威；current-state 权威见 D066 与更正后的 `first-release-baseline.md` §0/§2/§6。
-
-## D052 — MoQi 保持 downstream-only，撤回 Auxiliary Filter 上游 PR
-
-**状态：Accepted（2026-10-04；PR #300 已关闭）**
-
-MoQi 是本项目保留的专用 Auxiliary Filter 功能，但暂不继续向
-`fcitx5-chinese-addons` 上游提交。原因是其用户范围较窄，并且依赖外部 MoQi
-码表、构建和再分发边界；这些维护成本目前不适合由上游承担。
-
-- `fcitx/fcitx5-chinese-addons#300`（head
-  `choicky/fcitx5-chinese-addons:contribution/moqi-upstream`，head
-  `4c1a93d28bf1fec474c58f8fd2a88a90fc24ef48`）已关闭；该分支不删除。
-- `contribution/moqi-upstream-v2` @
-  `ad4398c1252e4ad508b99e4300a4c3a1a7f1a59a` 保留为 validated clean
-  extraction/reference snapshot，不作为当前上游贡献线。
-- Unified Auxiliary Filter 架构、Disabled / Stroke / MoQi 状态、现有 MoQi
-  trigger、selection-frontier、partial-selection、composition 保留和继续输入
-  语义均不改变；本决定不恢复平行 Stroke/MoQi handler。
-- 不继续为上游接受度单独重设计 MoQi 码表下载、表格分发或相关发布流程。
-
-后续涉及 MoQi 的实现和发布仍按 downstream 产品线维护；若未来重新提出上游
-贡献，须先有新的明确范围和维护决策，不得把本快照或已关闭 PR 作为当前计划。
-
-## D053 — ASR 上游贡献采用 Strategy 4 的增量边界
-
-**状态：Accepted（2026-10-04）**
-
-ASR 上游贡献不提交 Full / No-Local / Local-focused 三个互斥候选，而采用可
-叠加的 Strategy 4：
-
-1. PR 1：完整的 provider-independent Voice Input core、generic trigger/settings/
-   provider-selection contract、Android System ASR，以及轻量、静态、进程内
-   Provider Registry / provider boundary；
-2. PR 2：Local ASR 与 Local Model Manager；
-3. PR 3 及以后：Managed Cloud 与 Self-hosted ASR provider。
-
-PR 1 的 provider boundary 只承担稳定 identity、availability、backend
-construction/resolution；不引入动态插件、反射发现、通用 DI、通用网络或凭据
-框架。`VoiceInputFlow` / `VoiceBackend` 继续拥有共同 session lifecycle、
-composition 和 commit；provider-specific state 由各 provider 自己拥有。Trigger
-不等于 provider；PR 1 建立一个 canonical configured-provider truth，并让麦克风
-和长按 Space 共用同一 Voice flow。trigger 的配置/可见性不等同于 provider
-availability；provider 不可用时在 invocation 后给出明确结果并可回到 Voice 设置。
-旧 `preferredVoiceInput` 仍是 Android voice-input IME/subtype 的兼容偏好，不复用
-其 String namespace 作为内部 ASR provider ID。
-
-此前 Full / No-Local / Local-focused 比较是边界调查，不是最终 PR 结构。现有
-Full extraction 仅作为 source、行为和兼容性证据分支保留，不作为第一个上游 PR。
-产品架构仍须支持 System、Local、Managed Cloud、Self-hosted 全部 provider；本决定
-只是 upstream contribution decomposition，不减少 fcitx5-fusion 产品范围，也不改变
-MoQi downstream-only 决定。
-
-## D054 — Android applicationId 收敛为 Fusion Enhanced，不承担旧安装迁移
-
-**状态：Accepted（2026-10-04；修订 D025 的 release 包名后缀；部分 supersede `docs/repository-rename.md` 的“包名/applicationId 保持不变”立场）**
-
-产品正式身份统一为 **Fcitx5 Fusion Enhanced**。Android 安装身份（applicationId）由旧
-MoQi 后缀正式切换到 Fusion Enhanced：
-
-- release effective applicationId：`org.fcitx.fcitx5.android.moqi` → **`org.fcitx.fcitx5.android.fusionenhanced`**；
-  实现方式为 `app/build.gradle.kts` release 变体 `applicationIdSuffix` `.moqi` → `.fusionenhanced`（base `org.fcitx.fcitx5.android` 与 `namespace` 不变）。
-- debug 测试后缀保持 `.debug`，不属于本次切换对象。
-- 用户可见 Release APK 文件名使用带连字符的 branding：`org.fcitx.fcitx5.android.fusion-enhanced-<version>-<abi>-release.apk`
-  （branding 连字符 `fusion-enhanced` 与 applicationId 无连字符 `fusionenhanced` 有意不同，不是笔误）。
-- Version 仍来自单一权威算法 `git describe --tags --long --always`；ABI 来自实际构建产物，不新建第二套 version。
-
-**明确决定：不承担旧安装/偏好迁移。** 目前产品仅项目所有者本人使用，因此：
-
-- 不做 `.moqi` → `.fusionenhanced` 的数据/preference/shared-preferences/数据库迁移；
-- 不做旧 upstream preference migration；不设计双 package 共存升级机制；
-- Android 将 `org.fcitx.fcitx5.android.moqi` 与 `org.fcitx.fcitx5.android.fusionenhanced` 视为不同 App，需要全新安装，这是**接受的结果**。
-- 同一条新的 `.fusionenhanced` 发布线之间仍按 D025 用固定签名密钥覆盖升级。
-  （2026-10-05 修订：该归属由 D058 supersede——`.fusionenhanced` 线使用其新建立的固定签名身份，
-  不再沿用 D025/`CN=MoQi Release`；D025 仅继续作为历史 `.moqi` 发布线的权威签名决定。）
-
-范围边界：仅改 Android 安装身份。`MoQi` Auxiliary Filter 功能名、码表、config keys、
-`feature/moqi-filter` addon 分支、workflow 文件名以及历史 commit/Release/证据（含
-`docs/x-asr-model-integration.md` 的 v0.1.3.7 记录与 `repository-rename.md`）**不追溯改写**，
-也不因 branding 而全局替换 “moqi”。manifest 内 `${applicationId}` 占位符
-（custom permissions、`provider` / `cropper.fileprovider` / `androidx-startup` authorities、plugin MANIFEST action）
-与所有 `BuildConfig.APPLICATION_ID` 引用随有效包名自动移动，无需逐处手改，且彼此自洽。
-插件（`org.fcitx.fcitx5.android.plugin.*`）沿用既有无后缀 package 身份，本次不调整其 IPC 兼容模型。
-
-## D055 — Model A 为 Fusion Enhanced 正式 Voice 产品架构
-
-**状态：Accepted as target architecture（2026-10-04；细化并统一 D027/D033/D034/D053 的 top-level provider 语义）**
-**实现状态：IMPLEMENTED（最小一致批次）/ SOURCE-LEVEL VALIDATED / DEVICE VALIDATION DEFERRED（Android commit `21f8b2ad`，分支 `contribution/fusion-enhanced-identity-naming-r8`）**
-
-Voice 触发与 provider 选择采用单一 top-level dispatch：
-
-```
-Voice Trigger (Mic / Long-press Space)
-        ↓
-ONE configured Voice Provider  ←  VoiceSelectionStore.current 是唯一 top-level provider truth
-        ├─ External Android Voice Input   (preferredVoiceInput：仅其下属 external voice IME/subtype 配置)
-        └─ In-IME ASR (System ASR / Local / Managed / Self-hosted) → VoiceBackend → VoiceInputFlow
-```
-
-职责边界：
-
-- `VoiceSelectionStore.current` = 唯一 top-level configured provider truth。
-- `preferredVoiceInput` = External Android 下属配置，只表示 external Android Voice IME/subtype，不作为内部 ASR provider ID（沿用 D053）。
-- `VoiceInputFlow` 只负责 in-IME ASR 的 session/lifecycle/composition/final commit/cleanup。
-- **External Android Voice Input 不强行经过 `VoiceInputFlow`。**
-- Mic 与 Space 都是纯 Voice Trigger，进入同一 top-level dispatch。
-
-产品决策（固化；最小一致批次已在 source 层实现）：
-
-- **B 默认 Provider**：Fresh install / 清空数据后，继续遵循既定隐私与推荐原则；**不因 External Android Voice IME 存在就自动选择 External**；“一键推荐”优先合格 Local ASR（沿用 D034/D045/D050 推荐资格逐项检查）。
-- **C External 不参加一键推荐**：External Android Voice Input 只由用户主动选择，理由是它把输入控制权交给外部 IME，其 UI/隐私/数据流不由 Fusion 控制。
-- **D External 消失/不可用**：已选 External Voice IME 后该 IME 不可用时，不静默切换到其他 External/System/Local/任意 Provider；保持 configured provider 语义，触发时给出明确 unavailable 提示并引导进入 Voice Settings。若 subordinate preference 明确表达 upstream 原有 “System default external voice input” 语义，则保留 upstream 自身选择语义，不额外发明 provider fallback。
-- **E System ASR runtime failure**：本轮不为 vivo System ASR bug 修改 D035/fallback policy；先查清真正 runtime error，不用 fallback 掩盖 bug。
-- **F 实现顺序**：先在 Fusion Enhanced 产品中实现正确架构 → 本地验证 → 真机验证 → regression 验证；之后再从完整、工作的 Fusion 产品做 subtractive extraction → upstream PR1（对齐 D053），不为 PR1 显小而扭曲产品架构。
-
-### 实现记录（2026-10-04，Android commit `21f8b2ad`）
-
-按 F 顺序完成“实现 + 本地（source-level）验证”，真机验证仍 DEFERRED：
-
-- `VoiceSelection.current`（唯一 top-level truth，持久化为单串 `voice_current_service`）新增
-  `AsrServiceId.External` 作为 top-level provider 值；**刻意不加入 `entries`**，因此固定 in-IME
-  服务集、enablement 分桶、migration 与既有 selection 测试不受影响。
-- 分派：`resolveCurrentService` 对 External 返回 `AsrResolution.ExternalAndroid`（无 backend），
-  `voiceStartStep` 映射为 `VoiceStartStep.StartExternal`；`VoiceInputComponent.start()` 复用上游
-  `InputMethodUtil.findVoiceSubtype(preferredVoiceInput) → switchInputMethod(...)`，**不进入
-  `VoiceInputFlow`/`VoiceBackend`**。Mic 与 Space 仍共用同一 `start()` dispatch。
-- 可用性（§9/§10）：trigger 在 provider 已配置时保持可见；触发时若外部 IME 已消失，给明确
-  `voice_external_no_ime` 提示并进入 Voice Settings，绝不静默换 provider。
-- 推荐（§8）：`recommend()` 不产生 External；设置页不自动选择 External（决策 C 落实）。
-- D035 fallback（§11）：`fallbackTarget` 对 External 直接返回 null；且 External 从不产生
-  `Ready(service)`，fallback 路径结构上看不到 External，System 行为未被触碰。
-- `preferredVoiceInput` 保持为 External 的下属 external voice IME/subtype 选择器，空串 =
-  upstream “System default”；不作为内部 ASR provider ID（决策 D / D053）。
-- Voice Settings：current-service 选择器把 External 作为 top-level 候选（受“存在外部 voice IME”
-  probe 约束）；选中 External 后出现下属 “Preferred voice input” 行，用
-  `InputMethodUtil.listVoiceInputMethods()` + “System default” 构建。
-- source-level 验证：`testDebugUnitTest` classes=49 total=309 failures=0 errors=0 skipped=12；
-  `compileDebugKotlin`/`compileReleaseKotlin`/`assembleDebug`/`assembleRelease`/
-  `compileDebugAndroidTestKotlin`（arm64-v8a）均 BUILD SUCCESSFUL；applicationId
-  debug=`.debug`、release=`.fusionenhanced` 不变；sherpa R8 keep rule 不变；无 submodule/gitlink、
-  dictionary/MoQi/LibIME 回归 diff。
-- **DEFERRED（不得推断为通过）**：真机 External 切换、System default 解析、IME 消失显式反馈、
-  Local 三个模型运行时验收、vivo System ASR trace、Mic/Space 手势与 password 场景设备回归。
-
-### UI Supersession 记录（2026-10-04，Android commit `e4e2c47e`）
-
-本记录 supersede 上方实现记录中两条 UI 决策，Model A 架构本身（top-level dispatch、
-`current` 唯一 truth、External 不进 flow、D035 不变）不受影响：
-
-- **旧**：current-service 选择器把 External 作为 top-level 候选“受存在外部 voice IME 的
-  probe 约束”（`externalAndroidAvailable = listVoiceInputMethods().isNotEmpty()`）。
-  **新**：External 是无条件列出的 top-level configured provider。配置可见性不依赖运行时
-  IME 发现；Configured / Enabled / Selectable / Available / RuntimeUsable 保持分离，
-  “发现不到具体 IME”只在触发边界处理（既有 `voice_external_no_ime` 提示 + 进入 Voice
-  Settings，决策 D 原文不变）。不允许用 probe 把 provider 从配置 UI 抹除。
-- **旧**：选中 External 后在 Voice Settings 内出现下属 “Preferred voice input” 行（重复实现
-  的 IME 发现 picker）。**新**：`preferredVoiceInput` 回到 upstream 原位置与相对顺序
-  （Settings → Virtual Keyboard，`keepLettersUppercase` 与 `expandKeypressArea` 之间），
-  复用上游 `voiceInputPreference` + `ManagedPreferenceUi.VoiceInputList`（含 “System
-  default” 与 `_not_available_` summary）。状态归属与 UI 位置分离：该值仍是 External 的
-  下属配置（D053 语义不变），但不因 “current==External” 才显示，也不因此搬进 Voice 设置。
-  Voice Settings 中的下属行与其 helper 已删除。
-- 该行不设 `enableUiOn` gate：upstream 原 gate 依赖的 `showVoiceInputButton` 已在
-  `17250b3d` 被 ToolbarAction 状态取代，恢复动态置灰需要新的跨 category plumbing，超出
-  最小闭包；故按 normal upstream visibility 语义常显。
-- 验证（source-level）：`testDebugUnitTest` total=323 failures=0 errors=0；
-  `compileDebugKotlin`/`compileReleaseKotlin`/`compileDebugAndroidTestKotlin` BUILD
-  SUCCESSFUL；`git diff --check` clean。Model A 测试改为断言新不变量（External 在发现为
-  空时仍列出；in-IME 候选规则不变）。
-- **DEVICE VALIDATION 仍 DEFERRED**：无 vivo 设备，本节不改变任何设备结论。
-
-## D056 — Local ASR Release 运行时根因（R8 移除 JNI 构造函数）与修复边界
-
-**状态：CLOSED / VERIFIED（2026-10-05）。** 根因 VERIFIED、修复 STATIC/BUILD VERIFIED、真机 DEVICE VERIFIED
-（vivo X100 Pro,三 Local 引擎逐一复测 + Space 长按回归全绿,见下方设备验收结果）。
-
-原始现象（历史,保留）：Release APK 中三个 Local ASR（X-ASR Offline / X-ASR Streaming 960ms / FunASR Nano）
-共同抛出 `RuntimeException: Failed to get field ID for maxActivePaths`；Debug/Test APK 不复现。
-
-初版根因（历史,保留）：Debug/Test 与 Release 共用
-`com.k2fsa.sherpa.onnx:sherpa-onnx:1.13.8@aar`，仅 Release 经 R8/minify。该 AAR consumer
-proguard 规则为空（`proguard.txt` = 0 字节）；native JNI 按 Kotlin 字段源名读取
-`OfflineRecognizerConfig.maxActivePaths` / `OnlineRecognizerConfig.maxActivePaths`
-（各 ABI 的 `libsherpa-onnx-jni.so` 内嵌 `Failed to get field ID for maxActivePaths` 字符串），
-而这两个字段在 Kotlin 侧仅经 getter/setter 访问，被 Release 的 R8 shrink 移除。
-
-初版修复（历史保留,后由本条 2026-10-05 修订放宽并 supersede 其边界）：`app/proguard-rules.pro` 增加最小边界
-`-keepclassmembers class com.k2fsa.sherpa.onnx.** { <fields>; }`，只保留该单一第三方 JNI 库的字段
-（不关 R8/minify、不 keep 全应用、不扩到无关包、不加无关 native keep 规则）。当时经审阅为可靠最小边界；
-更窄的按类/按字段清单会因 sherpa 镜像众多 config 字段而不“同样可靠”。（该字段-only 边界事后被设备证伪,见下。）
-
-状态（当时）：源码根因 VERIFIED；初版修复的结构性验证 = 重建 Release optimized DEX 中两个 `maxActivePaths` 字段仍在；
-**真机 Local ASR 尚未 VERIFIED**，未做设备测试前不得写 “runtime fixed”。见 `/tmp` 报告与验证步骤。
-System ASR 在 vivo 上 “flicker→idle” 已由后续设备 A/B 定位（激活的 RecognitionService=vivo Copilot 时
-ERROR_CLIENT(5)，切 Google 服务同一二进制即 GOOD；非 Fcitx 回归），处置见 D057；本条仍不改 SystemAsrBackend 架构。
-
-2026-10-04 于分支 tip（应用码 `9a31512c` / HEAD `99373594`）复审维持上述结论：三份独立证据一致 ——
-R8 `configuration.txt` 含该 keep 规则；`classes.dex` 中 `Offline/OnlineRecognizerConfig.maxActivePaths`
-均以源名存在；`usage.txt` 收缩账目中 sherpa 移除项全部为方法级（`maxActivePaths` 0 次出现，字段未动）。
-当次 Release 候选为未签名产物（包名 `org.fcitx.fcitx5.android.fusionenhanced`），真机验收需先以签名身份签名安装。
-（2026-10-05 修订：本句原写“按 D025 的 `SIGN_KEY_*` 签名”，该签名前置已由 D058 supersede——fusionenhanced
-候选使用 D058 新固定身份，`SIGN_KEY_*` 消费机制不变。）最终状态 = RELEASE STATIC/BUILD VERIFIED + DEVICE RUNTIME PENDING。
-
-（2026-10-05 设备实证与边界修订）：上述 `maxActivePaths` 字段级修复的**静态判据不充分**。签名 release/minified
-APK（HEAD `b73dbcff`，v0.1.3.7-11，包名 `.fusionenhanced`）在 vivo X100 Pro 上**三个 Local ASR 全部失败**：
-Mic/Space 触发、Listening UI、真实波形均正常，失败发生在本地识别阶段（transcript commit 前）。FunASR Nano 决定性日志：
-`NoSuchMethodError: no non-static method Lcom/k2fsa/sherpa/onnx/OfflineRecognizerResult;.<init>(Ljava/lang/String;
-[Ljava/lang/String;[FLjava/lang/String;Ljava/lang/String;Ljava/lang/String;[F)V`，链
-`libsherpa-onnx-jni.so → OfflineRecognizer.getResult → LocalAsrEngines.funAsrNano → LocalAsrBackend.captureAndRecognize`，
-ART abort。根因：该 AAR `proguard.txt` 为 0 字节；native 用 `FindClass`+`NewObject` 按源名构造 result 类
-（`OfflineRecognizerResult`/`OnlineRecognizerResult`/`SpeechSegment`/`KeywordSpotterResult`/…），而这些构造函数在
-Kotlin 侧从不 `new`（仅 `getResult(stream).text` 取 getter），故 `-keepclassmembers { <fields>; }` 只保字段、未保 ctor，
-被 R8 当作死代码 shrink。修复（提交 `4e14cde9`）：将边界放宽为 `-keep class com.k2fsa.sherpa.onnx.** { *; }`
-（类 + 全部成员），维持“按包整体可靠、胜过随版本漂移的窄清单”的既有原则；minify/shrinkResources 保持开启，
-运行时逻辑/模型选择/provider 架构不变。重建 release APK 静态验证：签名者 SHA-256 =
-`A5:15:B7:4A:C4:C3:84:51:54:E1:7C:AD:D1:3D:02:75:BE:70:01:DD:CF:2B:97:2A:4F:2F:06:1A:FD:26:89:0C`（D058）；
-`configuration.txt` 含新 keep；`classes.dex` 中 `OfflineRecognizerResult.<init>` 以崩溃现场同一描述符仍在，
-`OnlineRecognizerResult.<init>(...)` 与 `maxActivePaths` 亦在，`usage.txt` 无 `OfflineRecognizerResult` 移除项；
-`libsherpa-onnx-jni.so`/`libonnxruntime.so` 等 native 库仍打包。历史证据不改写：此前“字段仍在”结论在其判据下成立，
-但其不足以覆盖 JNI 构造函数面。
-
-设备验收（2026-10-05，vivo X100 Pro,安装修复后签名 release/minified APK;
-APK SHA-256 `2729120390d387e74caf0e4c8899582d0ad279b8dc7e9b9913819739e9db4054`）;
-签名者证书 SHA-256 = D058 canonical `A5:15:B7:4A:...:89:0C`）。**全部必测项通过**：
-- X-ASR Offline INT8：Mic 首会话 PASS；紧随的第二次会话 PASS。
-- X-ASR 960ms Streaming INT8（OnlineRecognizerResult 路径）：首会话 PASS；第二次会话 PASS。
-- FunASR Nano（崩溃现场引擎）：首会话 PASS；第二次会话 PASS。
-- 共享触发回归：Space 长按 Local ASR 会话 PASS。
-- Managed ASR smoke（如 Doubao）：PASS。
-每个 Local 测试均为端到端：Listening → 真实语音 → 识别 → 非空且合理 transcript → commit → Idle/可复用;
-logcat 无 `NoSuchMethodError`、无 `Failed to get field ID`、无 `AndroidRuntime` FATAL。
-
-**状态 = 根因 VERIFIED + 修复 STATIC/BUILD VERIFIED + DEVICE VERIFIED → CLOSED。**
-
-工程教训：Release JNI 集成必须以运行时验证收口,源码级/静态成员核对不足以覆盖 native 按名字/签名
-访问、而 R8 无法从 Java/Kotlin 调用图推断的 ABI；不得据此关闭 R8/minify。
-
-## D057 — Android System ASR 运行时失败必须可见可诊断（vivo A/B 实证后的边界）
-
-**状态：CLOSED。** 源码 VERIFIED、测试 VERIFIED（330/12/0/0）、CI VERIFIED（run 37254123119
-@ `b73dbcff` SUCCESS）、设备 VERIFIED（见下方 2026-10-05 vivo X100 Pro 实测）。
-
-设备实测（2026-10-05，vivo X100 Pro，安装 `b73dbcff` 的 CI Test APK（run 37254123119），
-vivo Copilot 为当前激活 RecognitionService）：
-1. 触发 Android System ASR → 显示新的用户可见失败提示且包含错误码 5 → PASS；
-2. 失败后语音正常回到 Idle，输入法保持可用、可再次发起语音输入 → PASS；
-3. `session-audit.log` 记录到预期的仅元数据系统错误 `class=system code=5` → PASS。
-根因表述维持不变：同一条历史-good L0 二进制（`fb3b0c26`）在 vivo Copilot 服务下
-ERROR_CLIENT(5) BAD、仅切换 Android RecognitionService 到 Google 后 GOOD、期间无任何
-Fcitx 代码改动 → 未证明存在 Fcitx 源码回归；RuntimeUsable 与 Configured/Selectable/
-Available 分离；Redmi error-9 仍是独立历史故障形态，不得混同。
-
-设备实证（vivo X100 Pro，同一条历史-good L0 二进制 `fb3b0c26`，无任何 Fcitx 代码改动）：
-系统 `voice_recognition_service = com.vivo.ai.copilot/.framework.wakeup.CopilotRecognitionService`
-时 SpeechRecognizer 报 `ERROR_CLIENT (5)` → BAD；临时把系统 RecognitionService 切到 Google 的
-RecognitionService → 同一二进制 GOOD。结论：**未证明存在 Fcitx 源码回归**；Android System ASR 的
-可发现性/可用性 ≠ RuntimeUsable，RuntimeUsable 取决于当前激活的 RecognitionService。Redmi 历史
-失败是不同根因（Xiaomi RecognitionService 权限 / error 9），不得与本案混同。
-
-决定（最小语义修正，提交 `b73dbcff`）：
-- `SystemAsrBackend` 错误映射中 `ERROR_CLIENT` 不再并入 `Silent`，改走既有 `VoiceError.System(code)`，
-  沿既有链路弹出携带数字诊断码（5）的用户提示并写入 F1 审计（`class=system code=5`，仅元数据）；
-- 合法静默结果保持不变：`ERROR_NO_MATCH`、`ERROR_SPEECH_TIMEOUT` 仍为 `Silent`；
-  `ERROR_INSUFFICIENT_PERMISSIONS` 仍走权限流程；其余系统码维持既有 `System(code)` 行为；
-- 用户文案只说“Android 系统语音识别失败（错误 %1$d）”，提示检查系统语音识别设置或在“语音输入”
-  设置中改用其他语音服务；不得向普通用户展示实现术语，数字码保留在提示与诊断中。
-
-边界（红线）：Fcitx **不得**静默改写 `Settings.Secure.VOICE_RECOGNITION_SERVICE`，**不得**实现
-vivo/Xiaomi/Google 等 ROM 特定的 RecognitionService 选择器或条件分支；不得为触发 D035 把 System 错误
-伪装成 `VoiceError.Service`（fallback 资格不变：仅建立会话前的 Service 错误可回退一次）；不得改动
-SpeechRecognizer 创建、intent、音频所有权与 provider 解析。本案是“可见性与可诊断性”修复，不是
-vivo 变通方案；provider 仍由用户决定（Model A / D055 不变）。
-
-## D058 — Fcitx5 Fusion Enhanced 建立独立永久发布签名身份（supersede D054/D056 的 D025 签名归属）
-
-**状态：Accepted（2026-10-05）。** 本决策不改写历史事实：D025 对其权威范围（历史 `.moqi`
-发布线）继续有效；被 supersede 的仅是 D054 末条与 D056 增补中“`.fusionenhanced` 线沿用 D025
-签名密钥”这一归属。
-
-背景与前提（均有实证）：
-- D025 密钥对应已发布产品线 `org.fcitx.fcitx5.android.moqi`，证书 `CN=MoQi Release`，
-  证书 SHA-256 `c90122d652b624fae7040a7869efc1d6cd1506d2803d58b19ff4599d2abbada7`
-  （最早 v0.1.3-moqi.1 @ `f16be460` 与最新 v0.1.3.7 @ `b31ae5f7` 公开 APK 验签一致）；
-- 用户确认、仓库证据一致：`org.fcitx.fcitx5.android.fusionenhanced` 在 D054（`402ca654`）
-  收敛包名之后从未正式发布于任何 GitHub Release（全部 8 个既有 Release 的 APK 均为 `.moqi` 包）。
-
-决定：Fcitx5 Fusion Enhanced 在首个正式发布之前建立**新的永久发布签名身份**，不继承 D025：
-
-- PKCS#12：`fusion-enhanced-release.p12`，alias `fusion-enhanced-release`；
-- 证书 DN：`C=CN, O=choicky, CN=Fcitx5 Fusion Enhanced Release`（自签）；
-- 密钥/签名算法：RSA 4096 / SHA256withRSA；有效期 2026-10-05 → 2056-09-27（30 年，长期身份）；
-  serial `5ee054c6c10a529c`；
-- **canonical Fusion Enhanced 发布签名者指纹（证书 SHA-256）**：
-  `A5:15:B7:4A:C4:C3:84:51:54:E1:7C:AD:D1:3D:02:75:BE:70:01:DD:CF:2B:97:2A:4F:2F:06:1A:FD:26:89:0C`
-  （keytool 与 openssl 双路一致）；
-- 一切 `.fusionenhanced` 产物的签名验证以该指纹为准，不符即 HARD STOP。
-
-实现边界：完全复用既有 `SIGN_KEY_*` 机制（`ProjectExtensions.kt` 的 `SIGN_KEY_FILE` /
-`SIGN_KEY_BASE64` / `SIGN_KEY_PWD` / `SIGN_KEY_ALIAS` 接口与 `release-apk.yml`），不引入任何
-新签名框架、不改 AGP signingConfig 代码路径。GitHub Actions `choicky/fcitx5-android` 的
-`SIGN_KEY_BASE64` / `SIGN_KEY_PWD` / `SIGN_KEY_ALIAS` 已于 2026-10-05T03:49Z 更新为新身份
-（值经 stdin 管道写入，从未进入终端输出/git/文档）；`DEBUG_SIGN_KEY_*` 未触碰。
-由此 GitHub 侧 MoQi 旧密钥副本被覆盖且不可找回（Actions secrets 只写不可读）；`.moqi` 历史线
-如需再发布，须从 D025 离线存档重新导入 `SIGN_KEY_*` 并先核对旧指纹。
-
-密钥保全（延续 D025 风险条款）：私钥与口令永不进入任何 git 仓库、`/tmp`、终端输出或 CI 日志；
-主副本存于开发机仓库外私有路径（`~/.signing/`，目录 700 / 文件 600），口令以 0600 文件与
-GitHub secrets 两份存在；D025 旧密钥文件不改动、不删除，按其存档位置（OracleKR3
-`...\default-workspace\signing\`，Phase-3 归档记载）保持原样。（2026-10-05 更新：用户已确认完成
-Fusion Enhanced 密钥的**设备外独立备份 = USER-CONFIRMED COMPLETE**；该结论为用户自证,本 checkpoint
-未独立查验私钥/口令内容,亦不得据此暴露或检查任何私有材料。）
-
-约束：**未来所有 Fusion Enhanced 正式 Release 必须保持该签名身份**（覆盖升级连续性的前提），
-除非另行设计并批准正式的 Android 签名密钥轮换程序；`.moqi` 与 `.fusionenhanced` 是两个不同
-App（D054），二者签名身份自此永久分离。
-
-## D059 — Local ASR 模型分发/下载资格收口（four-rights closure；final closure of the A/B/C research-phase distribution record）
-
-**状态：Accepted（2026-10-05）。本条收口 D037/D045/D050 中关于“研究/测试构建”分发口径的全部遗留，
-是后续 agent 关于当前三模型分发资格的单一权威记录；除下方 reopen conditions 外不得重复调查。**
-
-### 背景（实证，非推测）
-
-当前 Local 三模型（X-ASR 离线 INT8、X-ASR 960 ms 流式 INT8、FunASR Nano）已由 D050 确立为
-**产品模型集**：`production=true`、`recommendationEligible=true`，debug/release 均从**作者/发布方
-自己的固定公开上游**按需下载，项目不托管、不镜像、不内置权重。Android 目录在
-`LocalModelInstaller.kt` 曾携带旧 A/B/C 研究阶段（D037）遗留的两个布尔：
-- `distributionApproved`：经核查**从不 gate 下载**（下载 gate 是 `downloadOffered(BuildConfig.DEBUG)`），
-  唯一作用是 `VoiceSettingsFragment` 追加一条 “Research/private testing only; public in-product
-  distribution approval is not established.” 的横幅。因三模型都沿用默认 `false`，**release 构建会对
-  正式发布的产品模型错误显示“仅供研究/个人测试”**，与 D050 直接矛盾。
-- `testBuildDownloadOnly`：三模型都未置 `true`，是“退役 model A”提交 `81eb115d`（2026-10-01，早于
-  D050）留下的**当前无效**残留字段。
-
-结论：`distributionApproved=false` **不是**当前模型的“真实资格歧义”，而是研究阶段的**语义过载 +
-陈旧文案**——它把“独立许可证/来源审计是否完成”与“产品内下载是否获批”混为一谈。控制器文档
-（D050、`THIRD_PARTY_LICENSES.md` §“Current distribution interpretation”）早已把这两件事分开记录，
-Android 侧文案落后于该共识。
-
-### 四项法律上彼此独立的权利（三当前模型逐项一致）
-
-| 权利 | 当前三模型的权威答案 | 依据 / 代码事实 |
-|---|---|---|
-| **① 内置权重进 APK（bundle）** | **NOT APPROVED（项目主动不做）** | D050“权重不内置 APK”；无 build 路径嵌入模型。bundling 会使项目成为权重的再分发者，而上游许可证据（archive 无 LICENSE/NOTICE、Nano 导出源无 LICENSE、训练来源未核）不足以肯定授予该再分发。 |
-| **② 项目镜像 / 重新托管（mirror / re-host）** | **NOT APPROVED（项目主动不做）** | D050“项目不托管、不镜像”；`downloadBase`/`archiveUrl` 均指向上游原站（huggingface.co / github.com k2-fsa release），无项目侧托管。 |
-| **③ 应用内固定上游下载入口（in-app upstream download）** | **APPROVED（本条要交付的产品能力）** | D050 所有者确认的发布口径；`downloadOffered(testBuild=false)=true` 对三模型成立（`LocalModelInstallerTest` / `XAsrModelTest` 已 pin）。用户直接从作者公开上游按其自身条款拉取，项目不转发、不存储权重。 |
-| **④ 手动导入（manual import）** | **PERMITTED（非项目分发行为）** | `ModelAction.Import` 无 gate；`ModelJobs.import` 接受用户自选文件、按名匹配并以 pinned SHA-256 校验。用户对自己合法取得的文件负责，项目不为此作分发决定。 |
-
-“独立法律审计是否完成”不属于上述任何一项的批准，也不 gate ③；它是一个**如实披露的未完成事项**，
-保留在模型详情文案中（见下），既不写成审计 PASS，也不当作 ③/发布线的笼统阻断项（D050）。
-
-### Android 元数据更正（最小可维护，非新合规框架；Android `2aa3a999` 于 `contribution/fusion-enhanced-identity-naming-r8`）
-
-- `distributionApproved` → 重命名为 **`licenseAuditComplete`**，语义即“独立许可/来源审计是否完成”，
-  三模型仍默认 `false`（不猜测、不声称批准），并在文档中明确它**不 gate 下载**；
-- 详情横幅文案 `voice_model_research_status` → **`voice_model_audit_pending`**：如实说明“从作者固定
-  公开上游获取、本应用不内置也不镜像、上游许可与来源证据尚未经独立审计”，不再把产品模型称为
-  “仅供研究/个人测试”；
-- FunASR Nano 的 `limitation` 去掉陈旧“Research model;”前缀，保留 34–39 s 空 final 实测限制；
-- `testBuildDownloadOnly` 保留为**保留字段**（当前无条目使用），注释由“描述 model A 现状”改为
-  描述机制；`LocalModels.kt` / `ModelRows.kt` 中把机制说成 model A/D037 现状的注释同样更正。
-- **未改动**：任何 URL、revision、asset id、SHA-256、size、条目顺序、下载/导入运行时行为。
-
-### 最终决定
-
-首个 Fusion Enhanced Release 的应用内模型下载入口交付的是权利 ③，而 ③ 已由 D050 明确批准且当前
-release 构建已实际提供（`downloadOffered` 从未依赖 `distributionApproved`）；④ 是用户自身行为；①②
-项目主动不做且许可证据不足以肯定授予再分发，与 ③ 无关。故本项不阻断发布线。
-
-**LOCAL MODEL DOWNLOAD UI FOR FIRST FUSION ENHANCED RELEASE: GO**
-
-### Reopen conditions（仅以下情形才重新调查；否则四项答案持续有效，不得重翻 A/B/C 研究阶段结论）
-
-1. 某模型的 artifact/revision/URL/SHA-256 改变（上游字节不同）；
-2. 上游许可证或授权声明改变、或被进一步澄清；
-3. 下载入口改指向非作者原主的宿主（触及权利 ②/镜像）；
-4. 项目开始镜像 / 重新托管权重（改变 ②）；
-5. 项目开始在 APK 内置权重（改变 ①）；
-6. 出现与当前记录矛盾的**具体**法律证据（原始 LICENSE/NOTICE、导出/训练来源链等）。
-
-逐模型许可证据细节（作者声明、archive 缺 LICENSE/NOTICE、导出/训练来源缺口、pinned id/hash）继续以
-`docs/THIRD_PARTY_LICENSES.md` 为准；本条只裁定四项权利与 UI 发布资格，二者不互相覆盖。
-
-## D060 — 首发稳定基线与权威冻结（First Release Stable Baseline & Authority Freeze）
-
-**状态：Accepted（2026-10-05）。** 纯文档/权威收口，**零产品行为改动**。目的：在首个正式 Fusion Enhanced
-发布之前，把“最新源码 + 既有已验证证据”收敛成**一个当前产品基线 / 一个首发范围 / 一个功能状态矩阵**，
-并显式 supersede 陈旧 current-state 记录，杜绝 D059 所暴露的失效模式（陈旧字段导致已决问题被反复重查）。
-
-### 权威落点（single source of truth）
-
-- 当前基线、四大家族范围、**首发真值表**、Local/Voice/System/D035/F1/Model-Manager/MoQi 冻结边界、
-  范围耦合与分类规则：**`docs/first-release-baseline.md`**（唯一矩阵，其余文档只指针引用，不复制）。
-- 操作/权威/重开规则：**AGENTS.md**（新增 CLOSED EVIDENCE RULE 与 VALIDATION-DEBT vs RELEASE-BLOCKER 分类）。
-
-### 冻结的当前产品基线（source-verified）
-
-- 产品线：`choicky/fcitx5-android` `contribution/fusion-enhanced-identity-naming-r8` @ `2ba3a999`
-  （applicationId `org.fcitx.fcitx5.android.fusionenhanced`）。该线是**权威超集**：经祖先核验包含
-  词库、Toolbar、Local 三模型、D056 修复与旧“字典线”tip `9163ec96`。
-- addons：开发 gitlink `19f06898`（upstream，无 MoQi）；**发布固定 pin `9b3448e6`**（分支
-  `fix/punctuation-candidate-pairs`，含 MoQi Auxiliary Filter，经 `release-apk.yml` 有意不跟随分支）。
-- LibIME：upstream `fcitx/libime`，**项目无 LibIME fork**。
-- 签名身份：D058 canonical 证书指纹（公开证书现场复核一致），私钥/口令永不记录。
-
-### 显式 supersede 的 current-state 记录（历史保留，不作当前真值）
-
-1. `ROADMAP.md` “### 当前实现基线（跨仓库）” 以 `phase5c-dictionary-manager @ 9163ec96` 为 Android 基线
-   —— 由本 D060 / `first-release-baseline.md` 取代为 `contribution/fusion-enhanced-identity-naming-r8 @ 2ba3a999`。
-2. `ROADMAP.md` “### 当前开发基线（2026-10-03）” 表（fusion `eb0b4e93` / android `phase5c-dictionary-manager @
-   9163ec96` / addons `master 61474bd3`）—— 三行 current-state 均由本 D060 取代；旧 SHA 保留为历史。
-3. `voice-closure-checkpoint.md` §4 “基线口径差” 观测 —— 由本 D060 收口。
-4. D055 增补中 “真机行为仍 DEFERRED” 的 External Android Voice：作为 VALIDATION DEBT 记入真值表，不再当未实现。
-
-“Current development baseline / Release reproducibility baseline / Historical phase checkpoint” 三分性质继续有效，
-但**当前开发基线**唯一值即上表产品线。Release reproducibility（`v0.1.3-fusion.6` = Android tag `e48896ac` +
-addons pin `9b3448e6`）仅用于复现该历史 Release，不是当前 HEAD。
-
-### 冻结结论
-
-四大家族（MoQi / Voice / Toolbar / Dictionary Manager）均 IMPLEMENTED 且已在首发范围；所有未完成项均为
-VALIDATION DEBT（设备/服务器/凭据矩阵或扩展用例），**无一达到 RELEASE BLOCKER 的具体证据门槛**。
-LLM / 文本后处理具体实现 = NONE / DISABLED，非首发家族；provider-neutral optional seam 已由 Android merged PR #15 实现并保留，Local-LLM 路线已停止，Cloud LLM 未实现且当前不在开发方向。D017 的 2026-10-13 部分 supersession 取代本句旧的“无 seam”含义；D059 reopen、D056 教训、D057/D018/F1 边界、
-§13 MoQi 语义、D035 语义均按既有条目冻结，不重开。
-
-**FIRST FUSION ENHANCED RELEASE BASELINE: FROZEN**
-
-下一步是有界 Release-Candidate 验证（`first-release-baseline.md` §2 VALIDATION DEBT 清单 + §6 范围耦合裁定），
-不在本任务启动。本任务不建 tag / GitHub Release / workflow / PR / merge，不改签名或 provider 行为。
-
-## D061 — 首发接受 D051 成对标点扩展（§6 范围耦合裁定收口）
-
-**状态：Accepted（2026-10-05；核心裁定“保留 pin `9b3448e6`、首发有意包含 D051”已由 D066 同日 supersede）。** 纯权威/范围收口，零产品行为改动。仅裁定 `first-release-baseline.md` §6
-（D060）显式留给 RC 的范围耦合；不重开 D060 其余冻结边界（Voice 架构、D056–D059、D035、F1、Model
-Manager、Self-hosted、LLM、Dictionary Manager、Toolbar、MoQi 架构均不变）。
-
-> **SUPERSESSION（D066，2026-10-05）：** D062 设备验收在 RC.1 产物上观察到两项 D051 成对标点 FAIL，
-> 裁定为 INVALID FIRST-RELEASE SCOPE；本条“不为排除 D051 而 re-pin”的裁定被推翻——发布 pin 已更正为
-> `47401b04681615024e4cf87c4797005b26e202ff`，首发**排除** D051 标点扩展。本条 SOURCE FACT 中的耦合事实
-> （`9b3448e6` 同时携带 MoQi 与 46-row 实验表）与行数更正（41→46）仍为真，全文保留为历史证据。
-
-- **SOURCE FACT（2026-10-05 现场核验）：** 发布 pin `9b3448e6b3889e4281ea39e334c7e5714f8a8b12`
-  （`choicky/fcitx5-chinese-addons` 分支 `fix/punctuation-candidate-pairs`）同时携带 (a) MoQi Auxiliary
-  Filter（`modules/pinyinhelper/{moqi.cpp,moqi.h,moqima-gb18030.cmake}` + `third_party/moqima-tables.LICENSE`）
-  与 (b) D051 成对标点扩展：`modules/punctuation/punc.mb.zh_CN` 在该 pin 内由 upstream 41 行基线扩至
-  **46 行**（净增 5 行：〈〉、〖〗、〔〕、«»、‹›；并为此前只有开符的 `<`《、`[`【/「/』/❲/［、
-  `{` 等 trigger 行补齐闭符）。`release-apk.yml` 与 `moqi-test-apk.yml` 的
-  `env.ADDON_COMMIT` 均断言该 SHA（`checkout --detach`）。D060 §6 原文“由 upstream 39 行扩至 44 行”
-  为行数笔误，以本条更正；耦合结论不受影响。分支 tip `47401b0`（punctuation: restore upstream zh_CN
-  profile）晚于该 pin，但不改变 detached pin 的构建内容。
-- **决定：首个 Fusion Enhanced 正式发布会保留当前 addons pin `9b3448e6`，有意包含 D051 成对标点扩展；
-  不仅为排除 D051 而 re-pin。** 只有当有界 RC 验证产出具体回归证据时，才允许另行作出 fix/re-pin 决定。
-- **状态口径：** Paired Punctuation / D051 = **INCLUDED IN FIRST RELEASE；IMPLEMENTED（随 pin）；有界
-  runtime 回归 = VALIDATION DEBT；RELEASE BLOCKER = NONE（除非 RC 发现具体回归）**。D051 不因此成为
-  第五个顶层产品家族；19 组 authoritative target set（D051 / REQUIREMENTS.md §5.1）与“不得静默扩展”
-  约束不变。
-- 旧 D051 “PAUSED / experimental table rolled back / runtime validation pending”措辞仅描述 structured-candidate
-  实验线与开发分支现状，不再被解读为“D051 被排除在首发之外”。
-- 本决定不声称任何尚未实际发生的编译、运行时、Pinyin/Shuangpin E2E 或 Android 真机验证。
-
-## D063 — 签名产物生产与精确产物晋升策略（Signed RC Production and Exact-Artifact Promotion Policy）
-
-**状态：Accepted / FROZEN（2026-10-05）。最小 workflow 改动已实施；未建 tag / Release / 未触发任何 workflow run。**
-
-- **背景问题：** D062 §4 留下的唯一未闭合自动化门——签名产物的生产路径，与“设备验收 → 发布同一产物”的
-  晋升语义。普通 agent 会话不可安全消费本地发布凭证（D062 期间策略拦截，未绕过、未读取任何私有材料）：
-  **`LOCAL_SIGNING = UNAVAILABLE_IN_CURRENT_SESSION` 是正常、受支持状态，不是缺陷**。
-- **SOURCE FACTS — 现状发布调用链（2026-10-05 实测 `.github/workflows/release-apk.yml` @ `2ba3a999`，164 行）：**
-  A. 无 `workflow_dispatch`，唯一触发 `on: push: tags: v*`。B. 不能只构建+签名而不发布 Release。
-  C. 签名（Gradle `assembleRelease` + `SIGN_KEY_*` secrets）与发布（末步 `gh release create`）在同一 job，无分离。
-  D. 签名 APK 从不作为 Actions artifact 上传，只进入 Release。E. 发布不二次构建，但 Release 总是随
-  tag-push 的那次重建顺带产生。F. 因此“设备验收产物不重建直接晋升”现状**不可能**：任何新 tag-push 都重建，
-  发布字节可能与验收字节不一致。G. 最小改动 = 同一 workflow 增加 dispatch + draft 暂存 + D058 硬断言；
-  零改动方案不成立，也无需重设计。
-- **SOURCE FACTS — 签名身份矩阵（Phase A.1，仅公开证书信息，`apksigner verify --print-certs` 实测）：**
-
-  | 产物 | 构建位置 | 签名来源 | 证书 SHA-256 | 状态 |
-  |---|---|---|---|---|
-  | 本地 Debug/Test（当前源码，无 `DEBUG_SIGN_KEY_*`） | Local | `fromProjectEnv("debug")` 返回 null → **未签名**（产物 `-debug-unsigned.apk`，apksigner `DOES NOT VERIFY`） | none | VERIFIED |
-  | CI Debug/Test | GitHub Actions | `DEBUG_SIGN_KEY_BASE64/PWD/ALIAS` → `CN=MoQi Debug CI` | `41705bc94f4226fffae96091b7ba36f2c055b62a93df4eb9589ca996a37c7a7e`（`21f8b2ad`/`9a31512c` 两产物一致） | VERIFIED |
-  | 本地 Signed RC | Local | D058（策略性不可用） | — | NOT PRODUCED |
-  | CI Signed RC（本决定机制） | GitHub Actions | `SIGN_KEY_BASE64/PWD/ALIAS` → D058 | 期望 `A515B74AC4C3845154E17CADD13D0275BE7001DDCF2B972A4F2F061AFD26890C`（workflow 已硬断言） | NOT PRODUCED（机制已冻结，未触发） |
-
-  **LOCAL_DEBUG_CERT == CI_DEBUG_CERT？NO。** 当前本地 debug 默认根本未签名（显式 null 覆盖 AGP 默认
-  `~/.android/debug.keystore` 路径）；历史上本地 `CN=Android Debug`（`56a81b91…`）亦异于 CI `CN=MoQi Debug CI`
-  （`41705bc9…`）。实际后果：CI debug APK 与本地 debug 构建同包名时互覆安装需先 uninstall
-  （`adb install -r` → INSTALL_FAILED_UPDATE_INCOMPATIBLE）；release 线不受影响（独立 `.fusionenhanced`
-  applicationId + D058 唯一权威）。现配置**有意只保证 CI debug/test 身份稳定**，不统一本地与 CI debug 身份；
-  统一需 owner 侧注入同一 `DEBUG_SIGN_KEY_*`，本任务不修改任何签名配置或 Secrets。
-  **（快照注记：本行结论已由同日 D064 的统一 Debug 身份迁移取代；本条目保留为 2026-10-05 D063 时点事实。）**
-  历史谱系（非权威）：v0.1.3.7 CI release 资产签名 `CN=MoQi Release`（`c90122d6…`），属 D058 之前的旧发布身份。
-- **政策（本决定为单一权威）：**
-  1. **签名路由：** 本地 D058 签名语义上优先（owner 在持有凭证的环境直接签）；普通 agent 会话不可安全
-     消费本地凭证时走 **CI fallback**——同一 Gradle signingConfigs、同一 `SIGN_KEY_*` secrets，不构成第二签名实现。
-  2. **Signed RC：** 经 `workflow_dispatch(tag, draft=true)` 对一个既有 `v*` tag 构建**一份**签名产物，
-     以 **draft release** 暂存（draft 资产即精确产物本体），并记录其 SHA-256。
-  3. **精确产物晋升：** 设备验收只针对该 SHA-256 记录的产物执行 D062 既有 6 项清单；全部 PASS 后唯一
-     合法转正动作 = publish 该 draft（`gh release edit --draft=false` 或 UI）。**发布禁止重建**；任何重建
-     产生不同字节即使验收失效，必须重新验收。
-  4. **D058 门：** workflow 在 release 资产存在前对证书指纹做归一化硬断言（`D058_CERT_SHA256`），不符即
-     构建失败；产物侧人工 `apksigner verify --print-certs` 复核保留，mismatch = HARD STOP。
-  5. **开发路由：** 日常开发/测试保持本地优先（debug 不需要发布凭证）；CI debug 身份稳定可设备测试。
-  6. **安全不变量：** 永不读取/打印/复制/记录私钥内容、keystore/P12 内容、口令、base64 私有签名材料、
-     GitHub secret 值；不新增签名实现/身份；不改 `SIGN_KEY_*` / `DEBUG_SIGN_KEY_*` Secrets。
-- **实现边界（最小改动）：** 分支 `contribution/signed-rc-workflow`（自冻结点 `2ba3a999`，HEAD `45000477`，
-  单提交、单文件 `.github/workflows/release-apk.yml`，+41/−3）：新增 `workflow_dispatch`（inputs `tag`、
-  `draft` 默认 true）；首步校验 `v[0-9]*`；checkout ref 与 notes 改用 `RELEASE_TAG = inputs.tag || github.ref_name`；
-  notes 步新增 D058 指纹硬断言；publish 步在 dispatch+draft 时条件追加 `--draft`。零产品源码改动、零构建
-  步骤改动、零签名配置改动；**tag-push 旧路径行为保持不变**。冻结产品线分支仍指 `2ba3a999`；本分支未
-  merge、未 tag、未触发。
-- **Reopen conditions（仅此七项重开 D063）：** ① D058 签名材料/身份变化；② 出现第二签名路径或绕过
-  convention plugin 的签名逻辑；③ CI secrets/权限变化导致签名身份或产物完整性无法保证；④ 设备验收发现
-  需要改变产物的回归（已验收 SHA-256 失效）；⑤ GitHub draft release / 资产字节不变晋升语义改变；
-  ⑥ owner 明确改变发布策略（例如要求本地签名路径成为必经）；⑦ 冻结基线变化使本决定前提失效。
-  **普通 agent/session 无法访问本地凭证不是重开理由。**
-- 本决定不声称任何 Signed RC 或 CI 发布产物已实际构建/发布；产物级结论仅限上表实测行。
-
-## D064 — Fusion Enhanced 统一 Debug 签名身份（Unified Debug Signing Identity）
-
-**状态：Accepted；CLOSED（2026-10-05）— LOCAL 与 CI 均已用真实 APK `apksigner` 实测，不变量
-`LOCAL_DEBUG_CERT == CI_DEBUG_CERT == Fusion Enhanced Debug` 成立。本决定不触及 Release/D058/D063 任何语义。**
-
-- **决定：** 建立**一个新的、永久的** Fusion Enhanced Debug 签名身份，同时用于本地与 GitHub CI 的
-  Debug/Test 构建，目标不变量 `LOCAL_DEBUG_CERT == CI_DEBUG_CERT == Fusion Enhanced Debug`。
-  该身份与 D058 Release 身份**完全分离**：绝不用于签 Release/Signed RC，绝不复用旧 Android Debug、
-  旧 `CN=MoQi Debug CI`（`41705bc9…`）、旧 `CN=MoQi Release`（`c90122d6…`）或 D058 任何材料。
-- **D064 Debug 身份权威（仅公开信息）：**
-  - alias `fusion-enhanced-debug`；keystore 文件名 `fusion-enhanced-debug.p12`（PKCS12，RSA-2048，
-    SHA256withRSA，有效期 30 年，存于 owner 私有目录，仓库外）。
-  - DN：`CN=Fcitx5 Fusion Enhanced Debug, O=choicky, C=CN`
-  - 证书 SHA-256：**`DC:49:71:82:C5:48:66:34:FD:68:E5:71:B8:78:A3:3E:CE:A6:8B:DA:D2:05:C3:D6:1A:ED:09:B9:83:92:A5:6A`**
-- **机制（Android 分支 `contribution/debug-signing-identity`，基于冻结点 `2ba3a999`，提交 `5260dbc4` +
-  `69734a4d`，未 merge）：** 泛化既有 signing helper（`ProjectExtensions.signingKey`，release/debug 共用，
-  不建平行实现）：
-  - 本地：`DEBUG_SIGN_KEY_FILE`（优先）/ `DEBUG_SIGN_KEY_PWD_FILE` / `DEBUG_SIGN_KEY_ALIAS` —— 全部为
-    文件路径或别名，**口令与密钥内容不经过命令行、shell 历史或属性文件**。
-  - CI：保持 `DEBUG_SIGN_KEY_BASE64` / `DEBUG_SIGN_KEY_PWD` / `DEBUG_SIGN_KEY_ALIAS`（同一 helper 的
-    BASE64 分支，不构成第二签名实现）。
-  - Release 侧 `SIGN_KEY_FILE/SIGN_KEY_BASE64/SIGN_KEY_PWD/SIGN_KEY_ALIAS` 行为与值**未变**；
-    `release-apk.yml` 与 D063 语义未变。
-  - `moqi-test-apk.yml` 的固定 debug 签名断言常量由旧 `41705BC9…` 改为 D064 指纹（`69734a4d` 定稿；
-    `5260dbc4` 曾记录一个随即废弃的探针指纹，密钥已重建）。
-- **证据：**
-  - 本地真实产品路径构建 `:app:assembleDebug`（addon pin `9b3448e6` detached，`BUILD_ABI=arm64-v8a`）→
-    BUILD SUCCESSFUL；产物 `org.fcitx.fcitx5.android-v0.1.3.7-14-g5260dbc4-arm64-v8a-debug.apk`
-    （已签名命名形态），SHA-256 `83d0430836cd8880c8d0974b867af256a37aafc1215e8d25a2bbbeb06da7c561`；
-    `apksigner verify --print-certs` 实测 DN 与证书 SHA-256 均等于上述 D064 身份 → **LOCAL_DEBUG_CERT = VERIFIED**。
-  - CI：**VERIFIED（运行时实测，收口阶段完成）**。Owner 已替换三个 `DEBUG_SIGN_KEY_*` Secrets（本 agent
-    会话全程未读取、打印或以任何方式获取 Secret 值）。随后在未 merge 分支
-    `contribution/debug-signing-identity` @ `69734a4d` 上以 `workflow_dispatch` 触发
-    `moqi-test-apk.yml`（run `37301397541`，conclusion=success），其中
-    “Verify the fixed debug APK signature” 步骤 PASS（该步骤内建断言即 D064 指纹与包名
-    `org.fcitx.fcitx5.android.debug`）。下载该 run 的 artifact
-    `fcitx5-android-fusion-enhanced-v0.1.3.7-15-g69734a4d-arm64-v8a-test`（APK
-    `org.fcitx.fcitx5.android.debug-v0.1.3.7-15-g69734a4d-arm64-v8a-debug.apk`，文件
-    SHA-256 `f348dc89efcfc4a2d877d749137151ceda61fa59370f9cf43ca68ef808481813`）后独立执行
-    `apksigner verify --print-certs`，实测 DN `C=CN, O=choicky, CN=Fcitx5 Fusion Enhanced Debug`、
-    证书 SHA-256 `dc497182c5486634fd68e571b878a33ecea68bdad205c3d61aed09b98392a56a`，与 D064 权威
-    身份及本地实测证书逐字符相等 → **CI_DEBUG_CERT = VERIFIED**，
-    `LOCAL_DEBUG_CERT == CI_DEBUG_CERT = YES`。（此前口径：SOURCE-CONFIGURED / RUNTIME-PENDING，
-    因本会话安全策略拦截 `gh secret` 而停止于 owner 动作之前，未绕过。）
-- **Owner 侧收口步骤（2026-10-05 均已完成；任何密钥值未进入聊天、日志、diff 或仓库）：**
-  1. GitHub → `choicky/fcitx5-android` → Settings → Secrets and variables → Actions → 更新三个仓库
-     Secret（值在 owner 本机生成/复制）：
-     `DEBUG_SIGN_KEY_ALIAS` = `fusion-enhanced-debug`；
-     `DEBUG_SIGN_KEY_PWD` = 本机 `cat ~/.signing/fusion-enhanced-debug.pwd` 的内容；
-     `DEBUG_SIGN_KEY_BASE64` = 本机 `base64 -w0 ~/.signing/fusion-enhanced-debug.p12` 的输出。
-  2. `gh workflow run moqi-test-apk.yml --repo choicky/fcitx5-android --ref contribution/debug-signing-identity`
-     （或 owner 认可后由后续 agent 触发）。
-  3. 确认 “Verify the fixed debug APK signature” 步骤通过（其内建断言即 D064 指纹），下载 artifact 执行
-     `apksigner verify --print-certs`，与本地指纹逐字符相等 → 方可宣告 `LOCAL_DEBUG_CERT == CI_DEBUG_CERT = YES`。
-- **迁移（一次性）：** 已安装的 `.debug` 包若由旧 Android Debug 或 `CN=MoQi Debug CI` 签名，无法被新证书
-  原地升级；首次迁移需 uninstall 旧 `.debug` 包再安装新产物，此后本地↔CI Debug/Test 产物可
-  `adb install -r` 互覆（受常规 version/versionCode 规则约束）。**只影响 Debug/Test 包**；
-  `org.fcitx.fcitx5.android.fusionenhanced` 与 D058 Release 升级连续性不受任何影响。
-- **轮转政策：** Debug 身份轮转属例外而非常规；轮换须作成新决定并同步 workflow 断言常量与 owner 记录。
-- **Reopen conditions（仅此五项重开 D064）：** ① Debug 签名身份被有意轮转；② Debug 签名机制发生实质变化；
-  ③ Android 签名要求变化；④ 具体安全证据要求换钥；⑤ 源码改动破坏本地/CI 一致性。
-  **单个 agent 会话无法访问本地 Debug 私钥不构成重开理由。**
-- CI Debug 运行时验证已于收口阶段完成（run `37301397541` @ `69734a4d`，success；决定性证据为该 run
-  artifact 的 `apksigner` 实测证书，而非 workflow 配置本身）。D064 就此 CLOSED；仅当命中上述五项
-  reopen conditions 时重开。
-
-## D066 — 首发基线更正：D051 移出首发、发布 pin 重固定 `47401b04`、RC.1 驳回与 Toolbar 首显修复
-
-**状态：Accepted（2026-10-05）。** 本条显式 supersede D061 的核心裁定（“首发保留 pin `9b3448e6`、有意包含
-D051 成对标点扩展”）；D061 全文保留为历史证据，不删除。D060 其余冻结边界（Voice 架构、D056–D059、D035、
-F1、Model Manager、Self-hosted、LLM、Dictionary Manager、Toolbar 家族地位、MoQi 架构）均不变。本任务不创建
-RC.2、不建 tag / GitHub Release / PR、不触发签名构建；未读取、打印、移动、重生成或修改任何私有签名材料
-（D058 / D064 身份冻结不变）。
-
-- **DEVICE FACT（owner 对 RC.1 产物执行 D062 设备验收，2026-10-05）：** MoQi / Dictionary Manager / X-ASR /
-  Toolbar 功能族 PASS；两项 FAIL 均为 D051 成对标点行为。**裁定：该两项 FAIL = INVALID FIRST-RELEASE
-  SCOPE**——失败的验证目标本不属于首发承诺（成对标点扩展实验为 PAUSED，首发产物中 `punc.mb.zh_CN` 必须为
-  官方 upstream 原表），不是对已承诺首发行为的回归；对应处置 = 恢复 upstream 基线（re-pin），而非修复 D051。
-  同次验收另报告一个真实首发回归：全新安装首次呈现 Keyboard 时 Toolbar 停在空条（见下 Toolbar 条目）。
-- **家族口径（不变+更正）：** 首发四大家族仍为 **Dictionary Manager、ASR/Voice、Toolbar、MoQi Auxiliary
-  Filter**；D051 Paired Punctuation = 实验（structured-candidate 线已回滚；46-row mapping 实验），状态
-  **PAUSED**，**移出首发、非第五家族**。19 组 authoritative target set（D051 / REQUIREMENTS.md §5.1）与
-  “不得静默扩展”约束不变。
-- **SOURCE FACT（发布 pin 更正，2026-10-05 现场对 fork 仓库复核）：** 发布 pin 由 `9b3448e6`（携带 46-row
-  实验表，blob `eeecf444…`）更正为 **`47401b04681615024e4cf87c4797005b26e202ff`**（`choicky/fcitx5-chinese-addons`
-  分支 `fix/punctuation-candidate-pairs` tip = origin tip，`9b3448e6` 的直接子提交，
-  "punctuation: restore upstream zh_CN profile"）。该 pin 内 `modules/punctuation/punc.mb.zh_CN` = **41 行**，
-  SHA-256 `6c120e2e0db8a97c0334901c41b8667475779c4a26b95316492d8b3a42a4d91f`，与 upstream 基线
-  （`61474bd3` 侧原表，对照件 `/tmp/fcitx5-d066-upstream-punc.zh_CN`）**逐字节一致**；MoQi Auxiliary Filter
-  文件（`modules/pinyinhelper/{moqi.cpp,moqi.h,moqima-gb18030.cmake}` + `third_party/moqima-tables.LICENSE`）
-  与码表断言 `MOQI_TABLE_SHA256 66deab4a…e792` 不受影响（`47401b04` 完整包含 `9b3448e6` 树内容后仅回退标点表）。
-  LibIME gitlink、签名身份、applicationId、开发 gitlink `19f06898` 均不变。
-- **PRODUCT FACT（Android 侧，已推送、HEAD==origin、worktree clean）：** pin 更正提交
-  `ce6b27e4`（`contribution/fusion-enhanced-identity-naming-r8`）、`531e80b9`
-  （`contribution/debug-signing-identity`）、`5f50c64c`（`contribution/signed-rc-workflow`），message
-  “ci: repin addons to 47401b04, the upstream punctuation baseline”，内容 = `release-apk.yml` /
-  `test-apk.yml` `env.ADDON_COMMIT` 及 `.github/moqi-release-notes.md` anchor 同步；`docs/voice-phase4-acceptance.md`
-  中的旧 pin 文字保留为历史证据。
-- **PRODUCT FACT（Toolbar 首显回归，源码级 root cause 已核验后修复）：** 症状 = 全新安装后首次呈现输入法时
-  idle bar 停在空条，需 collapse→expand 或 hide→show 才恢复。根因（逐项 AOSP/源码核验，过程记录
-  `/tmp/fcitx5-d066-toolbar-root-cause.md`）：fork 的 `IdleUi` 构造页为 `State.Empty`/emptyBar（AOSP
-  ViewAnimator 首加子可见语义），而逻辑默认是展开（`KawaiiBarComponent.isToolbarCollapsed == false`，D048
-  有意改的默认）；两态仅靠 `FcitxInputMethodService` 一次性 fire-and-forget 的 `inputView?.startInput(...)`
-  调合，且 `ButtonsBarUi` 的宽度门 + 严格 width-change 监听使错过首次调合无法就地恢复。upstream 免疫的原因是
-  `expandToolbarByDefault` 默认 false 使构造页与逻辑默认天然一致；本 fork 的该分歧即缺陷本体。修复 = 让构造页
-  与逻辑默认对齐：`IdleUi.kt` 两处（`currentState = State.Toolbar`、animator `displayedChild = 1`），提交
-  **`f2a64da1` "fix(toolbar): start the idle bar on the expanded page"**（`ce6b27e4` 的直接子提交，仅落于
-  feature 产品线分支）。修复保留全部既有 Toolbar 行为：折叠/展开、Tools、Hide、自定义、排序、editor 事务、
-  runtime projection、Mic-Voice、Space Voice、重建、持久化。未新增任何测试专用生产钩子。
-- **VALIDATION：** `ToolbarActionTest` 23/23 PASS（`/tmp/fcitx5-d066-toolbar-tests.log`）；
-  `:app:testDebugUnitTest` 全量 + `:app:compileDebugKotlin` + `:app:compileDebugAndroidTestKotlin`
-  BUILD SUCCESSFUL、0 FAILED（`/tmp/fcitx5-d066-full-jvm.log`）；各变更 `git diff --check` 干净。**诚实边界：**
-  本环境无设备/模拟器，首屏呈现属 UI 生命周期行为，JVM 测试不对其作证——**首次呈现的权威验证 = RC.2 设备清单
-  第 1–2 项**（`/tmp/fcitx5-d066-rc2-retest-checklist.md`）。
-- **RELEASE-ARTIFACT FACT：** **RC.1（annotated tag `v0.1.3.8-rc.1` → `2ba3a999`，GitHub Release draft，
-  资产 `…v0.1.3.8-rc.1-0-g2ba3a999-arm64-v8a-release.apk`，`ACCEPTANCE_APK_SHA256 = 148457a406d8c35ea780b
-  5bb07c2f62738e4ce526f8ad68ccfddaff2f2018dee`，67,728,288 B）= REJECTED。** 该 draft 与其资产**不得发布、
-  不得修改**；任何修复必须以**新 RC / 新 SHA-256** 承载，D063/D065 的“精确产物晋升、
-  `device-tested == published == ACCEPTANCE_APK_SHA256`、禁止重建”不变量自 RC.2 产物重新适用。D065 生产记录
-  （run `37304432367` 等）保留为历史证据。
-- **状态口径汇总：** Dictionary Manager / Toolbar / Voice 各族状态不变（VALIDATION DEBT 口径不变）；Paired
-  Punctuation / D051 = **EXCLUDED FROM FIRST RELEASE（D066）；实验 PAUSED；非第五家族**；Toolbar 首显 = 已修复
-  （`f2a64da1`），设备权威验证 = RC.2。**NEXT = 以更正后产品线（pin `47401b04` + `f2a64da1`）经 D063 机制生产
-  RC.2 Signed 产物，并按 8 项清单设备复测；其中标点项仅验证随包 `punc.mb.zh_CN` == upstream 41 行基线，
-  **不**测试 D051 实验行为。**
-- **Reopen conditions：** 仅当 (a) 未来明确决定恢复 D051 并纳入首发（需 runtime PoC + 新裁定）、(b) pin
-  `47401b04` 被证明与 upstream 标点基线或 MoQi 断言不一致、(c) RC.2 设备验收产出 Toolbar/MoQi/词库的具体回归
-  证据时，重开本条相应分项。“还能测更多”不构成重开理由（D060 §7 分类规则不变）。
-
-## D068 — 首个 Fusion Enhanced 正式发布（RC.2 精确产物晋升）
-
-**状态：Accepted / CLOSED（2026-10-06）。** 本条只记录验收与发布事实；不重开、不修改 D060–D067 任何冻结边界或裁定，历史条目全文保留。
-
-- **Owner 设备验收（owner 提供，本任务未重跑任何设备测试、未重开 D066/D067 调查）：** RC.2 DEVICE
-  ACCEPTANCE = **PASS**，D066/RC.2 清单全部 **8 项 APPROVED DEVICE CHECKS = PASS**；FINAL RELEASE = **GO**。
-- **发布方式 = 精确产物晋升（D063 不变量 `device-tested == published == ACCEPTANCE_APK_SHA256`）：** 仅将
-  既有 GitHub Draft `v0.1.3.8-rc.2`（release id `403830061`）置为 `draft=false` 发布。**未** rebuild、
-  **未** 重跑 release build、**未** resign、**未** 替换/上传/改动资产、**未** 新建 RC/tag、**未** 移动 tag、
-  **未** 触碰 RC.1（draft id `403658765` 维持 REJECTED 历史证据）。
-- **Phase A 发布前十项核验（全部 PASS，逐项）：** ① tag == `v0.1.3.8-rc.2`；② release id == `403830061`；
-  ③ 当时 `draft=true`/`published_at=null`；④ 资产唯一且即验收 APK；⑤ 文件名逐字符 ==
-  `org.fcitx.fcitx5.android.fusion-enhanced-v0.1.3.8-rc.2-0-gf2a64da1-arm64-v8a-release.apk`；⑥ size ==
-  67,728,186 B；⑦ GitHub asset digest == 下载本体本地 `sha256sum` == `93a42897f0d053436f113f32ca88aac539eb0f18e8034f6f130309356e8deb9b`；
-  ⑧ annotated tag `398fc520` peel → `f2a64da1c0344a8b8c385fb3f57c00752efbbf81`；⑨ `apksigner verify
-  --print-certs`：v1+v2 Verifies，单签名者，证书 SHA-256 `a515b74a…890c` == D058 canonical（DN
-  `CN=Fcitx5 Fusion Enhanced Release, O=choicky, C=CN`）；⑩ asset id `612850708`、`updated_at`
-  `2026-10-05T14:48:48Z` 与 D067 生产记录一致 → 未被替换。
-- **发布与发布后复核：** 2026-10-06T01:06:19Z 发布（`published_at` 写入、`draft=false`）；复核 tag 未动、
-  asset id/名/size/digest/updated_at 全部不变，发布产物 SHA-256 仍 == `93a42897…deb9b`；
-  Release URL `https://github.com/choicky/fcitx5-android/releases/tag/v0.1.3.8-rc.2`。
-- **基线登记：** 产品源 `f2a64da1`（分支 `contribution/fusion-enhanced-identity-naming-r8`）；addons 发布
-  pin `47401b04681615024e4cf87c4797005b26e202ff`（随包 `punc.mb.zh_CN` == upstream 41 行）；**D051 维持
-  PAUSED / 排除于首发**；RC.2 成为正式版是**精确产物晋升**的结果，版本串中的 `-rc.2` 为 D067 生产时的
-  命名事实、非疏漏（不得为满足命名而重建，D063 禁止）。
-- **状态口径：** **FIRST FUSION ENHANCED RELEASE = PUBLISHED**；acceptance → publication 之间**零重建**。
-  各功能族既有 VALIDATION DEBT（扩展矩阵类）不因发布而自动升格为 blocker，也不因发布而被记为已测
-  （AGENTS 分类规则不变）。
-- **Reopen conditions：** 仅当已发布产物被证实存在具体缺陷、签名/供应链完整性被证伪、或 owner 明确决定
-  另行发布新版本时，按 AGENTS CLOSED EVIDENCE RULE 重开对应事项。
-
-## D069 — Architecture A 中英混输收口：Master Switch 撤销、产品化裁定集合、Auxiliary Filter 融合回归与发布边界
-
-**状态：Accepted（2026-10-06）。** 本条是混输线在 fusion 权威文档中的首次正式记录（此前 `docs/` 无任何
-MixedInputEnabled/混输条目，grep 已核验）。命名澄清：本条 "Architecture A" = 中英混输架构，**区别于**
-D027 的 Voice Architecture A。本任务未 merge PR #3、未创建 tag / GitHub Release、未触碰 D060/D066/D068
-发布边界（addons 发布 pin 仍为 `47401b04`）；LibIME 全程处于修改边界之外、未被改动；未读取、打印或修改
-任何私有签名材料（D058/D064 身份冻结不变）。
-
-- **SUPERSEDE（显式撤销）：** 混输设计初期“混输由 `MixedInputEnabled` master switch 门控”的要求自本条起被撤销：
-  Architecture A 是 Pinyin 与 Shuangpin 的常规能力，**不设 master switch**；英文候选参与只由唯一门控
-  `SpellEnabled`（默认 ON）决定；classical ISpell 单词 sidecar 已退役，同一配置永远不可能喂出两条独立英文
-  管线（实现 `fd102b7`）。sidecar 的 upper-raw 行为由 EnglishArcOracle 大小写保全规则吸收：用户键入的大写
-  权威，全小写 span 采用 canonical 显示。（该句中被后续证据推翻的部分：以 canonical 显示**取代**字面形态；
-  D071 裁定候选集须同时保留 canonical 显示与用户键入的字面 surface，canonical 可排位在前。仍有效的部分：
-  用户键入大写权威、默认显示形态为 canonical。）
-- **PRODUCT DECISIONS（产品化裁定，逐项对应实现提交）：**
-  - **classical-derived pure-Han coverage：** 放置策略的中文覆盖判定读取 classical decoder 的纯 Han 全 raw
-    读数，而非 mixed 有界 pool 内部——保证大写快打产品路径（Apple/iPhone）保持领先（`6a0e951` + `fd102b7`
-    结构放置策略；`fd102b7` 同时移除被证伪的 `canTileRawFully()` 探针：LibIME parser 可 tile 任意 raw，
-    该探针不携带必要性信号）。
-  - **English 3-byte emission floor：** `EnglishArcOracle.minSpanLength = 3`；1/2 字母 SCOWL 条目与拼音音节
-    重合，会令 beam 把任意 raw 铺成字母汤。floor 等于 §9(b)/correction oracle 证据下界；词库条目本身保留
-    （dictionary API 不受影响）。
-  - **tier-ordered completions：** `EnglishLexicon::completions` 按词频 tier 选最优条目（tier 内短者优先）并
-    受有界扫描约束，取代首个字典序邻位，与 §13 tier-driven completionEvidence 一致（`6a0e951`）。
-  - **whole-span ranker bonus：** UnifiedRanker 新增 `wWholeSpan`（0.15）——单 arc 全 span 读数应胜过碎片化
-    tiling；演示反转 0.4916 vs 0.3986（"iphon"），任何 wCost 取值都无法在不破坏 cost ordering 的情况下修复
-    该反转，故须结构 bonus 而非调权（`6a0e951`）。
-  - **widening fallback：** top-K 路径全部解析失败时 `MixedEngine::compute` 以扩大的 survivor set 重试一次，
-    防止“长、不可解析但低成本”的中文 arc 清零整个 mixed 层（`6a0e951`）。
-  - **VAsQuickphrase reservation：** 产品面 corpus harness 运行前显式关闭 VAsQuickphrase——其开启时 `v` 起头
-    raw 永远不会进入 pinyin 组合；这是 harness 前置条件记录，不改任何产品行为（`6a0e951`）。
-  - **English-learning-on-commit seam：** MixedCandidateWord 携带其计算所依 raw span；`select()` /
-    `selectUpToSegment(k)` 经 `PinyinEngine::noteMixedEnglishSelection` 把已确认英文段 span 通过共享
-    `shouldLearn` gate 折入 English user lexicon，并以 `StandardPaths::safeSave` 崩溃安全持久化（写入被拒时
-    显式记错）；partial selection 只训练已冻结前缀（`8e7ad01`）。**Harness 发现（如实记录）：** Instance
-    harness 的 `setupTestingEnvironment` 按设计跳过 user paths，user-path 磁盘断言在 harness 内结构性不可行；
-    生产文件 round trip（`pinyin/mixed_english_user.tsv`，字段完整）改由 testenglishuserlexicon check #14 经
-    safeSave + reload 钉住。设备侧持久化维持 **NOT RUN**。
-- **AUXILIARY FILTER 融合回归（本轮修复 + 下游验证分支）：**
-  - `c5b78c9`：Auxiliary Filter 是 post-CandidateList UI 能力，必须只匹配组合前沿。`filterByStroke` 原扫描
-    候选全部字符，mixed 候选可越过内嵌英文 surface 靠后部汉字存活、英文前沿候选可同样匹到尾部汉字；现扫描
-    止于第一个无笔画映射字符（Han frontier）：纯 Han 候选保留原任意字符匹配，mixed 候选只按首部 Han run
-    过滤，英文前沿候选无可匹配 run（与 MoQi 首字符锚一致；MoQi 从未有此回归）。同提交修复 Backspace 清空
-    buffer 后 `inStrokeFilterMode` 残留吞掉下次触发、二次调用失效的缺陷。
-  - 下游融合回归分支 `feature/mixed-moqi-fusion-regression`（fork 仓库，仅验证，不并入发布线）：`62f233c`
-    merge moqi 产品线 `0220285`（MoQi Auxiliary Filter 并入统一 `AuxiliaryFilter{Disabled,Stroke,MoQi}`
-    引擎 API；默认 `Stroke` 保持既有行为；触发键配置路径仍为 `FilterByStroke` 不变；MoQi 模式接受 a–z 入
-    buffer）；`fa4c0d4` 在真实产品路径闭合 {Disabled,Stroke,MoQi} × {Pinyin,Shuangpin} × mixed 全矩阵：
-    frontier keep/bait、二次调用、backspace 退出、翻页、过滤选中 commit。**Disabled 单元格断言落在
-    tab-action 面**（无「笔画/墨奇」action + mixed 列表完整），原因：Disabled 下 active composition 上的
-    raw grave 落入 upstream 标点/commit 回退（布局无关的既有行为），按按键断言会误测该回退。Ziranma 码取自
-    LibIME `171edcf` SPMap_C_Ziranma 钉值（配=`pz`、件=`jm`）；MoQi 码表 `6d8ba8f1` 断言
-    `66deab4a…e792` 不受影响；测试语法补记：`Key("Escape")` 或 `Key(FcitxKey_Escape)` 有效，小写
-    `"escape"` 无效；testfrontend commit 期望队列是严格 FIFO，任何意外 Commit 即 abort。
-- **PINS & EVIDENCE（final state）：**
-  - addons `feature/mixed-input-arch-a` @ `c5b78c9`，base = upstream `61474bd3`，领先 24 个提交；累计 diff
-    50 文件 +103,271/−99（`/tmp/mixed-input-final.diff`；融合回归 diff `c5b78c9..fa4c0d4` 17 文件
-    +1,382/−105；`/tmp` 任务 artifacts 已于本轮全部按最终实际状态重生成）。
-  - PR #3 → `fcitx/fcitx5-chinese-addons@master`：**OPEN、未 merge**（不得为省事而 merge）；终态
-    gcc / clang / clang-format / CodeQL 全绿（run `37422090686`）。
-  - Android 集成分支 `feature/mixed-input-arch-a` @ `e3cec1d8`：gitlink 由过期 `e3d8f0c` 更新为 `c5b78c9`。
-  - 最终 Debug APK `org.fcitx.fcitx5.android-v0.1.3.8-rc.1-8-ge3cec1d8-arm64-v8a-debug.apk`，85,771,636 B，
-    SHA-256 `d7d9635f75e22fcfbd01d89be628939901e83cea340ae5d8337b394c78a6ef5f`；D064 Debug 签名（apksigner
-    DN `C=CN, O=choicky, CN=Fcitx5 Fusion Enhanced Debug`，证书 SHA-256
-    `dc497182c5486634fd68e571b878a33ecea68bdad205c3d61aed09b98392a56a` == D064 权威值）；包名
-    `org.fcitx.fcitx5.android.debug`、versionCode 112；内嵌 `english_lexicon.tsv` SHA-256
-    `defcefe35b4ab00a9f262fd3f0e8bfa62a3aee66a2b26cb3711f5e7de9ec6daf` 与 `c5b78c9` 源逐字节一致；
-    `lib/arm64-v8a/libpinyin.so` SHA-256 `24d485a73e9ed83ae3a6d0f23aebf7a984fe0c807bf466d02a826cd08fe94b5a`。
-    D058 Release 身份与 D064 Debug 身份互不混用（不变量）。
-  - Gate 3：`localhost/fcitx5-upstream-validation:gcc` 容器内两棵树（纯 arch-a 与融合回归分支）ctest
-    **19/19 PASS**；benchmark（`/tmp/mixed-input-benchmark.md`）mixed p50/p95/p99/max =
-    538.6/1955.8/1955.8/1955.8 µs，fast-path p50 81.8 µs，production pipeline compute p50 4015.8 µs，
-    与 3fbd72b 记录复跑偏差 <2%。
-  - **诚实边界：** 设备 smoke test = **NOT RUN**（本环境无设备/模拟器，不得记 PASS）；Android 分支无 CI
-    wiring（`test-apk.yml` 不含该分支且其 `ADDON_COMMIT` 硬编码 `47401b04`），本地 gradle 构建 + 逐字节
-    产物核验是本线诚实的 Android 验证路由。
-- **发布边界：** 本线**不改变** D068 已发布首版；未来并入产品线需独立采纳决定 + 完整设备验收与新的
-  D063/D064 签名产物流程。
-- **Reopen conditions：** 仅当 (a) 新设备/真实产品路径证据与上述断言矛盾，(b) PR #3 上游评审要求变更
-  placement / learning / filter 合同语义，(c) owner 决定并入发布线（届时按 D063/D064 走新 pin 与新签名
-  产物）时重开对应分项。“还能测更多”（更大真实语料、长组合扩展矩阵、设备覆盖）属 VALIDATION DEBT，不构成重开
-  理由（AGENTS 分类规则不变）。
-
-## D070 — Final Ranking Closure：有界跨源插入类取代 D069 blanket 放置策略（Bounded Cross-Source Insertion Class）
-
-**状态：Accepted（2026-10-06）。** 本条**显式 supersede D069 PRODUCT DECISIONS 中
-「classical-derived pure-Han coverage」条目里由 blanket 规则承担的部分**：当 classical decoder
-对全 raw 存在纯 Han 读数时，把**整个** mixed pool 一律压到 classical 列表之后的放置策略被替换为
-**有界跨源插入类（bounded cross-source insertion class）**。D069 其余裁定（3-byte floor、
-tier-ordered completions、wWholeSpan、widening fallback、VAsQuickphrase、learning seam、
-auxiliary filter 融合回归、发布边界与 master switch 撤销）**全部继续有效**；本条不改 LibIME、
-不改两个来源各自的 intra-source 排序、不比较未校准跨源原始分数（§19 禁令不变）、不引入
-learned reranker / neural boundary / Scheme 2。
-
-- **blanket 规则失败的证据（真实产品路径，`testpinyin` bulk 列表，c5b78c9）：**
-  `chatgpt → ChatGPT rank 113`（top1=茶通过平台）、`macos → macOS rank 88`（top1=马车哦是）、
-  `openwrt → OpenWrt rank 9`、`libime → LibIME rank 367`、learn 后 E2 placement 仍 113。
-  根因：force-decode 的碎片 Han tiling 对几乎任何小写字母流都存在，`chineseCoversWholeRaw`
-  于是恒真，把 whole-span Canonical 重拼写也整体埋葬；MIXEDCORP 基线 MRR 0.717、top1 5/7。
-- **替换策略（属性判据，无词表）：** `UnifiedRanker::isBoundedInsertionClass(c, rawSize)` =
-  单 arc + 全 span（alignment[0].rawBegin==0 && rawEnd==rawSize）+ English source +
-  provenance ∈ {Canonical, CustomPhrase}。Canonical 只在词典 surface 与键入 span 大小写结构不同
-  （chatgpt→ChatGPT、macos→macOS、github→GitHub、openwrt→OpenWrt、libime→LibIME）时存在；
-  歧义小写重合词（win/long/game/pin/an/ai surface==raw ⇒ Exact）、Completion/Correction
-  （对 "chang" 的补全、对 "githbu" 的修正）按构造不满足，保持保守放置。CustomPhrase 使
-  用户确认过的词经 learning 进入该类（§6.E）。类成员获得有界领先 slot（插入序号 0,1,…），
-  其余候选与既有 `mixedLeads` 路径逐字节不变 ⇒ **中文 intra-source（LibIME classical 顺序）与
-  英文 intra-source（pool 顺序）都原样保留**，跨源之间只有**位置类插入**，没有任何分数比较。
-- **音节护栏（语料驱动）：** classical 存在**单音节纯 Han 全 raw 读数**时类被抑制——
-  `chang → Chang`（词典 tier-4 姓氏）在首次替换运行中把 top1 从 长 夺走，证明「合法拼音音节
-  同时是英文姓氏」的 raw 必须中文优先（han/wei/ming 同理）；多段 force-cover（茶通过平台/
-  马车哦是）是缩写产物、非音节，不触发抑制。护栏读取的是 classical decoder 结构
-  （sentence().size()==1），不是池内分数。
-- **固定产品路径排名语料（先于调优冻结，groups A–F，`testMixedRankingCorpus`）：**
-  BEFORE（c5b78c9）= failures 6/6 组暴露：A 4 项 rank≠0 + E2；B/C/D/F 全绿 ⇒ 期望与既有产品
-  合同一致（ai/an/pin/win/long/game 保守：win 无全 raw Han 读数、其英文领先为 D069 期既有行为，
-  如实编码而非重写期望；multi-switch 二段英文按实际 "嗨phone" 铺段断言可达性；纠错按词典
-  QWERTY-substitution/transposition 模型选 "githbu" 证据例）。AFTER（57d72c2）：A 全部 rank 0
-  （chatgpt/macos/github/iphone/openwrt/libime），B/D 护栏与污染门全绿（chang top1=长），
-  C mixed 保持领先（wodakaigithub/iphonepeijian/woxiangmaiiphonepeijian rank 0），E 学习只移动
-  被确认词（pin 213→213）且中文续打不破坏（nihao→你），F Shuangpin mixed 可达（rank 129，
-  与 D069 放置合同一致），`RANKCORP SUMMARY failures=0`；存量 MIXEDCORP 由
-  top1 5/7、MRR 0.717 升至 **top1 7/7、MRR 1.000、pollution 0**。
-- **PINS & EVIDENCE：** addons `feature/mixed-input-arch-a`：`860ed68`（放置实现 +
-  isBoundedInsertionClass）+ `57d72c2`（语料），base `c5b78c9`；融合回归分支
-  `feature/mixed-moqi-fusion-regression` merge 提交 `06c9afd`；容器
-  `localhost/fcitx5-upstream-validation:gcc` 两棵树全量 build + **ctest 19/19**、
-  `testpinyin` EXIT=0（含 MIXEDSTROKE/MIXEDMOQI/MIXEDAUX-SP 门）、clang-format 干净、
-  `git diff --check` 干净。benchmark：mixed p50/p95/p99/max = 522.4/1930.5/1930.5/1930.5 µs
-  （基线 538.6/1955.8，−3%），fast-path p50 82.7 µs（81.8，噪声带内），production compute p50
-  3919.9 µs（4015.8，−2.4%），lexicon RSS delta 7188 KiB；放置判定为每候选 O(arcs) 属性检查，
-  无逐键无界扫描。CI run `37432014234`（head `57d72c2`，fork 分支）：**clang-format / gcc / clang 全部 SUCCESS**。
-- **Reopen conditions：** (a) 新设备/真实产品路径证据与 rank-0 类断言矛盾；(b) PR #3 上游评审
-  要求变更放置类语义；(c) 词库变更使新的 valid-pinyin-syllable 姓氏 Canonical 溢出护栏覆盖
-  （须重跑 B/D 组而非加词表）；(d) owner 采纳 learned reranker 提案时按 §51.A+ 证据门重开，
-  本条同时记录 **A+ learned reranker：本轮不需要（INSUFFICIENT EVIDENCE 状态解除——确定性的
-  有界插入类已在固定语料上闭合 ranking error，未出现必须依赖学习模型才能达标的案例）**。
-
-## D071 — Canonical/字面双形态共存与 Android 集成重新基线（Canonical+Literal Coexistence & Android Re-baseline）
-
-**状态：Accepted（2026-10-06）。** 本条 (1) **部分 supersede D069**：全小写 span 的 canonical 显示不再
-以淘汰用户字面 surface 为代价——候选集必须**同时**包含 canonical 显示与字面形态（canonical 可排位在前，
-如 `chatgpt → ChatGPT(rank 0) + chatgpt`）；(2) 修正 Architecture A 的 Android 集成基线与 addons 集成
-head；(3) 固化真机现实差距的调查结论与验证层级。不改变 D070 的放置类、护栏与分数不可比禁令。
-
-- **真机证据与根因（device-acceptance APK，addons `57d72c2` pin）：**
-  - 观察 A（Auxiliary Filter Disabled/Stroke/MoQi 配置入口消失）：非前端缺陷。APK 字符串取证
-    （`libpinyin.so` 中 `AuxiliaryFilter` 出现 0 次、assets 无 moqima 表）+ 谱系审计证明
-    `feature/mixed-input-arch-a` 的纯 arch-a 分支自上游 master 分叉，**不含量产 AuxiliaryFilter/moqima
-    融合线约 53 个提交**；Android 设置页是 fcitx5 通用 config 渲染，schema 里没有的选项不会显示。
-    正确集成 head 是 `feature/mixed-moqi-fusion-regression`（D070 PINS 记录的 `06c9afd`，
-    = moqi 线 `0220285` + arch-a 收口，且内容覆盖发布 pin `47401b04`——其净效果一行已在树内）。
-  - 观察 F（首次打开 toolbar 只有 Tools+Hide）：Android arch-a 分支 fork 于 `531e80b9`，早于 rc.2 线的
-    `f2a64da1 fix(toolbar)`（IdleUi 构造页 = 逻辑默认展开态）。属**陈旧基线回归**，非重实现事项；
-    以 merge（`e1c52628`）保留双历史地 bring-in，不重写。
-  - 观察 E/C（真机中英混输不可用、macos 在 Pinyin 模式表现为 "ma cos"）：**native 同码复现失败**。
-    用产品 pin 的 libime `ecd2379`（1.1.16-3）在容器内全新 build addons `57d72c2` 跑固定语料，
-    与容器 libime 1.1.17 结果**逐行相同**（A 组 rank 0、C mixed rank 0、failures=0），数据文件
-    sha256 逐字节一致（sc.dict `38b9ca9a…`、zh_CN.lm `3588b394…`、english_lexicon `defcefe35…`）⇒
-    libime 版本翻转假设被否定；差距定位在 **Android runtime 层**（frontend/引擎状态），列为
-    device-only 诊断项与 Android integration FAIL 的残留根因，未经真机诊断日志
-    （raw/SpellEnabled/mixedEngine 可用性/arc 数/pool size，一个失败用例）不得调下游排序。
-  - 观察 D（ai/an/pin/win/long/game 未见英文）：对照冻结语料合同逐项为**已接受行为**（B 组保守放置），
-    非缺陷，不改。
-- **实现（addons `feature/mixed-moqi-fusion-regression` head `dd81e1b`）：** `EnglishArcOracle` 在
-  all-lowercase canonical 重拼写分支追加**并行 literal arc**（同 span、`resolvedOutput = 用户字面 span`），
-  复用 segmentation 既有 parallel-arc 机制（distinct `sourceLocalRank`）；provenance 仍为 Canonical 以保持
-  ranker 特征对等（非分数特例），boundaryConfidence 0.90<0.95 仅用于打破 cost tie、保证 canonical 显示
-  确定性地排在字面之前。composedText 去重天然保留两个 surface；`isBoundedInsertionClass` 判据不变，
-  字面 arc 同判据进入插入类；**无词表、无逐词规则**。
-- **语料门扩展（属性优先）：** group A 同一次 bulk 扫描分别测 canonical 与 literal rank，断言共存
-  （literal 缺失=FAIL）与排序（literal 不得先于 canonical）；mixed 用例 `wodakaigithub` 断言
-  `喔惮岂github` 可达。AFTER（`dd81e1b`，产品 libime ecd2379 全新 build）：A 全部 rank 0 +
-  literalRank 1×6、`C github rank=1`、`RANKCORP SUMMARY failures=0`、MIXEDCORP 7/7/1.000/0、
-  ctest 19/19、clang-format 与 `git diff --check` 干净。
-- **验证层级（harness gap，§8）：** `testpinyin` 是 **native core/product-path 测试**，不是 Android E2E，
-  文档与报告不得称其为 Android E2E；三层级为 native corpus gate（addons CI + 本条 product-libime 复跑）
-  → Android CI 构建/单测/JVM 门 → 真机 device acceptance（仅此层可判定观察 E 的 runtime 根因）。
-  最小自动化回归门=上述前两层；第三层以 §12 设备清单为准。
-- **集成后 PINS：** Android `feature/mixed-input-arch-a` = merge `e1c52628` + gitlink `fa095815`
-  （addons `dd81e1b`）+ workflow `fb9f16d5`；addons 融合回归 head `dd81e1b`（父 `06c9afd`）。
-  Toolbar 首显不变量的自动覆盖维持现状（rc.2 已接受的 `f2a64da1` + CI 运行的 `ToolbarActionTest`），
-  不在本条为可测性重构 IdleUi；首显正确性归 device checklist。
-- **Reopen conditions：** (a) 真机诊断日志与 arc/rank 层结论矛盾；(b) beam topK 截断使某些产品路径
-  literal 不可达（需语料证据，不加词表）；(c) 上游 PR #3 评审要求改变双形态语义；(d) 观察 E 的
-  Android runtime 根因确诊后若要求修改 core 放置策略，须重跑固定语料而非局部补丁。
-
-## D072 — Windows P0-C 收口：A′ 接受为 Windows 架构方向，Windows 架构权威迁入本仓库
-
-**状态：Accepted（2026-10-07）。** 适用范围仅为 Windows 线；不改变 D001（Android 第一目标平台）与 D060 首发基线。
-
-- **决定 1 — A′ ACCEPTED（Windows 架构方向）：** STATE async where possible，保留 consumed STATE → EFFECT
-  watermark；EFFECT ordered / unique / non-coalescible，以 bounded synchronous TSF materialization 为环境允许时的
-  优先主路径，满足 mutation/composition/selection/readback 条件后才记录显式 APPLIED terminal；显式 async/failure
-  fallback 与 recovery 为强制；prior EFFECT 未决时 later PASS 采用 drain-before-PASS（where lawful）——K /
-  `OnKeyDown` 为已测 Notepad + Word 上的最小已证实策略，T / `OnTestKeyDown` 仅在实际投递时 opportunistic，
-  correctness 不依赖 T，无普遍回调保证；无通用产品 `SendInput`/`PostMessage` replay，不以合成 `WM_CHAR`/newline
-  作为正常 PASS；FORCE_ASYNC 保留为 diagnostic/development 能力；全部公共 correctness 机制保留。“bounded” 只约束
-  client 可控部分（admission、Host wait、queue、fallback wait、operation count/payload、eligibility/disable policy），
-  不表示可抢占进行中的同步 TSF 调用。完整规范：`docs/windows-architecture.md` §6–§7。
-- **决定 2 — P0-C architecture research = CLOSED by project decision：** 依据为经独立核查的
-  `fcitx5-windows-tsf-census` 证据（`328f5e6bbec33e05dd10f7066b470b529316a5fa`；0.5B `419b73e`/`00c2150`，
-  0.5C `30bbbf6`/`140b404`，0.5D `8cbe13f`/`328f5e6`）**加上**本条对 Chromium 的显式 defer 范围决定。
-  **Stage 0.5D 证据自身的分类是 NOT-CLOSED**（其要求的收口范围包含 Chromium），该历史分类在其实验范围内仍然有效，
-  不改写为 CLOSURE-A；**不声称证据自身关闭了 P0-C**。
-- **决定 3 — Chromium compatibility = DEFERRED UNKNOWN：** 0 次合格运行、无 TSF trace；Edge 尝试因自动化工具
-  URL-policy 检查在实验前停止。这是工具限制，不是 Chromium TSF 失败，也不证明不支持 drain-before-PASS；
-  项目裁定该 UNKNOWN 不阻断架构冻结，不声称 Chromium 支持，也不为 P0-C 继续 Chromium 实验；可在 Stage 2.5/4
-  真实 TIP 集成时重新取证。
-- **决定 4 — Stage 0.5 口径：** 解决 P0-C 所需的 Stage 0.5 工作 COMPLETE；其余 census 应用与行为（见
-  `docs/windows-architecture.md` §18）为 DEFERRED / UNKNOWN，不表述为“全部 Stage 0.5 完成”。Stage 0
-  architecture closure COMPLETE；下一阶段 Stage 1 portable sans-IO FusionCore + simulator + RG-0（NOT STARTED）。
-- **决定 5 — 回调不可用 / drain 未决：** 架构要求显式 recovery/ownership disposition，不得把取消的 key 伪装为 PASS；
-  具体 recovery contract 不在本条冻结，分配给 P0-A（定义）与 Stage 1（以 RG-0 实现与验证）。
-- **决定 6 — Authority 迁移：** Windows normative/current architecture authority 自 `researching-notes`
-  `windows-ime/fcitx5-windows-current-architecture.md`（提交 `855ec99`）迁入本仓库 `docs/windows-architecture.md`；
-  旧文件标记 SUPERSEDED / HISTORICAL、保留原文；`researching-notes` 继续承担研究叙述、证据解读、架构历史与 supporting
-  reviews，`fcitx5-windows-tsf-census` 承担可复现低层证据，`fcitx5-fusion-windows` 承担产品实现。
-- **Supersession：** (a) census 历史 “Recommendation B”（bounded-sync 与 fully-async EFFECT 并列开放）被 A′ 取代；
-  census 中 “Model B”（协议模型）与 evolution Stage H 的 upstream 策略 “option B” 是不同概念，不受本条 supersede；
-  (b) researching-notes 2026-10-07 snapshot 中 P0-C OPEN、“Stage 0.5 REQUIRED”、“sync/async 最终策略待 Stage 0.5”
-  与 “zero synchronous Host coordination” 为 OPEN 项的表述，作为当前状态不再有效（历史保留，Stage K 原文不改写）。
-- **仍 OPEN / UNFROZEN（本条不关闭）：** lifecycle discontinuity（§9）；P0-A；P0-B；P0-D（纳入已核查的注册/提权观察，
-  仍 OPEN）；permanent identifiers / wire identifier set、final wire format、未决 Host topology、production timing
-  thresholds、UI；effect-capable key 精确分类。
-- **外部评审：** researching-notes `windows-ime/reviews/claude-2026-10-07.md` §2 与 A′ 一致、属 supporting review input；
-  接受来源是项目证据与本决定；不设外部 AI 评审 gate。
-- **Requirements：** `docs/REQUIREMENTS.md` 不变——其中没有 Windows 规范性需求与 A′ 冲突，Windows correctness
-  invariants 由 `docs/windows-architecture.md` §4 承载。
-- **Reopen conditions：** (a) 新的第三方证据表明在产品必须支持的 target class 中，K 与 T 均不投递或合法 drain 普遍不可得，
-  使 A′ 主路径在该类不可行（仅 Chromium 结果为 UNKNOWN 不构成 reopen）；(b) 证据表明主要 target 中同步 EFFECT
-  materialization 常态被拒，使 fallback 成为实际正常路径；(c) TSF 公开 API/行为变化与本条依据矛盾；(d) Stage 1
-  RG-0 或真实集成证明 §7.5 公共机制不足以维持 §4 invariants；(e) 本条核查所依据的 census 原始证据被发现不可靠。
-
-## D073 — Mixed Input M3-B Architecture Decision Closure：Graph-aware Parallel Mixed Recall
-
-**状态：PROPOSED — NOT ACCEPTED（2026-10-09 由 D074 裁定）。** 本条目正文按 M3-B 提议记录原样保留、
-不改写。本条目此前所标 “Accepted（2026-10-07）” 无效：Architecture Challenge（Gate P/Q）最终报告
-（`/tmp/mixed-architecture-challenge-final-report.md`）明确 proposed D073 diff 保持 uncommitted /
-unaccepted，target/fallback selection 仍 OPEN；Gate Q2 已被 owner 判定 **INVALID**，不得作为任何新
-architecture acceptance evidence。**本条目因此不具有当前架构权威**：其“supersede 此前 active wording”
-“本条是当前架构权威”“selection CLOSED by decision”与 Data/Quality/Mobile Cost Gate 作为 M2+ 前置的
-自称，一并作废；中英混输当前 architecture authority 见 D074。M3-B Graph-aware Parallel Mixed Recall
-维持 **deferred research candidate**，不是当前 product target；未来若经真实证据重新提出，须以新决策
-条目重新接受审查，不得沿用本条文本直接生效。
-
-### 1. Target and mandatory fallback
-
-目标架构是 **M3-B — Graph-aware Parallel Mixed Recall**。确定性基础和必须可独立工作的 fallback 是
-**M2 — Classical Mixed Search**：
-
-```text
-Raw Roman Stream → MixedCompositionState → bounded hypothesis/segmentation graph
-  ├─ LibIME-backed Chinese hypotheses
-  └─ English Core hypotheses
-  → parallel M2 Classical Mixed Search + M3-B MixedRecallProvider
-  → Unified Mixed Candidate Pool → contextual/optional learned ranking
-  → CandidateList → existing Auxiliary Filter (MoQi / Stroke)
-```
-
-M3-B 是目标架构，不是可有可无的未来选项；M2 必须在没有 M3-B 时独立提供确定性输入能力。
-MixedRecallProvider 必须可替换、可禁用、失败隔离。模型缺失、超时、推理失败、不支持 ABI、OOM 等情况必须
-回退到 M2，不得破坏 composition、partial selection 或普通输入。
-
-M3-B 不拥有 Pinyin/Shuangpin 解码、composition、中文学习、English dictionary、partial selection、candidate
-lifecycle 或 MoQi/Stroke；Auxiliary Filter 继续位于混输候选生成/排序之后。
-
-### 2. Frozen boundaries
-
-- LibIME 初始保持不变。只有真实 PoC 证明上层 contract 不足时才重开 API；优先 generic、可 upstream 的 API，
-  不 fork。
-- 不直接比较异构 LibIME、English、model raw score；统一排序前必须有明确 feature/calibration。
-- Pinyin、Shuangpin、partial selection、继续 composition/typing、learning、Backspace/Escape/paging 和重复
-  Auxiliary Filter 均为一等要求。
-- M1 Chinese Top-N + late reranking 仅作 benchmark/control；M3-C neural reranking 仅作 ablation/control。
-- M3-A raw-Roman→final-sentence full neural decoder 和 M4/full joint decoder deferred。
-- Phase3C/A′ 与 ChineseGap Top-1 不是未来 product architecture。
-
-### 3. Reuse and rework classification
-
-**KEEP / adapt:** MixedCompositionState、raw/output alignment、provenance、selection-frontier/partial-selection
-infrastructure、仍有效的 English Core abstractions/resources、Pinyin/Shuangpin seams、Auxiliary Filter seam、
-可复用的 test/benchmark infrastructure。
-
-**REWORK / REPLACE:** Chinese Top-1 gap contract、A′ ChineseGapSolver final boundary、mixed recall/search retention、
-把 product semantics 编进 placement 的规则、candidate truncation、heterogeneous score/ranking contract，以及任何
-在 cross-language context 影响 recall 之前进行不可逆 pruning 的假设。
-
-### 4. Required implementation gates
-
-**Data Gate:** 建立合法可用且有代表性的中英混输数据；区分自然 code-switch corpus 与真实 IME keystroke data；
-定义受控 Romanization/Pinyin/Shuangpin/synthetic augmentation。不得把 ASR code-switch corpus 宣称为 IME typing
-数据。
-
-**Quality Gate:** 使用 pinned LibIME 产生的真实 ambiguity witnesses，不得发明中文歧义；分别统计 segmentation、
-recall、context-modeling、ranking failure；在同一 corpus 上比较 M2、M3-B 和 M3-C control，并测 Recall@K、
-Top1、MRR/NDCG、partial-selection/continuation。
-
-**Mobile Cost Gate:** 做 Android-oriented latency/RSS/model-size/cold/warm/incremental 测量，报告 p50/p95/p99/max
-及 per-key work；A′ measurements 仅保留为 historical baseline；明确拒绝 naive per-span repeated full
-`Decoder::decode`，并要求 M3-B 用增量质量收益证明其相对 M2 的 latency/RSS 成本合理。
-
-### 5. Evidence discipline and roadmap transition
-
-商业证据只用于动机，不证明当前产品运行时调用图。现代 WeChat evidence 当前为 high-confidence static evidence，
-不是 proven runtime call graph；WeChat runtime call-chain verification 保留为 research item。Sogou/Tencent/Baidu
-patents 说明 mixed-search/context 方向但不证明当前产品恰好采用 M3-B。Rime 与 iFlytek 不是本决定的质量目标。
-M3-B 尚未通过 Data/Quality/Mobile gates。
-
-开放式 architecture selection/re-baseline 至此 **CLOSED by decision**。下一阶段为
-**“M3-B Architecture PoC / Validation”**，先做 contract 和 experimental validation，不做 production integration。
-Phase3C production implementation remains frozen；不更新 Android gitlink/product pin，不构建 APK/release/tag。
-
-下一阶段首次产出必须包括：precise hypothesis-graph contract、Chinese hypothesis provider contract、English
-hypothesis provider contract、MixedRecallProvider input/output/failure contract、M2/M3-B/M3-C benchmark design、
-Data Gate feasibility evidence，以及足以测试 recall/quality/mobile-cost assumptions 的最小 throwaway PoC。
-PoC 不预先决定 neural model/runtime/quantization/model size/beam width-N/final feature schema/training mixture，
-也不预先决定 M3-B 是否默认启用。
-
-## D074 — Mixed Input Authority Closure：混输 A′ 产品架构 Supersession 与 M2+ Architecture Contract
-
-**状态：Accepted（2026-10-09）。** 本条是 Android/Fcitx5 Fusion 中英混输的当前 architecture authority，
-依据 owner 已确认的 Project Instructions V2 与最终版 m2p implementation contract 收口。本条是
-docs/governance closure：不实现 M2+、不修改生产源码、不修改 LibIME、不运行 benchmark，
-Expected Behavioral Delta = NONE。
-命名澄清：本条所称混输侧 “A′” 指 Phase 3C 的 per-gap `ChineseGapSolver` 产品机制，**与 D072 的 Windows
-P0-C A′（TSF Key/Effect ordering）同名异物**；本条不修改、不重开、不被解读为影响 D072 或 Windows 线。
-
-> **部分修订注记（2026-10-10，由 D075 接受）：** 本条 §3 标题 “M2+ = 当前 implementation candidate” 的
-> candidate 表述、把架构选择理解为仍然 OPEN 的读法、以及把 “M2+ PoC / 另一轮 architecture-decision
-> experiment” 当作下一道 gate 的 current-state 表述（含 §6 的 “English lexicon 增强 deferred 至 M2+
-> architecture decision 之后” 之 defer 前提、§7 中 “English LM state 本轮测试 reset / preserve 两策略”
-> 作为未来状态的预期），**均不再规范**；对应 current-state 以 D075 为准：HR1 held-out 评估已完成且有效，
-> M2+/r4 已被接受为当前产品 Mixed Input 架构 baseline，架构竞争 CLOSED。本条其余内容按其原文继续有效，
-> 包括 §1 KEEP 裁定、§2 A′ 产品架构 SUPERSEDED 裁定本身、§3 所列九项长期架构 contract 要求（规范文本在
-> REQUIREMENTS §2.1）、§4、§5、§8；§9 reopen 条件 (b) 已按 D075 消化。本条正文是历史记录，原样保留、
-> 不改写。
-
-### 1. KEEP — Architecture A 上位结构与仍有效的既有裁定
-
-- 上位结构继续有效：Chinese lexical hypotheses（LibIME-derived，含 Chinese LM、UserDict/history 能力）
-  与 English Core hypotheses（lexicon、canonical form、completion、correction、user learning）进入
-  **同一个 bounded mixed hypothesis graph / search**，经统一候选表示/排序 → CandidateList →
-  Auxiliary Filter（保持 downstream）。
-- “中文/英文独立”的规范定义：**candidate sourcing、lexicon ownership、learning ownership、resource
-  responsibility 独立**。它不意味着两个完整 decoder 必须分别完成整句解码，也不意味着
-  Chinese/English 先各自选出最终结果再 late merge。不得为了 mixed input 把 English resources
-  无原则混入 Chinese dictionary。
-- D069–D071 中仍有效的裁定全部 KEEP：master switch 撤销与 `SpellEnabled` 单一英文门控（同一配置
-  不得喂出两条独立英文管线）、English Core 作为正式 candidate source、3-byte emission floor、
-  tier-ordered completions、`wWholeSpan`、widening fallback、English-learning-on-commit seam、
-  Auxiliary Filter frontier 融合回归、两个 intra-source 排序不动、未经校准跨源 raw score 不可
-  直接比较（D070 禁令）、canonical+字面双形态共存（D071）、raw↔output alignment、partial
-  selection、composition preservation、Pinyin/Shuangpin 一等支持。
-- D068 product/release boundary 不变（见 §8）。
-
-### 2. SUPERSEDED — 混输侧 A′ 产品架构
-
-- **OLD：** A′（Phase 3C）—— per-English-boundary / per-gap Chinese solve、Chinese (start,end)
-  Top-1 contract、cross-language context 生效前的不可逆 Chinese Top-1 pruning，以及为 A′ 性能
-  实现而产生、但未经产品证据证明的 retention/transition 限制。
-- **STATUS：** SUPERSEDED as accepted 产品语义（2026-10-09）。M2+ 开启时**不得运行 A′ per-gap
-  ChineseGapSolver**；上述约束不得继续作为 accepted 产品要求。
-- **STILL VALID（HISTORICAL EVIDENCE / 可复用工程成果）：** A′ 的代码、K1 incremental reuse、
-  diagnostics（含 MIXEDDIAG witness 机制）、benchmark/counter 基础设施、全部实验与设备报告，以及
-  Phase 9 的 native 20/20、ctest/CI 数字，原样保留为历史实现证据；不删除、不改写历史报告。
-  D069–D071 中被 D070/D071 自身明确保留的裁定继续按其原范围有效。
-- **REPLACED BY：** M2+（§3）。
-- **EVIDENCE/RATIONALE：** owner-approved 最终版 m2p implementation contract；architecture challenge
-  与 R5c/R6 阶段已验证事实。**Gate Q2 已判 INVALID，不得作为本条 acceptance evidence**；R6 已停止
-  （不得继续 N2/B1/B2/J/H），未完成的实验不得被写成支持了它没有支持的结论。无效 Q2 结果之外
-  的历史质量/性能数字仅作历史事实。
-
-### 3. M2+ = 当前 implementation candidate
-
-```text
-Raw Input
-  ↓
-Chinese lexical hypotheses + English Core hypotheses
-  ↓
-ONE Mixed Hypothesis Graph / bounded search
-  ↓
-each partial path carries LM state
-  ↓
-Chinese transition：pinned LibIME LanguageModel::score semantics
-  + 仅 source-verified / previously-validated 的最小调整
-  ↓
-English transition：单一集中式 transitionAcrossEnglish policy
-  ↓
-bounded diverse paths
-  ↓
-Unified candidate representation / ranking
-  ↓
-CandidateList
-  ↓
-Auxiliary Filter
-```
-
-Architecture requirements（长期，进入 REQUIREMENTS §2.1）：
-
-1. 每次 input update 使用**一个** bounded mixed search；Chinese 与 English 是同一 mixed
-   graph/search 中的 hypotheses/arcs，不是先各自解码完成再合并；
-2. LM state 是 search path state 的组成部分；Chinese transition 依该 path 当前 LM state 做
-   context-aware scoring；
-3. 不得在 cross-language context 有机会发挥作用前，把 Chinese span 不可逆固定成 Top-1；
-4. 搜索必须 bounded 并保留有限的多路径/diversity；
-5. 不得直接比较/相加未经校准的 heterogeneous Chinese/English raw scores；
-6. Pinyin/Shuangpin 均为一等支持；raw↔output alignment、partial selection、composition
-   semantics 必须保持；
-7. English transition 经一个集中式 transitionAcrossEnglish policy；
-8. Auxiliary Filter 继续位于主候选生成之后；
-9. LibIME 不修改；仅当实现过程中真实源码事实证明必要能力无法通过当前接口获得时，按 Hard Stop
-   规则重新评估（§5）。
-
-### 4. Architecture A 旧实现不是直接恢复目标
-
-旧 Architecture A 实现 **NOT restored verbatim**。“Architecture A 质量低主要因为 Chinese word
-scoring 缺少足够 path context” 当前是 **WORKING HYPOTHESIS TO VERIFY**，由 M2+ PoC 检验，不得写成
-已证明事实，也不得据此直接恢复旧实现细节。
-
-### 5. proposed D073 / M3-B 状态
-
-D073 已重标为 **PROPOSED — NOT ACCEPTED**，其正文作为 M3-B 提议记录原样保留；本条不 accept M3-B，
-也不得把 M3-B 写成 Accepted Architecture。M3-B 保持 **deferred research candidate**，不是当前
-product target；未来若经真实证据重启，必须以新的 decision 条目重新进入审查，不得沿用 D073 文本
-直接生效。proposed D073 的 Data/Quality/Mobile Cost Gate 不构成 M2+ 实现的前置阻断。
-
-### 6. M2+ PoC 的 English 侧冻结 = 实验控制条件
-
-本轮 M2+ PoC 使用与 R5c FINAL 相同的 English lexicon、English candidate recognition/filtering、
-English Core 与 placement；不加入雾凇、白霜或任何新 English/CN-EN dictionary。这是**实验控制条件**，
-用于隔离 mixed-search 架构变量，不代表永久禁止未来增强 English lexicon；English lexicon 增强决策
-deferred 至 M2+ architecture decision 之后。
-
-### 7. 长期架构要求 vs 本轮实验参数
-
-实验参数**不升级为永久 Requirements**，仅在 ROADMAP Phase 10 当前实验设定中管理：beam
-B = 4/8/16；English LM state 本轮测试 reset / preserve 两策略；Top-3 四配置计数之和 ≥184；
-A′ baseline 52+54+39+41=186；单配置最多下降 2；本轮 Pinyin Chinese p95 ≤10 ms；指定 ASan 两项
-test；六次 evaluation matrix；本轮具体 counter/report 文件名。最终 5 ms / 10 ms performance
-target：仓库当前**没有**独立 accepted 的硬延迟 requirement（researching-notes §11.8 亦禁止发明无依据
-阈值），因此不得仅因本轮 instruction 自动升级；如未来需要，须以单独决定确立。
-
-### 8. 发布边界与工程状态不变
-
-本条不改变 D068 首发发布边界（addons pin `47401b04`）、D060 current-state 权威、Android
-gitlink/product pin、PR #3 状态；不构建 APK/release/tag。`researching-notes` 混输架构文档与
-`/tmp/mixed-rebaseline-*`、gate 报告均为历史研究/实现证据，保持原样。
-
-### 9. Reopen conditions
-
-仅当 (a) M2+ 实现中的真实源码/API/call-chain 证据与 §3 requirements 冲突（Hard Stop，按
-AGENTS.md 报告并等待设计修订）；(b) M2+ PoC 结果促使 owner 重新评估 A′ 机制或 M3-B；(c) owner
-正式修订 m2p contract 时，重开对应分项。“还能测更多”、扩展矩阵或未穷尽 ROM/设备覆盖本身不构成
-重开或 blocker（AGENTS 分类规则不变）。
-
-## D075 — Mixed Input 架构基线终局：M2+/r4 接受为产品架构 Baseline 与 HR1 Held-out 评估收口
-
-**状态：Accepted（2026-10-10）。** 本条是 Android/Fcitx5 Fusion 中英混输的当前 architecture
-authority，依据 owner 已确认并采纳的 Project Instructions V2.1 最终架构结论与 HR1 held-out 评估
-裁决收口。本条是 docs/governance closure：不实现 r4、不修改生产源码、不修改 LibIME、不修改测试
-harness/benchmark、不运行任何评测、不访问已消耗的 HR1 held-out 数据行；Expected Behavioral
-Delta = NONE。本条对 D074 做部分修订（分项清单见 D074 头部注记与本条 §4），D074/D073 正文作为
-历史原样保留、不改写。命名澄清沿用 D074：混输侧 “A′” 与 D072 的 Windows P0-C A′ 同名异物；
-本条不修改、不重开、不被解读为影响 D072 或 Windows 线。
-
-> **澄清注记（2026-10-11，Confirmed Evidence；不改变本条任何裁定、证据或历史表述）：** 经产品
-> 基线源码复核（fcitx5-chinese-addons @ 644205f），本条接受的 M2+/r4 中，unified bounded mixed
-> search 规范混输候选的 **generation**（Layer 1）；PinyinEngine 最终组装（Layer 2）经既有
-> 排序/组装机制（customCandidateMap / CandidateOrder / inplace_merge，im/pinyin/pinyin.cpp:816-993）
-> 把混输候选与 LibIME classical 候选及其他既有来源做候选级 composition——“非两个整句 decoder
-> 末端朴素 late merge”是本条及 REQUIREMENTS §2.1 禁止对象的准确含义，不排除该候选级
-> composition。classical 路径对大写/raw literal 字面候选的保留同样不构成 English Core 拥有的
-> 词汇假设。本注为对既有接受文本的读法澄清，非新增 authority；REQUIREMENTS §2.1 已据相同
-> 口径加注澄清注记。
-
-### 1. 架构裁定（Accepted）
-
-- **M2+（单一 bounded mixed search，长期 contract 见 REQUIREMENTS §2.1 / D074 §3）被接受为当前
-  产品 Mixed Input 架构 baseline。** M2+/r4 = current accepted product architecture baseline。
-- **A′ 与 M2+ 之间的架构竞争 CLOSED。** A′ 保留为 historical/reference implementation 与证据
-  （其 per-gap `ChineseGapSolver` / Chinese Top-1 产品语义已由 D074 SUPERSEDED），不再是 competing
-  accepted product architecture；sunk implementation cost 不构成翻案依据。
-- **r4 = 在被评估的 M2+ 家族（r1–r4）中选出的 production baseline**；其已验证行为是产品化的行为
-  参照（§6）。
-- **不计划** r5/r6、A′ effort-parity 实验或任何新一轮 held-out 架构竞争。下一阶段是 **r4
-  productization/integration**（ROADMAP Phase 11），不是另一轮 M2+ PoC。
-
-### 2. HR1 Held-out 评估裁决（证据措辞精确，不升级、不降级）
-
-- **HR1 held-out 评估有效（valid）**：reveal attempt 1 按冻结 RCM（sha256
-  `28aa933e86705078c4c477c479b33090097d3a4ed394c2861e3ab24cda839f8a`）与冻结决策规则执行，
-  determinism 门 48/48 engine×cell run pairs EQUIVALENT（`/tmp/gate-hr1/reveal/attempt-1/report.md`；
-  前置认证与 negative-control 注入验证见 `/tmp/gate-hr1/h1-report.md`，held-out 语料冻结 HSF
-  STATUS: COMPLETE）。
-- **中文回归门 PASS**：C7 step 1 各引擎对 U 参照的 ZH_ONLY ci Top-3 / exact Top-1 比较全部
-  no trigger。
-- **在冻结选择规则下，r4（而非 r3）成为 M2+ 代表**：C7 step 2 `r4 vs r3 … → not clearly worse;
-  M=r4`。
-- **A′ vs r4 在主 held-out 质量指标（Track A ∩ MIXED ci Top-3）上为 INCONCLUSIVE**：C7 step 3
-  `Aprime vs r4 … p<0.05=no → INCONCLUSIVE`。因此**不得**写作 r4 在质量上统计性地战胜 A′，
-  **不得**写作 M2+ 具有被证明的、高于 A′ 的质量上限（proven higher quality ceiling）。
-- **产品决定基于完整证据**：在冻结决策规则下可比的 held-out 质量 + 显著更好的 runtime cost/
-  latency（held-out 侧 mixed keys p50/p95/p99：A′ ≈ 4.6–14.5 / 22.1–82.0 / 39.1–142.9 ms，r4 ≈
-  3.8–6.1 / 18.1–26.5 / 33.1–51.3 ms；进程 wall median A′ ≈ 40–195 s vs r4 ≈ 34–75 s，峰值 RSS
-  两者相当）+ 架构与产品属性（单一 bounded search、path LM state、集中式 transition policy、
-  无 per-gap 重复完整解码）+ 维护成本考量。
-- **召回区分必须保留**：A′ 在每个独立 Chinese gap 内执行更完整的 LibIME decode；r4 使用有界
-  增量搜索并可剪枝中间状态。**不得**制造“r4 在每一召回维度都优于 A′”的声称。
-- **HR1 held-out 数据集已被消耗**：此后不得将其描述或用作面向架构调参的 unseen held-out 证据。
-
-### 3. ENG_STATE=reset 裁定
-
-- 当前经验证的 r4 行为使用 **ENG_STATE=reset**；这是**当前验证过的实现策略**，
-  **不是**永久架构不变量（not a permanent architecture invariant）。
-- “Chinese LM state 是 search-path state 的组成部分”是长期架构要求；它**不**蕴含该状态当前必须
-  跨越 English transition 被保留。
-- **Cross-English Chinese LM-state preservation（preserve 或其他策略）= UNVERIFIED / DEFERRED
-  研究项，不是 r4 productization 的 blocker 或前置。**
-- HR1 实验参数（beam 大小、判定阈值、语料规模、`MIXED_M2P_*` 开关组合、reset 本身）**不**升级为
-  永久架构 Requirements；仅在 ROADMAP 实验记录中管理。
-
-### 4. 与 D074 的关系（KEEP / SUPERSEDED 分项）
-
-- **KEEP（仍有效）：** D074 §1 全部 KEEP 裁定；§2 A′ 产品架构 SUPERSEDED 裁定本身及其历史证据
-  保留条款；§3 九项长期架构 contract 要求（规范文本在 REQUIREMENTS §2.1）；§4（旧 Architecture A
-  实现不逐字恢复；WORKING HYPOTHESIS 定性保留）；§5（M3-B 状态，见本条 §5）；§8（发布边界）。
-- **SUPERSEDED（不再规范，已加注于 D074 头部）：** §3 标题的 “当前 implementation candidate”
-  表述及其候选读法；“架构选择仍然 OPEN”的任何读法；“另一轮 M2+ architecture-decision experiment
-  是下一道 gate”的路线表述（ROADMAP Phase 10 NEXT 措辞据此收口）；§6 中 “English lexicon 增强
-  deferred 至 M2+ architecture decision 之后”的 defer 前提——该 architecture decision 即本条，
-  前提已满足，词库增强回到正常产品/维护裁定，本条既不授权也不禁止任何具体词库变更；§7 中把
-  reset/preserve 双策略测试当作未来状态的预期（未来状态由本条 §3 与后续研究界定）。
-- **§9(b) 消化：** “PoC 结果促使 owner 重新评估 A′ 机制” 已按其自身语义由 owner 决定完成——
-  owner 基于 PoC/HR1 证据接受 M2+/r4，不恢复 A′ 为产品架构。
-
-### 5. M3-B（proposed D073）状态不变
-
-D073 维持 **PROPOSED — NOT ACCEPTED**；M3-B Graph-aware Parallel Mixed Recall 维持 **deferred
-research candidate**，不是当前 product target。本条不 accept M3-B，其 Data/Quality/Mobile Cost
-Gate 仍不构成 r4 productization 的前置阻断。
-
-### 6. 下一阶段语义边界（由 ROADMAP Phase 11 承载）
-
-- Next = **r4 productization/integration**；产品化**必须首先保持已验证的 r4 行为**（HR1 认证的
-  引擎语义为行为参照），再走正常工程流程（产品配置化、fork 集成、设备验收、发布裁定）。
-- 无 r5/r6、无 A′ effort-parity 实验、无新 held-out 架构竞争。
-- Cross-English LM-state preservation 是 deferred research，不阻塞产品化。
-- 发布边界不变：D060 current-state 权威、D068 首发发布边界（addons pin `47401b04`、Android
-  产品线 `contribution/fusion-enhanced-identity-naming-r8` @ `f2a64da1`）、PR #3 未 merge 状态、
-  Android gitlink/生产线均不因本条改变；不构建 APK/release/tag。
-
-### 7. Reopen conditions
-
-按 AGENTS.md 已收口证据与重开规则执行：仅**实质性新事实**可重开对应分项——相关产品行为/源码变化、
-依赖/artifact/版本变化、上游 API/许可/行为变化、与已接受结果矛盾的新设备证据、CI/release 回归、
-或命中本条专有的其他 reopen 条件；以及 r4 实现中真实源码/API/call-chain 证据与 REQUIREMENTS §2.1
-contract 冲突时按 Hard Stop 报告并等待设计修订（继承 D074 §9(a)）。**没有**自动触发的 r5/r6、
-A′ parity 或新 held-out campaign；“还能测更多”、矩阵不穷尽、未测 ROM 或缺少额外实验本身不构成
-重开理由。
-
-## D076 — Fusion 分支治理：Canonical Branch Policy 接受（docs/branch-policy.md）
-
-**状态：Accepted（2026-10-11）。** 本条接受 `docs/branch-policy.md` 为分支治理的当前唯一
-Accepted Branch Policy（current-state 权威）。仓库证据核查（AGENTS.md / REQUIREMENTS.md /
-ROADMAP.md 与 docs/ 检索“branch policy”）确认此前**不存在**已接受的 Branch Policy，故本条
-**不 supersede 任何先前决定**；D060/D063/D068/D075 的发布边界、pin 与权威地位不变，本条仅将
-其分支引用纳入 canonical 命名框架。本条为 documentation/governance batch：Expected Behavioral
-Delta = NONE；不修改生产源码、workflow、测试或 REQUIREMENTS。
-
-### 1. 接受的 policy 要点（正文权威见 docs/branch-policy.md）
-
-- 永久分支：Android/addons 各自 `fusion`（product trunk）+ `master`（upstream-only sync
-  line）；fcitx5-fusion `main`。master 永不承载 Fusion-owned commit——该不变量为
-  **前瞻性**裁定：android master 上既有的两个 pre-D076 fork-only CI 遗留提交作为历史
-  事实保留、不重写、不构成先例（精确定位与处置边界见 branch-policy.md §2；其清理属
-  未来独立治理批次）。fusion 永不重写。
-- 上游集成模型：update master → `integration/upstream-YYYY-MM` ← 合入上游 → 验证 →
-  reviewed PR 回 fusion。`contribution/*` 仅用于上游贡献，可 rebase，永不作 trunk。
-- fusion PR 合并的**两层要求**：GitHub 机械规则 = 必须经 PR、零强制 approving review
-  （ruleset `required_approving_review_count=0`，单维护者操作性安排）；项目流程规则 =
-  合并/PASS 判定前仍需独立评审（项目独立 AI review + owner 合并决定）。两层含义见
-  branch-policy.md §3/§13。
-- Phase 是 ROADMAP 概念，不是长期分支；evidence 分支不是标准类别；tag 表达固定点
-  （产品发布 tag 语法由 D077 canonical 定义：`v<complete-upstream-version>-fusion.<N>`
-  （可带 `-rc.K` 成熟度后缀）；治理命名空间 `archive/<name>`（annotated，仅持续复现/审计价值）、
-  `evidence/<id>`），禁止机械补建 archive tag 造成 tag clutter。
-- **Gitlink 可达性不变量**：canonical/release-relevant ref（含 workflow `ADDON_COMMIT`
-  pin）引用的 SHA 必须可达于永久分支或 durable tag；sole-protector 分支删除前必须先证明。
-- 跨仓顺序：先 addons fusion，再 Android gitlink 独立变更并记录 exact SHA。
-- 删除前 cleanup 清单（§12）：可达性、文档/CI/AGENTS 引用、上游贡献价值、worktree、open PR。
-
-### 2. Canonical refs（本条接受时已存在的事实，非本条创建）
-
-- choicky/fcitx5-android `refs/heads/fusion` = `bb6f88a54b1a2d353225a256833ec42ba15cefdd`
-  （原 `contribution/fusion-enhanced-identity-naming-r8` remote tip）。
-- choicky/fcitx5-chinese-addons `refs/heads/fusion` = `644205f6626011b37a0e1cc7fa789e00020e453d`
-  （原 `feature/mixed-input-r4-productization` tip）。
-- 两 code repo GitHub default branch 已切至 `fusion`；`master` 保留为上游同步线。
-- 迁移过程与验证证据：`evidence/branch-governance-gate1-2026-10-11/`（Gate 1 ref
-  normalization，未删除/重命名/tag/force-push 任何 ref，未改 workflow 与源码）。
-- Gate 2（分支清理）**未开始**；`evidence/branch-inventory-2026-10-11/` 的分类仅为历史
-  清点结论，执行删除前必须逐项满足 branch-policy.md §10/§12。
-
-### 3. Reopen conditions
-
-默认分支、ruleset 或 canonical `fusion` ref 出现与本 policy 冲突的外部变化（含
-non-fast-forward 移动）→ 立即 STOP 并按 AGENTS.md 冲突规则报告。policy 修订只能通过
-新的 Accepted Decision。
-
-## D077 — Fusion Versioning Policy：canonical 版本命名 `<upstream-version>-fusion.<N>`
-
-**状态：Accepted（2026-10-11）。** 分类：**既有发布实践的形式化 + 前瞻规范统一；不
-supersede 任何 Accepted Decision**（逐条权威核查见 §3）。本条是 version/tag 语义的唯一
-primary authority；`docs/branch-policy.md` §9 只引用本条、不重复内容。REQUIREMENTS.md 现无
-版本命名需求，本条不改 REQUIREMENTS（不属于需求域）。本条为 documentation batch：不修改
-Android/addons/LibIME 源码、不修改任何 workflow、不创建 tag、不触发 CI、不发布；Expected
-Behavioral Delta = NONE。
-
-### 1. Canonical 形式
-
-- 人类可读版本（versionName 基线）：`<complete-upstream-version>-fusion.<Fusion-revision>`；
-  Git 发布 tag：`v<complete-upstream-version>-fusion.<Fusion-revision>`。
-  例：`0.1.3-fusion.1` … `0.1.3-fusion.9` / `v0.1.3-fusion.9`。
-- 预发布成熟度后缀置于 Fusion revision 之后：`0.1.4-fusion.1-rc.1` → `0.1.4-fusion.1-rc.2`
-  → `0.1.4-fusion.1`（对应 tags `v0.1.4-fusion.1-rc.1` 等）。不引入 alpha/beta，除非未来
-  真实发布流程需要。
-
-### 2. 语义规则
-
-1. **完整保留**上游 release version 作为 upstream-baseline 分量，不缩写、不改写。
-2. upstream-version 分量必须标识 Fusion 产品**实际已并入**的上游 release baseline。
-3. 上游发布更新版本**本身不构成**变更该分量的授权：若 Fusion 仍基于 upstream 0.1.3，
-   则继续发布 `0.1.3-fusion.N`，即使 upstream 0.1.4 已公开。
-4. 仅当更新的上游 baseline 实际通过 branch-policy.md §4 的上游集成流程完成
-   integration/validation 并进入永久 `fusion` trunk 后，才可切换到该 baseline 的
-   `0.1.4-fusion.1`。
-5. 同一 upstream baseline 内，Fusion revision 单调递增。
-6. upstream baseline 变更时，Fusion revision 重置为 1。
-7. 发布成熟度由 `-rc.K` 等后缀表达（§1）。
-8. Android `versionCode` 与该人类可读语义**独立**：仅要求在可安装 Fusion releases 间严格
-   单调递增（现行机制：`Versions.baseVersionCode` 手动 bump，不变）。除非未来 Accepted
-   Decision 要求，不把 upstream/Fusion 结构数学编码进 versionCode。
-9. 使用旧命名方案的历史发布（`v0.1.3-moqi.1/.2`、`v0.1.3.7`、`v0.1.3.8-rc.1/.2`、已发布
-   `v0.1.3-fusion.6` 等）是**历史事实**：不为符合新 policy 而重写历史证据、旧 tag、旧发布
-   记录或旧报告。
-10. 若未来上游版本形态出现不可预见的解析/表示歧义：仍保留完整上游 release version，
-    下游表示通过未来 Accepted Decision 解决；不提前发明投机性复杂度。
-
-### 3. 与既有权威的关系（supersession 核查）
-
-- **D054**（version 来自单一权威算法 `git describe --tags --long --always`；APK 文件名
-  branding）：**仍有效，机制不变**。本条只约束所打 tag 的形式；describe 随 tag 顺延输出。
-- **D060 / D066 / D068**（首发基线、RC.1 驳回与 pin 更正、RC.2 精确产物晋升发布）：均为
-  已发生发布事实与历史证据，**保持不变**；其中 `v0.1.3.8-rc.N` 是当时执行用 tag，不构成本
-  条意义上对未来 releases 的规范命名形式。本条不推翻、不改写它们（规则 9）。
-- **D063**（签名产物与精确晋升策略）：发布流程权威**不变**；`-rc.K` 只是成熟度命名表达。
-- **D064 / D058**（签名身份）：与版本命名无关，不变。
-- **D075 / D076**：无版本形态裁定；D076 §1 的 tag 命名空间已改为引用本条。
-- 结论：无任何先前 Accepted Decision 被 supersede；本条为 **formalization**（先例：
-  `v0.1.3-fusion.6` 已经由现行 `release-apk.yml` 管线正式发布，CI run `37037562844` 成功）。
-
-### 4. 静态兼容性验证（read-only，源码/配置为 Android fusion head `bb6f88a5`，2026-10-11）
-
-- `build-logic/convention/src/main/kotlin/ProjectExtensions.kt`：
-  `buildVersionName = runCmd("git describe --tags --long --always", Versions.baseVersionName)`
-  —— 纯字符串直通，无数值/结构解析；Android versionName 接受该字符串（历史产物已实际携带
-  `v0.1.3.8-rc.2-0-g…` 与 `v0.1.3-fusion.6-0-ge48896ac` 风格 versionName）。
-- `build-logic/convention/src/main/kotlin/Versions.kt`：`calculateVersionCode() =
-  baseVersionCode * 10 + abiId`（`baseVersionCode` 为手动常量，现 11）——versionCode 与
-  versionName 形态完全解耦，符合规则 8。
-- `.github/workflows/release-apk.yml`：触发 `on.push.tags: ["v*"]` —— `v0.1.3-fusion.9`
-  匹配；workflow 对 tag 名本身**无版本解析**，仅对 Gradle 产物名做字符串前缀
-  case/替换检查（`org.fcitx.fcitx5.android-` → `…fusion-enhanced-`），与版本形态无关。
-- `app/org.fcitx.fcitx5.android.yml`（F-Droid recipe metadata）：placeholder builds，无
-  针对 fork tag 的 regex 解析。
-- **结论：`0.1.3-fusion.9` / `v0.1.3-fusion.9` / `0.1.4-fusion.1-rc.2` 无实际 parser/format
-  不兼容**，无需 STOP。PR #5 评审发现的草案 `fusion/v<version>` 形式因不匹配 `v*` 触发器而
-  废弃（见 branch-policy.md §9）。
-
-### 5. Reopen conditions
-
-未来上游版本形态命中规则 10 的解析歧义、或发布基础设施出现与本条冲突的真实需求时，按
-Hard Stop 报告并通过新的 Accepted Decision 解决。
-
-## D078 — English Lexicon Authority Closure：~95k 基线保持、lowercase OOV 能力定性、D071 语义分层与未来 English 资源分发前向兼容要求
-
-**状态：Accepted（2026-10-12）。** 分类：**authority closure = 复核 + 澄清 + 前向需求记录；
-不 supersede 任何先前 Accepted Decision**，D069/D070/D071/D074/D075/D076/D077 的裁定、pin、
-证据与历史表述逐项核查后全部不变（见 §7）。本条为 docs/governance batch：不实现产品行为、
-不运行或授权任何实验/benchmark、不改词库生成、不实现 Dictionary Manager/OOV/资源框架；
-Expected Behavioral Delta = NONE。输入：M2+/r4 已接受产品基线（D075）、两层候选管线源码
-审计（2026-10-11，REQUIREMENTS §2.1 / D075 澄清注记）、被拒绝的 short-Latin PoC
-（fcitx5-chinese-addons PR #4：ARM_A/ARM_B = REJECT，CLOSED 未 merge）、D071 既有裁定、
-最新独立架构评审意见。
-
-### 1. English Lexicon 产品基线（Accepted Decision：reaffirm + Confirmed Fact 补记）
-
-- **Confirmed Fact：** 当前 M2+/r4 **development/productization baseline**（addons 已接受基线
-  `644205f`，post-D068 产品化收口所接受）的英文词库 = `im/pinyin/english_lexicon.tsv`，
-  **94,530 条词库条目**（≈95k；另有 10 行头部注释，不计入），
-  来源 SCOWL v2 tag `rel-2026.02.25`、American spellings、variant level ≤1、deaccented；
-  文件 SHA-256 前缀 `ed36694f`。
-- **发布历史区分（不改写 D068 / `docs/first-release-baseline.md`）：** 已发布的 D068 First
-  Fusion Enhanced Release 历史 pin 为 addons `47401b04`；本条**不**得被读作该已发布 release
-  的 APK 已随包携带 `644205f` 词库——`644205f` 词库是当前 development/test/productization
-  baseline，非对已发布 bundle 的重述。
-- **保持该 ~95k 词库为当前 M2+/r4 产品开发/产品化基线；词库缩减不是当前产品目标。** 与 ROADMAP Phase 11 收口条目
-  （“English lexicon 规模不冻结…不提前把 1k/3k/5k 或任何其它规模写成产品 requirement”）及
-  D075 §4（词库增强回到正常产品/维护裁定）一致：本条**不**规定 1k/3k/5k 或任何 tier 实验。
-- **词库规模相关裁定仅在下列具体证据下重开**：可测的显著 search/latency/内存/磁盘资源成本
-  （真实产品路径证据）、ranking 回归或 false English admission（语料/设备证据）、
-  provenance 或许可证问题。
-- **不得**声称“更小的词库对中文输入天然更安全”：现有中文保护来自结构性裁定——English
-  3-byte emission floor（D069）、有界跨源插入类与单音节 Han 护栏（D070）——与词库规模无因果绑定。
-
-### 2. lowercase OOV：能力三分类与 Known Limitation
-
-讨论混输 OOV 必须区分三件事，不得笼统合并：
-
-1. **raw input commit**（原始串作为输入的 commit/回退路径）；
-2. **literal candidate availability**（字面串是否作为候选出现）；
-3. **OOV 参与连续中英 mixed composition**（OOV 词作为英文段参与连续混输句的生成与放置）。
-
-- **Known Limitation / Unresolved Capability：**小写 OOV 的混输 composition，如
-  `yongkubernetesbushu → 用kubernetes部署`，**未被建立为受支持能力**，属当前已知限制/
-  未解决能力。
-
-  > **澄清（2026-10-12，English Lexicon V1 产品化审计）**：对 `644205f` 基线源码复核确认
-  > `kubernetes` 是 ~95k 词库中的既有 curated 条目（`technical.allow`：`kubernetes → Kubernetes`，
-  > tier 9，flag `t`），**不是**严格意义的真 OOV；本条示例仅用于说明现象形态。本条 Known
-  > Limitation 的规范对象是**词库缺失的小写真 OOV 词**（如任意未收录字母串）的混输
-  > composition，对该类输入的定性不变；“不添加 generic 小写 raw-OOV arc”的裁定不变。对
-  > 词库已覆盖的小写词，English-Core 按既有词库机制产生 arc（与 `iphone` 同构）；本澄清
-  > 不宣称任何具体词的混输输出已获回归证据支持。
-- 两层管线源码审计确认的 classical 路径**大写/大小写相关** Latin 材料行为（LibIME 强制
-  uppercase 边 → unknown-node carrying → classical 候选；见 REQUIREMENTS §2.1 / D075 澄清注记）
-  **不得泛化到任意小写 OOV 字符串**；**不得**声称 classical 候选路径已被证明提供
-  “kubernetes” 级别的小写 OOV 完整候选。
-- 该限制**当前不**构成向 M2+/r4 添加 generic 小写 raw-OOV arc 的理由，该决定基于：
-  (a) 已接受的 ~95k English lexicon 作为 M2+/r4 development/productization 基线（§1）；
-  (b) 当前没有要求修改混输架构的证据。short-Latin PoC（addons PR #4）的 ARM_B = ARM_A
-  之上的**大写短 span `[A-Z]{1,2}` raw/OOV literal 假设**实验，其 REJECT 只针对该大写短
-  span 实验机制；PR #4 **没有**测试、也**没有**拒绝针对 “kubernetes” 类输入的 generic
-  小写 OOV 机制，本条不得被读为其已实验性否决了后者。
-- 未来真实设备失败语料或明确产品需求可重开本裁定。**本条不运行、不授权任何 OOV 实验。**
-
-### 3. D071 保持与语义分层澄清
-
-- **D071（canonical + 字面双形态共存）继续 Accepted；本条不 supersede、不弱化、不扩大其适用。**
-- 澄清两层语义，避免把词库身份与搜索输出混为一谈：
-  - **SYSTEM LEXICON IDENTITY**：normalized key → 默认 canonical 显示形态（如
-    `github → GitHub`）。属词库身份/默认显示语义（D069 仍有效部分：用户键入大写权威、
-    默认显示形态为 canonical）。
-  - **SEARCH OUTPUT ARCS**：当前接受行为 = 候选集**同时**保留 canonical 输出与
-    用户键入/字面输出（D071 parallel literal arc，canonical 可排位在前）。
-- **不**新增“canonical 与 literal 形态必须共享有界搜索预算”的冻结规则。“surface variants
-  浪费 diversity/search budget”仍是 **UNVERIFIED 假设**（无已接受证据支持）。
-- 修改共存行为本身需要**显式重开 D071 的单独决定**（其 Reopen condition (b) 的 beam/topK
-  截断证据要求同样适用）。
-
-### 4. 未来可下载/可更新 English Lexicon：compatibility gate（前向需求，非实现授权）
-
-- 架构要求：未来独立分发（下载/更新）的 English Lexicon **不得绕过 compatibility gate
-  改变 ranking 语义**。
-- 机制依据（已确认）：英文词库资源可能包含或暗示 prior/tier 分布（如 D069 tier-ordered
-  completions / tier-driven completionEvidence），会与已校准的 mixed-search scoring 行为直接
-  交互；REQUIREMENTS §2.1 的未经校准 heterogeneous raw score 不可比较/相加禁令同样约束
-  资源侧。
-- 因此未来可下载 English Lexicon 必须携带显式的 **runtime/scoring compatibility
-  generation/version 标记**（具体字段名与编码属实现细节，本条不规定）；应用只启用与其所支持
-  的 scoring/runtime contract 兼容的资源版本。
-- 新发布的、改变 ranking 相关数据的 English Lexicon artifact 在分发前必须通过相应的
-  mixed-input 回归门（现有固定语料/排名门体系）。
-- **本条是未来 English 资源需求，不是当前实现 English Lexicon 下载/更新的授权**（与 D059
-  对 ASR 模型分发权利的独立权威记录相互独立，互不扩张）。REQUIREMENTS §2.1 已按同口径
-  记录该 forward requirement。
-
-### 5. Dictionary Manager 边界与最小前向兼容原则
-
-- **本条不把现有 Dictionary Manager 泛化为 generic LexicalResourceManager。** 后续
-  Dictionary Update / Migration Closure 批次保持窄范围 = 现有中文/拼音词典产品行为（与
-  `docs/dictionary-manager-plan.md` §1/§8 的窄边界一致）。
-- 因既有 authority 已讨论持久 catalog/update schema 演进（plan M3 目录字段），记录最小
-  前向兼容原则：
-  - 持久 schema **不得**永久假设所有资源同为 Pinyin-dictionary 类型；
-  - 未来 resource type / namespace 与 compatibility-version 概念必须可在**不引入另一次
-    可避免的破坏性迁移**的前提下表达。
-- 除上述原则外，本条**不规定、不实现任何 generic loader/provider/resource framework**。
-
-### 6. 既有职责边界（已权威者引用，未记录者在本条层级记录）
-
-- 中文词库资源与中文学习 = **LibIME-owned**（REQUIREMENTS §2.1 ownership 分离规范）。
-- 英文词库资源与英文学习 = **English-Core-owned**（D069 English-learning-on-commit seam，
-  `mixed_english_user.tsv`）。
-- **cn_en 类数据是辅助证据/来源材料，不是主混输 decoder**（D074 的“不加入新 English/CN-EN
-  dictionary”是实验控制条件；本条把能力定位记为长期边界）。
-- 一般英文-英文 spacing（相邻多英文词的分词）是 composition/search（segmentation/graph）
-  职责，**不是**靠词库枚举全部 mixed/multi-word phrases 来解决。（本条只记录该职责边界；
-  不对当前 multi-word spacing 的质量状态作任何断言。）
-- **不得**把系统英文词库机械扩充为大量猜测的 morphology families（派生/屈折家族）；任何
-  词库内容变更走正常产品/维护裁定并命中 §4 门。
-- raw heterogeneous source frequencies 与中文分数**不可直接比较**；英文证据进入 mixed ranking
-  前必须归一化/校准（REQUIREMENTS §2.1 禁令；D070 “没有任何分数比较”的插入类设计同向）。
-- Pinyin/Shuangpin 碰撞语义（如 1–2 字母英文条目与拼音音节重合）**主要属混输
-  search/context 逻辑**（emission floor、placement、护栏；D069/D070 先例），**不**固化为
-  英文词库资源的永久 schema。
-- **CustomPhrase 保持为独立的既有 source of truth**（用户确认词经 learning 进入候选，D070
-  插入类 provenance 含 CustomPhrase；不与系统英文词库身份混同）。
-- 用户已学习的英文 surface/casing 偏好**不得**仅因系统词库后续改变 canonical 显示而被静默
-  覆盖（本条记录为边界要求；具体实现语义在相关批次经源码/设备证据确认）。
-
-### 7. Supersession 与历史证据核查
-
-- 本条 **不 supersede 任何决定**：D069（emission floor/tier completions/learning seam/大写
-  权威）、D070（插入类/护栏/语料门）、D071（双形态共存——§3 仅澄清读法）、D074/D075
-  （架构基线与 lexicon 增强裁定——§1 引用而非修改）、D076/D077（治理，与本题无交集）全部
-  维持原文与效力。
-- 历史证据（D069–D071 语料门与 PINS、HR1 评估、两层管线审计、addons PR #4 的 closure
-  记录）原样保留；本条固化的是解读与边界，不把旧证据改写成匹配新结论。
-- 分类标注：§1 = Accepted Decision（reaffirm）+ Confirmed Fact；§2 = Known Limitation /
-  Unresolved Capability；§3 = clarification（D071 不变）；§4/§5 = forward requirement /
-  边界（Accepted Decision，非实现授权）；§6 = 边界记录与引用。
-
-### 8. Reopen conditions
-
-- §1：命中 §1 所列规模相关具体证据；
-- §2：真实设备失败语料或明确产品需求指向小写 OOV 混输 composition；
-- §3：beam/topK 截断使字面形态在产品路径不可达的真实证据（沿用 D071 Reopen (b)），或显式
-  重开 D071 的决定；
-- §4/§5：进入 English 资源分发或 Dictionary Manager 后续批次设计时，按本条边界细化并由
-  评审裁定字段/迁移表达；
-- §6：新的源码事实或已确认证据与本条冲突。
-“还能测更多”、未穷尽矩阵或额外 instrumentation 本身不构成重开理由（AGENTS 分类规则不变）。
-
-## D079 — English Lexicon 收口：单一系统词库、Ice 主词表/Frost 补充的词库替换、最小覆盖审计、失败职责矩阵与 Android Spell 边界
-
-**状态：Accepted（2026-10-12，同日修订并含库存替换批次）。** 分类：**authority closure =
-Accepted Decision（架构/政策收口）+ Confirmed Fact（P1 覆盖审计、库存替换批次）+
-clarification（curated 合并碰撞规则文档更正）**；除本条 §1/§10 明确记载的对 D078 §1
-“SCOWL 基线”表述的 supersede 外，不 supersede D071/D075/D078，不修订 D069/D070/D074 的
-裁定。本条包含两个 addons 配套批次：P1 最小补充（94,530 → 94,540，后被替换批次整体取代）
-与同日执行的**词库替换**（SCOWL ~94.5k 库存退役，改为 Rime Ice 主词表 + Rime Frost 补充 +
-小而审的 curated allow-list，22,477 条）；除数据与文档外运行时代码零改动。
-Expected Behavioral Delta：仅词库数据（最终交付 = 替换后的 22,477 条库存；P1 补充批次为其
-历史中间态）；无运行时语义、ranking、搜索或架构变化。
-
-### 1. 单一词库架构与词汇来源政策（Accepted Decision）
-
-- 混输 English Core 消费的**唯一打包系统词库**（single bundled system lexicon）：
-  `im/pinyin/english_lexicon.tsv`（含 curated allow-list 合并结果），经 English Core
-  进入 M2+/r4。（Android Spell 的 `en_dict.fscd` 属另一职责路径，见 §2，不在此列。）
-- 词汇来源政策（2026-10-12 修订，替换原“SCOWL 基线”表述）：**主词表 = Rime Ice
-  `en_dicts/en.dict.yaml` + `en_ext.dict.yaml`（人工策展的常用英文核心）；Rime Frost
-  同名文件仅补充 Ice 缺失的折叠键；本仓库小而审的 `proper.allow` / `technical.allow`
-  curated 条目保留，用于 canonical 显示覆盖与上游缺失的少量键。** 这些是构建期输入，
-  经生成器进入同一条 TSV，**不是**第二个运行时词库。
-- SCOWL ~94.5k 拼写检查库存**不是产品需求**：不再为其保留、不再对其做进一步比较/基准/
-  研究；本批次已将其从运行时库存退役。历史记录（D071–D078 相关字节 pin、P1 审计表、
-  旧 NOTICE）保持原样，不回写。
-- 本条 §1 明确 supersede D078 §1 中“SCOWL ~94.5k 为广覆盖基线、保持不变”的词库来源
-  表述；D078 §1 的单一词库/单一 pipeline 结论与其余裁定不变。
-- 产品政策以此收口为最简架构。**不**加入：中文上下文元数据/词类/salience、第二词库或
-  第二 decoder、外部 raw frequency、臆造数值 prior、新 ranking 维度、逐词频度导入
-  （tier 仅按表来源成员关系粗分：Ice-en 9 / Ice-ext 8 / Frost-en 7 / Frost-ext 6）。
-- **不**手工裁决数千词：Ice 即策展来源；Frost 补充仅作最小判断；curated 列表只按 §5
-  审计证据增删。
-- 不可达键（如含数字的 `K8s`）**跳过**，不为使其可达而改动 LibIME、PinyinEngine 数字
-  处理或 M2+/r4 admission/search。
-
-### 2. Android Spell 职责边界（Confirmed Fact + 边界）
-
-- Android 既有英文路径 = fcitx5 Spell 模块 + `en_dict.fscd`（约 122,905 条 general-English
-  2012 词表，运行时不读频度）服务**纯英文** Spell/hint 提示（androidkeyboard
-  `hintForDisplay`）。它与 Fusion 混输词库职责不同，**不替代** Fusion 英文词库
-  （独立复用研究结论：KEEP FUSION RESOURCE；证据记录于该研究报告，非本条权威载体）。
-- 禁止项（维持现状）：不合并/导入 `en_dict.fscd`（其数据许可未声明，不满足再分发门），
-  不恢复混输 Spell sidecar（addons `pinyin.cpp` 已退役；`SpellEnabled` 现为 Architecture A
-  开关，语义按 D078 引用不变），M2+/r4 不调用 Spell 接口。
-
-### 3. 中文上下文词库元数据：不采纳（Accepted Decision）
-
-- 中文上下文元数据、词类标记、salience 信号**不属于当前架构**。先前
-  Chinese-Context Evidence Study 提出的“Model-2-as-annotation”方向按规则 F
-  （无现有机制无法解决的具体观测失败，就不新增元数据/排序层）**不予采纳**，仅作研究
-  记录保留。若未来出现设备/语料级失败证据，须以新 Decision 重开。
-
-### 4. 失败职责矩阵（边界记录）
-
-观测到的英文失败必须先归入实际负责机制，不得越界用词库“修复”：
-
-- 缺词 → 词库覆盖（curated allow-list 或 Ice/Frost pin 更新，走 AUDIT.md §6 评审；
-  仅在该键按 §1 可达字母表可输入时有效）；
-- 显示/大小写错误 → canonical 数据（allow-list 条目本身）；
-- 拼音碰撞、候选排位 → search/context/ranking（D069/D070 机制）；
-- 短 Latin 接受 → admission policy（D069 emission floor；addons PR #4 的
-  ARM_A=ARM_B=REJECT 记录不变）；
-- 英文词间空格/多词连输 → composition/search（分段图职责，D078 §6）；
-- 用户反复自造词 → 用户学习（`mixed_english_user.tsv`，D069 learning seam）。
-
-已收录词的可疑 placement 按上表归责记录，**不**回改词库条目。
-
-### 5. P1 覆盖审计与最小补充（Confirmed Fact）
-
-- 对**当前生成词库**（基线 SHA-256 `ed36694f…`）执行场景审计（AI 产品/服务、开发者平台、
-  语言/框架、云/devops、OS、消费品牌、计算缩写；含强制最小清单）。结果：**10 个键缺失**
-  （k8s、vercel、asr、css、deepseek、qwen、sora、midjourney、huawei、xiaomi），
-  **1 个 canonical 错误层级**（`copilot` 仅为 SCOWL 普通名词 tier 7 小写）。其余强制与
-  探测条目均已正确收录。逐项证据见 addons 批次随附
-  `data-licenses/english/coverage-audit-2026-10.tsv`。
-- 补充 = 8 proper（Vercel、DeepSeek、Qwen、Sora、Midjourney、Huawei、Xiaomi、Copilot）+
-  3 technical（CSS、ASR、K8s）。provenance = 官方 vendor/product 拼写或既定缩写惯例
-  （逐项记录于 addons AUDIT.md §6.1 维护日志）；未从 Rime Ice/Frost/Wanxiang/cn_en/
-  Android Spell 批量拷贝任何数据。
-- 词库 94,530 → 94,540（copilot 原位替换，不增行）；两次独立重生成字节一致，
-  manifest/NOTICE 同步更新，configure-time SHA 门通过；English Lexicon/混输回归
-  （testenglishlexicon、testenglishcorrection、testmixedpipeline、testmixedengine）与
-  生产词库 D071 探针全部通过。
-- 同日记录更正与历史定位：上述被审计的 SCOWL 库存随即被 §10 的替换批次整体退役，因此
-  本节的键缺失/canonical 结论是针对**当时已发布数据**的历史事实，保留不回写；其中
-  `K8s` 补充因数字键在输入路径不可达而被撤回（见 §6 更正与 §10）。其余 10 个可输入
-  curated 键（vercel、asr、css、deepseek、qwen、sora、midjourney、huawei、xiaomi、
-  copilot）在替换库存中继续成立。
-
-### 6. curated 合并碰撞规则：文档更正（clarification，非行为变更）
-
-- 实现语义（一直如此）：curated 条目总以 canonical 显示收录——与上游词（原 SCOWL，
-  现为 Ice/Frost，见 §10）折叠键碰撞时在 tier 9 替换其显示，与哪些字母大写无关（Apple、
-  GitHub、PDF 同理）；小写字面形态由
-  D071 parallel literal arc 保留，用户键入大小写仍权威（D069）。此前 AUDIT.md §3、
-  `proper.allow` 头注释与 TSV 头注释中“首字母大写形态永不覆盖常见词”的描述**从未实现、
-  从未进入已发布数据**，本批次将文档更正为与实现/已发布数据一致（先例：`apple→Apple`、
-  `google→Google`、`go→Go`）。
-- 同语境更正（P1 批次曾把生成器 curated 键过滤器放宽到含数字的 surface alphabet 以收录
-  `K8s`；同日替换批次**已回退**该放宽）：运行时加载器 `EnglishLexicon::foldKey` 一直允许
-  数字键且零改动，但产品输入路径 `PinyinEngine::keyEvent` 只接受字母与撇号（数字被候选
-  选择提前消费），因此数字/连字符/空格键在混输中不可达、属死数据。替换批次的生成器对
-  上游与 curated 键统一施加可达字母表过滤（`[A-Za-z]` + 撇号，AUDIT.md §1/§3），
-  `K8s` 按 §1 规则跳过。运行时代码零改动。
-- 本更正**不**改变 D071/D069 语义，**不**删除或重解释既有 uppercase/短 Latin/classical
-  literal 行为。
-
-### 7. cn_en 类表达式内容政策（Accepted Decision）
-
-- `cn_en` 类词典中的中英对照表达式（翻译对、短语、标点混合形态）**不得**被枚举为英文
-  系统词库条目。这是 D078 §6 “cn_en 是辅助证据来源、不是主 decoder”边界在**词库内容
-  政策**上的延伸：任何词库内容变更必须逐条满足本条 §1 的最小补充证据要求。
-
-### 8. Supersession 核查
-
-- 本条唯一的 supersede 是 §1/§10 记载的 D078 §1 词库来源表述（“SCOWL ~94.5k 为广覆盖
-  基线、保持不变”）；除此之外不 supersede 任何决定。相对 D078 的关系是执行收口与边界
-  补充（§2/§3/§4/§7 扩展 D078 §6 的职责边界记录，§6 更正属文档一致性修复）。
-  D071/D075/D078 其余原文与效力不变。
-- addons PR #4（ARM_A=ARM_B=REJECT，CLOSED 未 merge）的历史描述维持既有正确记录，
-  本条不改动。fusion PR #9（D078 §2 kubernetes 示例澄清）与本条独立，已于 2026-10-12
-  merge。
-- 本条**不**修改 κ、λ、Gate D、mixed scoring、CandidatePool、M2+/r4 search、短 token
-  admission、spacing、用户学习的任何语义；**不**授权中文上下文批次、ranking 实验、
-  词库规模研究、OOV 工程或 short-Latin 策略变更。Phase 5D（Dictionary Manager 安装目录
-  版本身份与失败安全更新）按主任务授权另行实施，属产品既有规划而非本条词库批次范围。
-
-### 9. Reopen conditions
-
-- §1/§5：出现现有机制无法解决的具体观测失败（规则 F 重审）；
-- §2：`en_dict` 数据许可问题解决且出现明确产品价值证据；
-- §3：中文上下文收益获得设备/语料级失败证据（须新 Decision）；
-- §6：curated 合并语义若要变更，须显式重开 D071/D069 相关裁定；
-- §7：新的词库内容批次逐条按 §1 最小补充证据评审；
-- §10：替换库存的来源、许可位置或 tier 规则若要变更，须以新 Decision 重开本条 §1/§10。
-“还能补更多词”、“还能覆盖更广”、未经审计的词表直觉或额外 instrumentation 本身不构成
-重开理由；SCOWL 退役不构成重开理由（不是产品需求，也不再对其做比较/基准/研究）。
-
-### 10. 词库替换批次：Ice 主词表 + Frost 补充（Accepted Decision + Confirmed Fact）
-
-- 2026-10-12 同日执行、随 addons `8a5ee8a`（PR #6）交付的词库替换，把运行时英文库存
-  从 SCOWL ~94.5k 拼写检查词表切换为**人工策展的常用英文核心**：
-  - 主词表 = Rime Ice `en_dicts/en.dict.yaml` + `en_ext.dict.yaml`，pin
-    `github.com/iDvel/rime-ice@da1fbe602e38f26db846fa10120ee64c2b0324c0`；
-  - 补充 = Rime Frost 同名两文件，**只收录 Ice 缺失的折叠键**，pin
-    `github.com/gaboolic/rime-frost@f1bc68b308adcca916c51bcaad25a267876e6efe`；
-  - curated `proper.allow` / `technical.allow` 保留（canonical 显示覆盖 + §5 审计键）；
-  - tier = 来源成员关系粗分：Ice-en 9 / Ice-ext 8 / Frost-en 7 / Frost-ext 6 /
-    curated 9；无逐词频度导入。
-- 交付事实：`im/pinyin/english_lexicon.tsv` = **22,477 条**（Ice 22,364 + Frost-only
-  150 + curated-only 9 − 46 severe-profanity 排除），SHA-256
-  `2506539f4f96a4603507a11ba23d7f4291346b08e1551d6e64cc7ac9fc6571b1`；两次独立重生成
-  字节一致；manifest/NOTICE 同步；configure-time SHA 门通过。生成器对上游与 curated
-  键统一施加可达字母表过滤（§6），`K8s` 因此被从 curated 列表移除。
-- 许可位置（Accepted Decision）：rime-ice 与 rime-frost 均为 GPL-3.0-only；派生 TSV 作为
-  **可分离数据资源**（mere aggregate）以 GPL-3.0-only 再分发，addon 代码保持
-  LGPL-2.1-or-later，与 D040 已随包分发 Frost 中文词典的先例一致；D040 当时排除 Ice
-  仅针对中文拼音自动注解用途，不构成对本英文词表来源的禁止。`en_dict.fscd` 维持 §2
-  禁令。
-- 验证（Confirmed Fact）：容器（gcc 16.2.1）内 testenglishlexicon、
-  testenglishcorrection、testmixedpipeline、testmixedengine 与生产词库探针
-  （22,477 加载、curated 显示、D071 canonical+literal 平行弧、数字 raw 无弧、
-  completion/correction/短词守卫）全部通过。
-- 测试口径变更：testmixedcorpus 生产库存下限 50,000 → 20,000，按本条政策更新
-  （库存定义改变，非削弱行为断言；所有语义断言原样保留并通过）。
-
-## D080 — v0.1.3-fusion.7 发布执行：本地签名精确交付、addons 发布 pin 前进与 Dictionary Manager Phase 5D 收口
-
-**状态：Accepted（2026-10-12）。** 分类：**Confirmed Fact（发布执行与验证数值）+
-Accepted Decision（本次发布的交付方式）**；不 supersede D054/D058/D063/D077/D079，
-不修改 `release-apk.yml` 的 CI 发布机制（仅前进其固定 pin）。本条为 documentation batch：
-不修改 Android/addons 源码语义；Expected Behavioral Delta = NONE。
-
-### 1. 发布事实（Confirmed Fact）
-
-- 版本：`v0.1.3-fusion.7`（D077 canonical：下一未用 revision；上一发布为
-  `v0.1.3-fusion.6`）。Android tag `v0.1.3-fusion.7` → `f7f2cc3dfa64baeb5816e8f0ea1b9f5c6488467c`
-  （`fcitx5-android` `fusion` 主干，PR #6 合并提交，其 message 含 `[skip ci]`）。
-- 交付方式 = **本地产物精确交付**：arm64-v8a release APK 在所有者机器上以既有 D058
-  签名身份（keystore 路径引用，口令未回显）本地构建并签名，apksigner 验证 v1+v2 PASS，
-  签名证书 SHA-256 == D058 canonical（`A5:15:B7:4A:…:89:0C`）；随后将**同一文件**上传为
-  GitHub Release `v0.1.3-fusion.7` 的唯一资产。tag 推送未触发 `release-apk.yml`
-  （`[skip ci]`），CI 未重建该 APK；发布资产 digest 与本地文件 SHA-256 一致：
-  `d28fe8c28b39dc655352a87902cb6c1d87cff62104376fbafcf5265ceb929c62`。
-- 正式 APK：`org.fcitx.fcitx5.android-v0.1.3-fusion.7-0-gf7f2cc3d-arm64-v8a-release.apk`，
-  67,969,674 B；versionName `v0.1.3-fusion.7-0-gf7f2cc3d`（D054 describe 机制），
-  versionCode 122（`baseVersionCode` 11→12，D077 规则 8）；包名
-  `org.fcitx.fcitx5.android.fusionenhanced`（可由 fusion.6 的 112 直接覆盖升级）。
-- 包内资源核验：`assets/usr/share/fcitx5/pinyinhelper/moqima_gb18030.txt` SHA-256
-  `66deab4a…7923` == addon pin 文件记录；`assets/usr/share/fcitx5/pinyin/english_lexicon.tsv`
-  SHA-256 `2506539f…571b1` == D079 §10 替换库存（22,477 条）。
-- release 构建日志：`BUILD SUCCESSFUL in 2m12s`（273 tasks，arm64 单 ABI）。
-
-### 2. addons 发布 pin 前进与形态刻画（Confirmed Fact）
-
-- `release-apk.yml` `env.ADDON_COMMIT`：`47401b04681615024e4cf87c4797005b26e202ff` →
-  `b7f1db540bb1127b586539c8144060fdc12c145b`（addons `fusion` 主干，PR #6 合并提交：
-  M2+/r4 混输 + Ice/Frost 词库替换）；Android gitlink 同步前进（`644205f6` → `b7f1db54`）。
-- 旧 pin `47401b04` 形态：D068 时代归档 pin（tag `archive/d068-release-pin-47401b04`），
-  不在 `fusion` 祖先线上（`git branch --contains` 为空）；其树内容 == 与 `fusion` 的
-  merge-base `0220285` 仅差 `im/pinyin/customphrase.cpp` 一处纯缩进重排；
-  `modules/punctuation` 与 `b7f1db5` 逐字节一致；`moqima-gb18030.cmake` blob 同一
-  （`9ee7903c`），故 pin 前进不丢失任何标点/墨奇状态，且为发布所必需（旧 pin 不含
-  混输与新词库）。
-- `test-apk.yml` 的 `ADDON_COMMIT` 保持 `644205f6`（M2+/r4 真机 TBV 构建线），仅更新
-  其注释中对发布 pin 的陈述；该 workflow 的触发面（旧分支 + dispatch）不变。
-
-### 3. Phase 5D 收口（Confirmed Fact）
-
-- Android PR #5（`feat/dict-manager-phase-5d`，实现提交 `b5b83da8`，合并 `1957b5f9`）
-  进入 `fusion` 主干并随 `v0.1.3-fusion.7` 发布。范围与主任务授权一致：安装版本身份
-  记录（`catalog_state.tsv`，内容 SHA-256 为比较基准）、可更新检测与详情级“更新”动作、
-  复用既有 staged 下载/校验（size+SHA+可用空间）/原子替换、失败/取消/中断保留旧词库、
-  enabled/disabled 状态跨更新保留、旧安装迁移补记、中断替换恢复、
-  `MIN_BASE_VERSION = "0.1.3"` 基线兼容门禁。未引入历史回滚、远端可变 catalog 服务、
-  通用 Resource Manager、词库排序或全局配额（排除清单遵守）。
-- 验证（本地 JVM）：`PinyinDictionaryInstallStateTest` 7、`PinyinDictionaryInstallerTest` 10
-  （含 disabled 状态跨更新保留与 `.disable` 拼写识别）、`DictionaryPresentationTest` 7
-  （identity/update 事实）、`PinyinDictionaryCatalogTest` 6；全量 `:app:testDebugUnitTest`
-  52 套件 0 失败；`:app:compileDebugAndroidTestKotlin` 通过。**真机 TBV 未执行**，
-  延后给所有者按交付说明验收；本条不把编译/单测写成设备 PASS。
-
-### 4. Supersession 核查
-
-- D054（describe 版本号）/ D058（签名身份）/ D063（精确产物晋升思想）/ D077（命名与
-  versionCode 解耦）：均不变；本次是该思想在**本地构建**产物上的执行记录，非新管线。
-- `release-apk.yml` 与其 tag 触发机制原样保留；未来发布可继续选择 CI 或本方式，各自的
-  SHA/资产按 Confirmed Fact 记录。
-- D079 词库替换与 Phase 5D“另行实施”的前向声明由本条闭环；不重开 §10 已定事项。
+# Accepted Decisions
+
+This file records durable accepted product/architecture decisions and concise
+supersession boundaries. Detailed experiment transcripts, benchmark tables,
+CI logs, device checklists, and release execution evidence remain in the
+referenced evidence documents or Git history. Historical decisions are retained
+when their rationale or supersession remains useful; a superseded clause is
+not current authority.
+
+## D001–D021 — project and initial architecture
+
+### D001 — Android first
+Android is the first target platform; other platforms are separate tracks.
+
+### D002 — Pinyin/Shuangpin primary input; MoQi auxiliary
+Pinyin and Shuangpin remain primary input. MoQi is an Auxiliary Filter, not a
+decoder or replacement input engine.
+
+### D003 — MoQi interaction
+MoQi uses the bounded on-demand per-character/word interaction: filter,
+partial-select, preserve composition, continue typing, and permit another
+filter pass. It must not force whole-string commit.
+
+### D004 — shared Auxiliary Filter infrastructure
+Reuse and minimally generalize the upstream Stroke Filter infrastructure.
+
+### D005 — trigger/implementation separation
+The Auxiliary Filter trigger enters the configured implementation. It is not
+hard-bound to Stroke or MoQi and no general plugin framework is introduced.
+
+### D006 — MoQi target semantics
+MoQi filters the target character after the current selection frontier. It does
+not inherit Stroke’s arbitrary-character-in-phrase predicate.
+
+### D007 — LibIME boundary
+Reuse LibIME partial-selection and composition APIs. LibIME remains unmodified
+unless a new, concrete source/API conflict is accepted.
+
+### D008 — fixed MoQi table
+The product table is `gaboolic/moqima-tables@6d8ba8f1c57466f358e682baefe11bbd0fe389ab`,
+file `moqima_gb18030.txt`, MIT. The pin, digest, and configure-time packaging
+are the single source for the product table.
+
+### D009 — Rime reference
+Rime is a reference/alternative, not a hard dependency.
+
+### D010 — Android generic configuration
+Reuse the existing generic Fcitx configuration UI and descriptor path.
+
+### D011 — data/update separation
+Dictionary updates and user-input upload are independent. Enabling an update
+does not authorize uploading user input.
+
+### D012 — default Voice trigger
+The microphone button is the default Voice trigger.
+
+### D013 — optional Space trigger
+Long-press Space may trigger the same Voice Input flow; it does not create a
+second pipeline.
+
+### D014–D015 — System ASR boundary
+Reuse Android SpeechRecognizer/upstream-compatible work. System
+SpeechRecognizer/RecognitionService is one optional ASR backend, not the whole
+Voice architecture and not the internal Provider abstraction.
+
+### D016 — Provider independence
+Voice flow, ASR backend, and concrete Provider remain separate. Provider changes
+must not change the trigger/session contract.
+
+### D017 — ASR and post-processing separation
+ASR ends at Raw Transcript. Optional TextPostProcessor is independently
+configurable and fully disableable. The provider-neutral seam is implemented
+and retained by Android PR #15; configured processor/provider is NONE/null/
+disabled, so the current product path is ASR → Raw Transcript → IME.
+The tested 0.6B–1B Local-LLM route is STOPPED after the quality gate failed;
+llama.cpp/JNI/GGUF runtime was removed. Cloud LLM is not implemented/planned.
+A concrete processor requires a separate decision/task.
+
+### D018 — auditable Voice data flow
+Voice routing, lifecycle, receiving party, fallback, and termination must be
+auditable without default transcript/audio/credential/endpoint-content logging.
+Content-level transcript logging requires a separate explicit privacy decision.
+
+### D019–D021 — repository and scope boundaries
+Fusion is the controller repository; upstream forks remain separate. Do not
+choose a repository-wide license prematurely. Prefer minimal, reviewable
+changes and existing upstream infrastructure over parallel abstractions.
+
+## D022–D040 — productization decisions
+
+### D022 — batched validation
+Validation is staged after source/diff review and uses the applicable local,
+CI, device, and service route; a lower gate never substitutes for a higher one.
+
+### D023 — configuration persistence
+Auxiliary Filter persistence follows the upstream path; unit tests need not
+claim filesystem persistence they cannot exercise.
+
+### D024 — MoQi Android packaging
+The addon retrieves the fixed table at configure time and installs it through
+the config component; Android requires no MoQi-specific product source change.
+
+### D025 — historical MoQi release identity
+The old `.moqi` package/signing line is historical and separate from Fusion
+Enhanced. It is not the current signer or migration path.
+
+### D026 — no single OEM System ASR dependency
+System RecognitionService cannot be the only usable Voice path.
+
+### D027 — Architecture A VoiceBackend
+Voice uses an internal VoiceBackend boundary:
+SystemAsrBackend → SpeechRecognizer/RecognitionService, and DirectAsrBackend →
+Fcitx-owned AudioRecord → configured Local/Managed/Self-hosted Provider.
+This is not a public plugin framework.
+
+### D028 — Provider categories and scope
+The logical categories are System, Local, Managed Cloud, and Self-hosted.
+Provider-specific implementations are acceptable; no generic protocol/plugin
+framework is required. Current Managed Cloud scope is Doubao, Alibaba/Qwen, and
+Tencent.
+
+### D029 — Provider-specific settings
+Provider credentials/configuration are independent, securely stored, and never
+cross-reused. Local models are separately managed from the Local runtime.
+Maintainer credentials never enter source, CI, APK, or release artifacts.
+
+### D030 — Voice visibility
+Voice trigger visibility follows configured-backend semantics and availability,
+not a hardcoded System-ASR assumption.
+
+### D031 — shared Voice panel
+Mic and Space sessions use shared lifecycle/panel semantics; Direct capture may
+provide a real level visualization, while System uses a non-PCM indicator.
+
+### D032 — historical Local A/B study
+The first A/B Local comparison was a bounded research/device study with external
+models. Its evidence remains historical and does not select the current model
+set.
+
+### D033 — four Provider categories
+All Providers use the same Voice flow. Self-hosted does not create a separate
+pipeline. Historical checkpoint claims that Qwen/Tencent real-device work was
+pending are superseded by later owner acceptance; Self-hosted device testing is
+DEFERRED/non-blocking.
+
+### D034 — selection and first recommendation
+Users configure/enable concrete services; “current service” selects one. First
+recommendation is one-time and Local-first, then disclosed/authorized System,
+then configuration guidance. It never silently selects a cloud/self-hosted
+service or rewrites the user’s selection.
+
+### D035 — bounded runtime fallback
+Only a selected external/network ASR may fall back on early technical/service
+failure before usable session establishment. The target is one eligible,
+installed, enabled, runtime-ready production Local ASR. System is never an
+automatic target; there is no external-to-external chaining, quality-triggered
+fallback, post-establishment migration, or PCM replay. `onStarted` is not
+session establishment. The core early-failure path is DEVICE VERIFIED /
+COMPLETE; edge/race permutations are not a reopened core gate.
+
+### D036–D038 — Local model selection
+The old A/B checkpoint remains historical. Current product models and order are
+fixed by D050. Each Local model is an independently enabled/selectable service;
+installed, enabled, current, production, recommendation eligibility, and
+runtime readiness remain separate dimensions.
+
+### D039–D040 — dictionary distribution
+Dictionary distribution uses fixed, reproducible, license-reviewed candidates
+and preserves the required license/provenance boundaries. D080 closes the
+productized Dictionary Manager update path.
+
+## D045–D055 — retained boundaries and Voice architecture
+
+### D045 — current Local recommendation
+The current Local model set and recommendation semantics are governed by D050;
+the old Zipformer research collection is not restored.
+
+### D046–D049 — UI boundaries
+Toolbar configuration is canonical state projected by the UI; runtime width does
+not rewrite it. Voice Settings is presentation/navigation and does not change
+Provider, dictionary, or lifecycle semantics. Toolbar/Voice Settings device
+regression and defect closure are COMPLETE.
+
+### D050 — current Local ASR release line
+Current production/recommendation-eligible Local order is:
+X-ASR offline INT8 → X-ASR 960 ms streaming INT8 → FunASR Nano.
+Models are downloaded from fixed upstream sources on demand; weights are not
+bundled, mirrored, or project-hosted. Core release-device lifecycle and
+abnormal/error Model Manager paths are COMPLETE / DEVICE VERIFIED. Provenance,
+license, and NOTICE closure is COMPLETE; do not create another audit task.
+
+### D051 — paired punctuation
+The experimental paired-punctuation extension is PAUSED and excluded from the
+first-release product scope by D066. Do not treat its historical experiment as
+a current product task.
+
+### D052–D053 — MoQi downstream boundary
+MoQi remains downstream-only. Upstream contribution work is closed/non-blocking;
+the product table and Auxiliary Filter semantics remain.
+
+### D054 — Fusion Enhanced identity
+The current Fusion Enhanced application identity is distinct from historical
+MoQi identity and does not perform old-install migration.
+
+### D055 — top-level Voice providers
+External Android Voice Input, System ASR, Local, Managed Cloud, and Self-hosted
+are top-level provider choices with the existing ownership/selection semantics.
+
+## D056–D068 — release and authority closure
+
+### D056 — Local release JNI closure
+The sherpa-onnx R8/JNI runtime issue was fixed with the accepted package keep
+boundary and closed by release/minified three-engine device verification.
+
+### D057 — System ASR diagnostics
+System ASR runtime failure must be visible/diagnosable within the accepted
+SpeechRecognizer boundary. Do not add ROM-specific service selection or rewrite
+system settings.
+
+### D058 — release signing identity
+Fusion Enhanced has its own permanent release signing identity, separate from
+historical MoQi and debug identities.
+
+### D059 — Local distribution four-rights closure
+Bundle, mirror/re-host, fixed-upstream in-app download, and manual import are
+separate rights. The fixed-upstream download path is approved; project
+mirroring/bundling is not. `licenseAuditComplete` is disclosure state, not a
+download gate. Reopen only under D059’s explicit conditions.
+
+### D060 — stable baseline and authority
+`docs/first-release-baseline.md` is the single first-release current-state
+matrix. Other documents point to it rather than duplicating a competing matrix.
+
+### D061 / D066 — punctuation and RC supersession
+D061’s acceptance of the expanded punctuation pin was superseded by D066:
+D051 is outside first-release scope, the release pin is `47401b04`, and RC.1
+was rejected. These are historical release-boundary decisions, not current
+punctuation work.
+
+### D063–D064 — signed RC and debug identity
+Signed RC production promotes the exact tested artifact; debug identity is
+separate and reproducibly verified. Do not mix identities or rebuild a tested
+release artifact.
+
+### D068 — first release
+RC.2 was exactly promoted and the first Fusion Enhanced release was published.
+Release evidence is historical; post-release development state is tracked by
+the current baseline/ROADMAP.
+
+## D069–D080 — Mixed Input, governance, lexicon, and latest release
+
+### D069–D071 — Mixed Input foundations
+Preserve the accepted bounded mixed-input architecture, separate sourcing/
+lexicon/learning ownership, raw/output alignment, selection frontier, partial
+selection, and canonical/literal semantics. These decisions are not licenses
+to revive superseded Architecture A' or old ranking experiments.
+
+### D072 — Windows boundary
+Windows Fusion is a separate product/research track with authority in
+`docs/windows-architecture.md`.
+
+### D073–D075 — M2+/r4 closure
+D073’s M3-B proposal was not accepted. D074 preserves the mixed-input contract
+and explicitly supersedes A' as product architecture. D075 accepts M2+/r4 as
+the current Mixed Input architecture baseline; A' is historical/reference,
+architecture competition is CLOSED, and no r5/r6 or new held-out competition is
+planned. Phase 11 productization and merged Android integration are
+VERIFIED / COMPLETE.
+
+### D076 — branch governance
+Canonical branches, PR/review flow, gitlink reachability, and deletion
+preconditions are governed by `docs/branch-policy.md`.
+
+### D077 — versioning
+Fusion versions use the canonical upstream-version + `-fusion.N` policy.
+
+### D078–D079 — English lexicon
+The current English Core uses the accepted single bundled lexicon policy and
+the D079 Ice/Frost/curated replacement. Android Spell remains a separate
+responsibility. Do not reopen the retired SCOWL comparison or invent ranking/
+metadata work.
+
+### D080 — v0.1.3-fusion.7 and Dictionary Manager closure
+The v0.1.3-fusion.7 exact-artifact release, addons pin advancement, and
+productized Dictionary Manager Phase 5D are recorded as COMPLETE / historical
+release facts. Do not treat the old Phase 5D forward pointer or release
+execution transcript as current NEXT.
+
+## Current authority rule
+
+For current product state, use `docs/first-release-baseline.md` and the
+compact current-next section in `docs/ROADMAP.md`. For requirements use
+`docs/REQUIREMENTS.md`. For evidence use the referenced checkpoint/report
+documents; their historical PENDING/NOT RUN rows do not reopen later CLOSED,
+VERIFIED, STOPPED, or DEFERRED facts.
