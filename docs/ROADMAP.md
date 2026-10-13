@@ -805,8 +805,8 @@ paired punctuation 的 formatter-only repair 暴露出验证状态必须分层�
 - UI、推荐和 D035 候选顺序统一为 X-ASR 离线 → X-ASR 流式 → Nano；资格、触发、持久化、production、installed、enabled、runtime-ready 与许可状态继续分层。
 - debug/release 均支持应用内从固定上游按需下载上述模型，权重不内置 APK；archive NOTICE、转换来源等证据仍待补齐，不表述为独立法律审计 PASS。
 - **Local 分发/下载资格已由 D059 收口（four-rights closure）**：① bundle、② mirror/re-host 项目主动不做；③ 应用内 fixed-upstream 下载入口 = 所有者批准（D050），`distributionApproved` 从未 gate 下载且其陈旧“research only”文案已重命名为 `licenseAuditComplete` + 如实 audit-pending 披露；④ manual import 属用户行为。首发下载 UI 判定 **GO**；除 D059 reopen conditions 外不得重翻 A/B/C 研究阶段分发结论。
-- Dictionary、Voice/ASR 和 Toolbar 已有实现批次；剩余真机回归、长语音/下载控制与 Toolbar 冻结审计按各自 checkpoint 继续，不把未测项目记为 PASS。
-- 下一步入口：Toolbar/Voice Settings 真机回归与缺陷收口、Local 长语音/下载控制设备明细与 NOTICE/转换来源证据补齐（**下载 UI 资格本身已由 D059 定为 GO,非阻断项**）、Managed Cloud 扩展矩阵与 Self-hosted checkpoint；已完成的三模型核心生命周期、Qwen/Tencent 基本真实设备识别和 D035 核心 fallback 不再作为下一开发任务。LLM 具体实现仍为未来独立决定，不在当前开发方向。
+- Dictionary、Voice/ASR 和 Toolbar 已有实现批次；剩余真机回归、Local 长语音与 Model Manager 异常路径、以及 Toolbar 冻结审计按各自 checkpoint 继续，不把未测项目记为 PASS。
+- 下一步入口：Toolbar/Voice Settings 真机回归与缺陷收口、Local 长语音与 Model Manager 未逐项验证的网络中断/校验失败/删除/迁移等异常设备路径、以及 NOTICE/转换来源证据补齐（**下载 UI 资格本身已由 D059 定为 GO,非阻断项**）、Managed Cloud 扩展矩阵与 Self-hosted checkpoint；已完成的三模型核心生命周期、Qwen/Tencent 基本真实设备识别和 D035 核心 fallback 不再作为下一开发任务。LLM 具体实现仍为未来独立决定，不在当前开发方向。
 - MoQi 上游贡献不在当前下一步：PR #300 已关闭并保留 `contribution/moqi-upstream-v2` 作为验证参考；不要为上游接受度继续重设计 MoQi 表格下载或发布流程。
 - （2026-10-06 新增，见 Phase 9 / D069）中英混输 Architecture A 收口 COMPLETE：addons `c5b78c9`（PR #3 绿、未 merge）、
   Android 集成 `e3cec1d8`、融合回归矩阵 `fa4c0d4` 19/19 PASS；剩余仅设备 smoke / 持久化 / 扩展语料类 VALIDATION DEBT；

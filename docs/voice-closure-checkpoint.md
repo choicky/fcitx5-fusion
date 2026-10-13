@@ -48,7 +48,7 @@
 | 不改写系统默认 RecognitionService / 无 ROM 特定切换 | `app/src/main` 全量 grep:0 处 `VOICE_RECOGNITION_SERVICE`/`Settings.Secure` 写 | — | — | VERIFIED（负向） | 不重开该研究（D057 边界） |
 | Local ASR：三生产模型（X-ASR Offline INT8 / X-ASR 960ms Streaming INT8→OnlineRecognizer / FunASR Nano→OfflineRecognizer） | `LocalAsr.kt:15-58`,`LocalAsrEngines.kt:28/79/110` | `LocalAsrTest`,`XAsr*Test`,`AsrSelectionTest:351-415` | vivo（D056 三引擎端到端）；所有者另报告 release product path lifecycle + recognition | VERIFIED | 长语音/RTF/PSS/中英混说质量、所有网络中断/取消竞态与许可/来源审计仍属后续 checkpoint |
 | Local R8/JNI ABI 保留（`-keep class com.k2fsa.sherpa.onnx.** { *; }`） | `app/proguard-rules.pro:26`@`4e14cde9` | release dex 静态（`<init>` 描述符在;usage 无移除项） | vivo | VERIFIED | 无（D056 已 CLOSED） |
-| Model Manager / 就绪 / 下载 / 安装（fixed-upstream 下载、SHA-256、路径穿越防护、暂停/续传、noBackup 存储） | `LocalModelInstaller.kt`,`ModelDownload.kt`,`ModelTasks.kt`,`ModelRows.kt`,`LocalModels.kt` | `LocalModelInstallerTest`,`ModelTasksTest`,`ModelPauseTest`,`ModelRowsTest`,`ModelSourcesTest`,`ModelDownloadInteropTest` | vivo（摘要级;断网/续传/校验失败/删除明细未逐项） | SOURCE/PARTIAL(设备) | 断网、长语音、下载控制、删除、旧设置精确迁移设备明细验收 |
+| Model Manager / 就绪 / 下载 / 安装（fixed-upstream 下载、SHA-256、路径穿越防护、暂停/续传、noBackup 存储） | `LocalModelInstaller.kt`,`ModelDownload.kt`,`ModelTasks.kt`,`ModelRows.kt`,`LocalModels.kt` | `LocalModelInstallerTest`,`ModelTasksTest`,`ModelPauseTest`,`ModelRowsTest`,`ModelSourcesTest`,`ModelDownloadInteropTest` | vivo（核心 release lifecycle 已由所有者接受；断网/续传/校验失败/删除明细未逐项） | SOURCE/PARTIAL(设备) | 网络中断/恢复、SHA/checksum 失败、删除、旧设置精确迁移等异常设备路径 |
 | Managed ASR：Doubao / Qwen / Tencent（可选择的已实现 provider;`NetworkAsrClient`;Keystore 凭据） | `DoubaoAsrBackend/Protocol`,`QwenAsrClient`,`TencentAsrClient`,`NetworkAsrBackend`,`AsrCredentials`,`KeystoreSecretCipher` | `DoubaoAsrProtocol/ResultTrackerTest`,`Qwen*Test`,`Tencent*Test`,`CredentialStoreTest` | Doubao 历史双机；Qwen/Tencent 所有者报告真实凭据、真实服务、Android 设备成功识别 | DEVICE VERIFIED（基本 provider/device path） | 配额、认证失败、provider error、取消/中断/重试竞态等扩展矩阵 |
 | Self-hosted ASR：sherpa-onnx Server / FunASR 2-pass / Fun-ASR-Nano **server** / OpenAI-compatible（已实现且可选择,非 settings-only） | `SelfHosted.kt:22-44`,`SherpaOnnxServerClient`,`FunAsr2PassClient`,`FunAsrNanoServerClient`,`OpenAiTranscriptionClient` | 各 `{Protocol,Interop,Emulator}Test` | 无自建 GPU 服务器实测 | SOURCE（协议/互通）;DEVICE-PENDING | 真实自建 endpoint/设备矩阵（需 GPU 服务） |
 | D035 运行时 fallback：单槽 consume-once;仅会话建立前;System/External 排除;唯一目标=已启用健康 production Local | `VoiceInputFlow.kt:32,145-154`,`AsrSelection.kt:310-320`,`LocalAsr.kt:69-70` | `VoiceInputFlowTest:370/401/412/423/455`,`AsrSelectionTest:315/343/476`,`AsrSelectionModelATest:61` | 所有者报告：外部早期技术/服务失败 → 正式 Local 继续操作 | DEVICE VERIFIED（核心 gate COMPLETE） | 中断、授权、取消时序、重复启动、麦克风所有权和 race 的穷举矩阵 |
@@ -60,7 +60,7 @@
 
 **设备/证据收口（非源缺陷）：**
 - Local 长语音、RTF/内存(PSS)、中英混说质量与 FunASR Nano 长 utterance 空 final（D050 模型集内）证据。
-- Model Manager 设备明细：断网、暂停/续传、SHA 校验失败、删除、旧设置精确迁移。
+- Model Manager 设备明细：网络中断/恢复、SHA/checksum 失败、删除、旧设置精确迁移等未逐项验证的异常路径。
 - Managed Cloud 的配额、认证失败、provider error、取消/中断/重试竞态等扩展矩阵。
 - 自建服务器（sherpa-onnx/FunASR-2-pass/Fun-ASR-Nano-server/OpenAI-compat）设备实测（需 GPU）。
 - D035 扩展边界矩阵（核心设备行为已 VERIFIED）。
@@ -88,7 +88,7 @@
 - 首发产品口径核对：是否捆绑/内置模型（当前权重不内置 APK,下载走 fixed upstream）;许可证据（X-ASR 归档 NOTICE/转换来源）——**已由 D059 收口为四项权利分离**：① bundle、② mirror/re-host 项目主动不做且许可证据不足以肯定授予再分发；③ 应用内 fixed-upstream 下载入口 = 所有者批准（D050）,`downloadOffered` 从未依赖旧 `distributionApproved`；④ manual import 属用户自身行为。Android 侧陈旧文案（原 `distributionApproved`/“research only”）已重命名为 `licenseAuditComplete` 并改为如实的“audit pending”披露。**分发许可项已定,非 Voice 行为阻断项；首发下载 UI 判定 GO。**
 
 **C. 可安全推迟到首发之后（SAFE TO DEFER）：**
-- 自建服务器设备矩阵、真实云多 provider 设备矩阵、Local 长语音/性能证据、D035 fallback 设备实测、Model Manager 设备明细。
+- 自建服务器真实 endpoint/设备矩阵、Managed Cloud 配额/认证/provider-error/网络/取消/重试竞态等扩展矩阵、Local 长会话/性能/资源证据、D035 扩展边界/竞态矩阵，以及 Model Manager 未逐项验证的网络中断/校验失败/删除/迁移等异常设备路径。
 - 4B.3c realtime preedit UX。
 
 **D. 未来 / 可选（FUTURE）：**
@@ -97,7 +97,9 @@
 **结论（Voice 子系统视角）：RELEASE READY FROM THE VOICE SUBSYSTEM PERSPECTIVE。**
 产品**整体**是否即刻发布取决于 B 中的有界回归 pass 与（若首发含模型分发）许可证据收口——这两项均非 Voice 源缺陷,且当前产品已适合作为**完成一次有界回归后即可进入的首发候选（RELEASE CANDIDATE AFTER A BOUNDED FINAL REGRESSION PASS）**。
 
-## 6. 建议的下一个工作包（本 checkpoint 不实施）
+## 6. 历史建议的下一个工作包（已被后续状态 supersede；不是当前 next task；本 checkpoint 不实施）
+
+本节保留 2026-10-05 checkpoint 当时的建议。首个 Fusion Enhanced 发布及后续 D059/D068/current ROADMAP 状态已 supersede 其“下一工作包”定位；以下内容不是当前 next task。
 
 推荐：**D059 — Fusion Enhanced 首发候选收口工作包**：以 `4e14cde9` 之后的 release HEAD 打一次有界
 最终回归（B 项清单）+ 在最终 HEAD 复跑 JVM 单测与 release/minified 构建并核验 D058 指纹;同时裁定
