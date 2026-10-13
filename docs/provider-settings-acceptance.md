@@ -2,6 +2,8 @@
 
 对象：`choicky/fcitx5-android` `phase4-voice-poc` @ `fb3b0c26`（`818dc671` 设置基础 + `fb3b0c26` 启动顺序修复）；debug APK（CI artifact `moqi-debug-apk`）。
 
+**历史快照说明（2026-10-13）：** 本文件只记录 2026-09-28 Settings Foundation checkpoint；其中“D035 运行时 fallback 未实现”以及 release APK 未验收等表述均是该时点事实，不是当前状态。当前 D035 核心设备状态以 `DECISIONS.md` D035、`docs/first-release-baseline.md` 与 `docs/voice-closure-checkpoint.md` 为准。
+
 - Candidate B 的历史设备测试基线仍为 `a8a0e1b3`，本验收不改变、不重标它。
 - D035 运行时 fallback **未实现**，不在本验收范围。
 

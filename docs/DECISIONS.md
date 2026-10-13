@@ -120,9 +120,11 @@ Voice Input flow 之后保持独立的 ASR backend/Provider 层；Android System
 
 ## D017 — ASR 与 LLM 后处理解耦
 
-**状态：Accepted**
+**状态：Accepted；2026-10-13 部分 supersede 当前实现状态表述**
 
 ASR 只负责 Audio → Raw Transcript。LLM/Text Post Processor 独立、可关闭，ASR Provider 与 LLM Provider 分别配置。
+
+**当前实现状态（Android merged PR #15，merge `c3421263`，基于 `fusion`）：** provider-neutral optional `TextPostProcessor` seam 与 VoiceInputFlow 的异步 pending-result ownership/lifecycle 已实现并保留；具体 postprocessor/provider 当前为 **NONE / null / disabled**，所以当前产品路径仍为 `ASR → Raw Transcript → IME`。旧的“LLM / Text Post Processor = NOT IMPLEMENTED”只对“没有任何 seam”这一含义不再规范；具体 Local LLM 运行时已因未通过保守质量门禁而停止，llama.cpp/JNI/GGUF 运行时已移除；Cloud LLM 当前未实现，也不是当前开发方向。未来若实现具体 processor，须另行接受决定和任务。本段不接受任何 Local LLM、Cloud LLM、self-hosted LLM、provider registry 或 vendor integration。
 
 ## D018 — Voice 数据流必须透明可审计
 
@@ -375,8 +377,8 @@ A/B 均复用 D027 的 Voice flow、Fcitx-owned `AudioCapture` 与 Local ASR 边
 
 **状态：Accepted（2026-09-27；实现已在当前 Android 产品线落地，Provider 对比和真实服务验收仍进行中）**
 
-本决定最初是规划 checkpoint；后续实现状态不得回写为当时已完成。当前实现基线为
-`fcitx5-android` `phase5c-dictionary-manager` @ `9163ec96`。
+本决定最初是规划 checkpoint；后续实现状态不得回写为当时已完成。下列
+`phase5c-dictionary-manager` @ `9163ec96` 仅为该历史 checkpoint 的基线；当前产品基线由 D060/`docs/first-release-baseline.md` 管理。
 
 ```text
 ASR Provider
@@ -407,14 +409,14 @@ Mic / Long-press Space → VoiceInputFlow → Configured ASR Provider → Raw Tr
 - System 由 `SystemAsrBackend` 承载；Local、Managed Cloud、Self-hosted 均经 D027 的 Fcitx-owned Audio Capture（Direct 路径）驱动。
 - OpenAI-compatible 是协议适配，不等于 Self-hosted（沿用 D028）。
 
-**Managed Cloud 对比候选（适配器已实现；真实服务对比未完成）**
+**Managed Cloud 对比候选（历史 checkpoint；当前基本设备状态由 2026-10-13 reconciliation 更新）**
 
 - Cloud A：Doubao Seed-ASR 2.0 — 已有 Direct backend，4B.3a 双机 PASS，作为基线；
 - Cloud B：Alibaba Qwen ASR 系列 — checkpoint 时依据当时官方产品线核实适合流式/输入法的模型；若存在多个相关变体，不提前冻结单一模型名；
 - Cloud C：Tencent Realtime ASR；
 - iFlytek 保留为未来候选，当前不实现。
 
-Managed Cloud checkpoint 至少比较：中文识别质量、中英混合、首个 partial 延迟、partial 修订行为、stop→final 延迟、弱网/失败行为、计费模式、认证/BYOK 复杂度、隐私/数据处理影响、客户端实现边界。Doubao 有历史双机 Direct E2E；Qwen/Tencent 已有客户端/协议适配器和 JVM 测试，但真实 endpoint/设备对比尚未完成，不选定胜者。
+Managed Cloud checkpoint 至少比较：中文识别质量、中英混合、首个 partial 延迟、partial 修订行为、stop→final 延迟、弱网/失败行为、计费模式、认证/BYOK 复杂度、隐私/数据处理影响、客户端实现边界。上述“真实 endpoint/设备对比尚未完成”是本历史 checkpoint 的时点结论；截至 2026-10-13，所有者已报告 Qwen/Tencent 使用真实凭据、真实服务在 Android 设备成功识别。该报告不关闭穷举 provider 错误、配额、取消/中断/重试或质量比较矩阵。
 
 **Self-hosted 研究候选（适配器已实现；真实服务/设备验收仍待完成）**
 
@@ -464,7 +466,7 @@ Self-hosted checkpoint 须依据当时上游源码/文档核实：实际 streami
 
 ## D035 — 自动 fallback：默认开启，不得未经授权扩大语音数据接收方
 
-**状态：Accepted（2026-09-27）；2026-09-28 修订：System ASR 不参与自动 fallback；D035 已实现，设备级 fallback 验收仍未完成**
+**状态：Accepted（2026-09-27）；2026-09-28 修订：System ASR 不参与自动 fallback；2026-10-13 核心设备行为 DEVICE VERIFIED**
 
 当前实现位于 `AsrSelection.fallbackTarget` 与 `VoiceInputFlow`：仅当前选定的
 Managed Cloud/Self-hosted 服务在会话建立前的技术失败时，回落到已启用、已安装、
@@ -502,6 +504,8 @@ System ASR 的一次性事先授权（D034）允许其作为当前服务使用�
 **V1 不实现**：会话中途跨 Provider 的 PCM replay/迁移；因识别质量看起来差而自动换 Provider 重识别；双 Provider 同时识别；把已采集音频静默重放给其他第三方。会话中途失败报告识别失败/允许重试，而不迁移会话。
 
 - fallback 发生时须可观测（D018），具体提示 UI 未冻结；关闭 fallback 的设置位置未冻结。
+
+**设备验收（所有者报告，2026-10-13）：** 当前选定的外部/网络 ASR 在会话建立前发生早期技术/服务失败时，已自动回落到已安装、已启用、runtime-ready 的正式 Local ASR，并继续本次 Voice operation。`onStarted` 不作为会话建立边界；`onSessionEstablished`、单槽 consume-once、至多一次和现有排除项均保持不变。故 D035 核心产品 gate = **DEVICE VERIFIED / COMPLETE**。这不扩大为外部到外部切换、System fallback、质量错误或任意 post-establishment failure fallback；中断、授权、取消时序、重复启动、麦克风所有权和 race 的穷举矩阵仍是 validation debt。
 
 ## D036 — 关闭 Local ASR A/B checkpoint：A、B 均不选为正式/默认 Local ASR
 
@@ -1057,7 +1061,7 @@ addons pin `9b3448e6`）仅用于复现该历史 Release，不是当前 HEAD。
 
 四大家族（MoQi / Voice / Toolbar / Dictionary Manager）均 IMPLEMENTED 且已在首发范围；所有未完成项均为
 VALIDATION DEBT（设备/服务器/凭据矩阵或扩展用例），**无一达到 RELEASE BLOCKER 的具体证据门槛**。
-LLM / 文本后处理 = NOT IMPLEMENTED / FUTURE，非首发家族。D059 reopen、D056 教训、D057/D018/F1 边界、
+LLM / 文本后处理具体实现 = NONE / DISABLED，非首发家族；provider-neutral optional seam 已由 Android merged PR #15 实现并保留，Local-LLM 路线已停止，Cloud LLM 未实现且当前不在开发方向。D017 的 2026-10-13 部分 supersession 取代本句旧的“无 seam”含义；D059 reopen、D056 教训、D057/D018/F1 边界、
 §13 MoQi 语义、D035 语义均按既有条目冻结，不重开。
 
 **FIRST FUSION ENHANCED RELEASE BASELINE: FROZEN**

@@ -2,7 +2,9 @@
 
 对象：`fcitx5-android` `phase4-voice-poc` 最新已通过 CI 的提交（见工作日志最后一条；记录实际 SHA）；debug APK = CI artifact `moqi-debug-apk`。Candidate B 历史基线 `a8a0e1b3` 不变；此前 `fb3b0c26` 的设置基础验收不覆盖本批。
 
-**状态：部分执行。** 2026-09-28 所有者在 vivo 上报告：服务选择与豆包 BYOK 识别 PASS；Model Manager 操作对话框 FAIL（`7af0cc16`，已在 `3116a7b8` 修复）；`6007c8ca` 上 A/B/C 均下载完成并显示已安装，但下载期间设置页闪烁 FAIL（历史证据保留）。同日所有者用 `7ed0fa78` 在 vivo X100 Pro 与 Redmi K90 Pro Max 上报告相同的摘要结果（§2.0a）：APK 升级后豆包 API Key 保留、A/B/C 下载期间无闪烁、A/B/C 独立启用/选择、切换当前服务均 PASS；A/B/C 实际识别可用（A 中文好、英文差；B、C 中英文均可；延迟主观可接受）。这些是摘要级结果：详细用例未逐项报告，除明确标注外仍为空；是否断网、录音时长、实测延迟/RTF/PSS、长语音、取消/继续、删除、旧设置精确迁移、Qwen/腾讯/自建/fallback 均未测。下一步见 §2.5。之后 Android `f651a082`（+ 测试修正 `ca294467`）简化了语音设置页（§2.6），其设备检查尚未执行。本执行环境没有设备、云凭据或 GPU。下列“预期”来自源码与本机测试；实测列留空，不可测记“不可测”，不得记 PASS。证据分三类，不得混写：代码/CI 结果、本机服务器或 JVM 测试、手机实测（只有所有者执行后才填写）。
+**2026-10-13 later owner-reported acceptance addendum:** The 2026-09-28 tables below are historical records and remain unchanged. After that snapshot, the owner reported that all three production Local ASR models completed the release product-path lifecycle (download, pause, resume, cancel, enable, and actual speech recognition); Alibaba/Qwen ASR and Tencent ASR both succeeded on Android with real services and real credentials; and the core D035 early external/service-failure fallback to an installed, enabled, runtime-ready production Local ASR continued the voice operation. These reports close only those core gates. Long sessions, exhaustive resource/latency measurements, every interruption/cancellation/retry race, quota/auth/provider-error cases, and Self-hosted device coverage remain open validation debt. This addendum is owner-reported evidence, not an independent rerun by this documentation task.
+
+**Historical snapshot status:** The 2026-09-28 “部分执行” wording and empty detailed rows describe the evidence available at that time; they must not be read as the current authority after the addendum above. The test script remains useful for genuinely unexercised cases.
 
 ## 0. 已有的非设备证据（供对照）
 

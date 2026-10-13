@@ -12,6 +12,10 @@
 - 设备验收 APK：签名 release/minified，SHA-256 `2729120390d387e74caf0e4c8899582d0ad279b8dc7e9b9913819739e9db4054`；
   签名者证书 SHA-256 = D058 canonical `A5:15:B7:4A:C4:C3:84:51:54:E1:7C:AD:D1:3D:02:75:BE:70:01:DD:CF:2B:97:2A:4F:2F:06:1A:FD:26:89:0C`。
 
+## 0.1 2026-10-13 状态 reconciliation
+
+本 checkpoint 的原始矩阵是 2026-10-05 的快照；以下 later owner-reported evidence 更新当前状态，不回写或伪造旧 APK/旧测试时点：三生产 Local ASR 已在 release product path 完成下载、暂停、继续、取消、启用和实际识别；Qwen 与 Tencent 已使用真实凭据、真实服务在 Android 设备成功识别；D035 核心“会话建立前外部早期技术/服务失败 → 已安装、已启用、runtime-ready 正式 Local 并继续操作”已 DEVICE VERIFIED。扩展用例仍按下表 Remaining 保留。
+
 ## 1. D056 收口（CLOSED / VERIFIED）
 
 完整证据链（详见 `docs/DECISIONS.md` D056）：
@@ -42,27 +46,27 @@
 | External Android Voice Input（顶层 provider;`preferredVoiceInput` 从属;findVoiceSubtype/switchInputMethod,不走 VoiceInputFlow） | `AsrSelection.kt:258,443`,`VoiceInputComponent.kt:358-398`,`InputMethodUtil.kt` | `AsrSelectionModelATest`,`VoiceAuditTest`（handoff/NoIme） | vivo | VERIFIED | 无 |
 | Android System ASR（per-session SpeechRecognizer;D057 ERROR_CLIENT(5)→可见 `System(code)`;NO_MATCH/TIMEOUT 仍 Silent） | `SystemAsrBackend.kt:21-33,102-107` | `SystemAsrErrorMappingTest`;CI `37254123119`@`b73dbcff` | vivo（D057 A/B + 本次 smoke） | VERIFIED | vivo 默认 RecognitionService 属系统限制,非产品 bug;不改默认服务 |
 | 不改写系统默认 RecognitionService / 无 ROM 特定切换 | `app/src/main` 全量 grep:0 处 `VOICE_RECOGNITION_SERVICE`/`Settings.Secure` 写 | — | — | VERIFIED（负向） | 不重开该研究（D057 边界） |
-| Local ASR：三生产模型（X-ASR Offline INT8 / X-ASR 960ms Streaming INT8→OnlineRecognizer / FunASR Nano→OfflineRecognizer） | `LocalAsr.kt:15-58`,`LocalAsrEngines.kt:28/79/110` | `LocalAsrTest`,`XAsr*Test`,`AsrSelectionTest:351-415` | vivo（D056 三引擎端到端） | VERIFIED | 长语音/RTF/PSS/中英混说质量证据仍属后续 checkpoint（非 ABI/崩溃面） |
+| Local ASR：三生产模型（X-ASR Offline INT8 / X-ASR 960ms Streaming INT8→OnlineRecognizer / FunASR Nano→OfflineRecognizer） | `LocalAsr.kt:15-58`,`LocalAsrEngines.kt:28/79/110` | `LocalAsrTest`,`XAsr*Test`,`AsrSelectionTest:351-415` | vivo（D056 三引擎端到端）；所有者另报告 release product path lifecycle + recognition | VERIFIED | 长语音/RTF/PSS/中英混说质量、所有网络中断/取消竞态与许可/来源审计仍属后续 checkpoint |
 | Local R8/JNI ABI 保留（`-keep class com.k2fsa.sherpa.onnx.** { *; }`） | `app/proguard-rules.pro:26`@`4e14cde9` | release dex 静态（`<init>` 描述符在;usage 无移除项） | vivo | VERIFIED | 无（D056 已 CLOSED） |
-| Model Manager / 就绪 / 下载 / 安装（fixed-upstream 下载、SHA-256、路径穿越防护、暂停/续传、noBackup 存储） | `LocalModelInstaller.kt`,`ModelDownload.kt`,`ModelTasks.kt`,`ModelRows.kt`,`LocalModels.kt` | `LocalModelInstallerTest`,`ModelTasksTest`,`ModelPauseTest`,`ModelRowsTest`,`ModelSourcesTest`,`ModelDownloadInteropTest` | vivo（摘要级;断网/续传/校验失败/删除明细未逐项） | SOURCE/PARTIAL(设备) | 断网、长语音、下载控制、删除、旧设置精确迁移设备明细验收 |
-| Managed ASR：Doubao / Qwen / Tencent（可选择的已实现 provider;`NetworkAsrClient`;Keystore 凭据） | `DoubaoAsrBackend/Protocol`,`QwenAsrClient`,`TencentAsrClient`,`NetworkAsrBackend`,`AsrCredentials`,`KeystoreSecretCipher` | `DoubaoAsrProtocol/ResultTrackerTest`,`Qwen*Test`,`Tencent*Test`,`CredentialStoreTest` | vivo（本次 Managed smoke PASS;历史 4B.3a DUAL-PASS） | VERIFIED（选择/流程）/ 真实云凭据矩阵待补 | 真实云端凭据下的多 provider 设备矩阵 |
+| Model Manager / 就绪 / 下载 / 安装（fixed-upstream 下载、SHA-256、路径穿越防护、暂停/续传、noBackup 存储） | `LocalModelInstaller.kt`,`ModelDownload.kt`,`ModelTasks.kt`,`ModelRows.kt`,`LocalModels.kt` | `LocalModelInstallerTest`,`ModelTasksTest`,`ModelPauseTest`,`ModelRowsTest`,`ModelSourcesTest`,`ModelDownloadInteropTest` | vivo（核心 release lifecycle 已由所有者接受；断网/续传/校验失败/删除明细未逐项） | SOURCE/PARTIAL(设备) | 网络中断/恢复、SHA/checksum 失败、删除、旧设置精确迁移等异常设备路径 |
+| Managed ASR：Doubao / Qwen / Tencent（可选择的已实现 provider;`NetworkAsrClient`;Keystore 凭据） | `DoubaoAsrBackend/Protocol`,`QwenAsrClient`,`TencentAsrClient`,`NetworkAsrBackend`,`AsrCredentials`,`KeystoreSecretCipher` | `DoubaoAsrProtocol/ResultTrackerTest`,`Qwen*Test`,`Tencent*Test`,`CredentialStoreTest` | Doubao 历史双机；Qwen/Tencent 所有者报告真实凭据、真实服务、Android 设备成功识别 | DEVICE VERIFIED（基本 provider/device path） | 配额、认证失败、provider error、取消/中断/重试竞态等扩展矩阵 |
 | Self-hosted ASR：sherpa-onnx Server / FunASR 2-pass / Fun-ASR-Nano **server** / OpenAI-compatible（已实现且可选择,非 settings-only） | `SelfHosted.kt:22-44`,`SherpaOnnxServerClient`,`FunAsr2PassClient`,`FunAsrNanoServerClient`,`OpenAiTranscriptionClient` | 各 `{Protocol,Interop,Emulator}Test` | 无自建 GPU 服务器实测 | SOURCE（协议/互通）;DEVICE-PENDING | 真实自建 endpoint/设备矩阵（需 GPU 服务） |
-| D035 运行时 fallback：单槽 consume-once;仅会话建立前;System/External 排除;唯一目标=已启用健康 production Local | `VoiceInputFlow.kt:32,145-154`,`AsrSelection.kt:310-320`,`LocalAsr.kt:69-70` | `VoiceInputFlowTest:370/401/412/423/455`,`AsrSelectionTest:315/343/476`,`AsrSelectionModelATest:61` | 无专项设备实测（fallback 触发路径） | VERIFIED（源+测）;DEVICE-PENDING | 一次设备实测：外部服务早期失败→回落 Local |
+| D035 运行时 fallback：单槽 consume-once;仅会话建立前;System/External 排除;唯一目标=已启用健康 production Local | `VoiceInputFlow.kt:32,145-154`,`AsrSelection.kt:310-320`,`LocalAsr.kt:69-70` | `VoiceInputFlowTest:370/401/412/423/455`,`AsrSelectionTest:315/343/476`,`AsrSelectionModelATest:61` | 所有者报告：外部早期技术/服务失败 → 正式 Local 继续操作 | DEVICE VERIFIED（核心 gate COMPLETE） | 中断、授权、取消时序、重复启动、麦克风所有权和 race 的穷举矩阵 |
 | Voice 审计 / 隐私 F1（仅控制流元数据;`session-audit.log` noBackup;`sanitize`+`redact` 结构排除 transcript/audio/url/secret） | `VoiceAudit.kt`,`ErrorRedaction.kt` | `VoiceAuditTest`(`errorDetailIsNeverRecorded`,`realisticTraceLeaksNothing`),`ErrorRedactionTest` | vivo（D057 审计元数据） | VERIFIED | F1 收口;内容级 D018 之外的进一步项不属本 checkpoint |
-| LLM / 文本后处理 | **全 `app/src/main` 无任何实现**;仅 `AsrCredentials.kt:26` “future LLM credentials” 注释与 FunASR Nano 的 `llm.int8.onnx`(本地模型组件,非后处理器) | 无（无被测对象） | 无 | NOT IMPLEMENTED（规划架构,非功能） | 按 D017 与 ASR 解耦;不阻塞首发 |
+| LLM / 文本后处理 | Android PR #15 保留 `TextPostProcessor` seam；具体 processor 未配置 | PR #15 lifecycle tests；Local-LLM closure evidence | 无 concrete processor product path | SEAM IMPLEMENTED; concrete NONE/null/disabled | Local-LLM route STOPPED；Cloud LLM 未实现/非当前方向；未来 concrete processor 需独立决定 |
 | 设置 / 首次推荐（“当前使用”单值;一次性 Local-first 推荐:X-ASR Offline→960ms→Nano,再授权 System,否则提示配置;绝不自动选云端） | `VoiceSettingsFragment.kt:261-286,1126-1139`,`AsrSelection.kt:183-201`,`VoiceSettingsRows.kt` | `AsrSelectionTest`（recommendation/migration）,`VoiceSettingsRowsTest` | vivo（摘要） | VERIFIED（逻辑） | 推荐触发详细设备项（长语音/性能另计） |
 
 ## 4. 剩余 Voice 工作（仅列真实剩余,不重复旧 roadmap 项）
 
 **设备/证据收口（非源缺陷）：**
 - Local 长语音、RTF/内存(PSS)、中英混说质量与 FunASR Nano 长 utterance 空 final（D050 模型集内）证据。
-- Model Manager 设备明细：断网、暂停/续传、SHA 校验失败、删除、旧设置精确迁移。
-- 真实云端凭据下 Doubao/Qwen/Tencent 设备矩阵。
+- Model Manager 设备明细：网络中断/恢复、SHA/checksum 失败、删除、旧设置精确迁移等未逐项验证的异常路径。
+- Managed Cloud 的配额、认证失败、provider error、取消/中断/重试竞态等扩展矩阵。
 - 自建服务器（sherpa-onnx/FunASR-2-pass/Fun-ASR-Nano-server/OpenAI-compat）设备实测（需 GPU）。
-- D035 fallback 的一次端到端设备实测（源+单测已 VERIFIED）。
+- D035 扩展边界矩阵（核心设备行为已 VERIFIED）。
 
 **规划态（非实现,非本 checkpoint 交付）：**
-- LLM / 文本后处理：D017 已决定与 ASR 解耦,源码零实现。
+- LLM / 文本后处理：optional seam 已实现但 concrete processor = NONE；Local-LLM 路线已停止，Cloud LLM 未实现；任何具体实现需独立决定。
 - 4B.3c realtime preedit UX PoC：roadmap `[ ]`,未开始。
 
 **观测（已由 D060 收口）：**
@@ -84,7 +88,7 @@
 - 首发产品口径核对：是否捆绑/内置模型（当前权重不内置 APK,下载走 fixed upstream）;许可证据（X-ASR 归档 NOTICE/转换来源）——**已由 D059 收口为四项权利分离**：① bundle、② mirror/re-host 项目主动不做且许可证据不足以肯定授予再分发；③ 应用内 fixed-upstream 下载入口 = 所有者批准（D050）,`downloadOffered` 从未依赖旧 `distributionApproved`；④ manual import 属用户自身行为。Android 侧陈旧文案（原 `distributionApproved`/“research only”）已重命名为 `licenseAuditComplete` 并改为如实的“audit pending”披露。**分发许可项已定,非 Voice 行为阻断项；首发下载 UI 判定 GO。**
 
 **C. 可安全推迟到首发之后（SAFE TO DEFER）：**
-- 自建服务器设备矩阵、真实云多 provider 设备矩阵、Local 长语音/性能证据、D035 fallback 设备实测、Model Manager 设备明细。
+- 自建服务器真实 endpoint/设备矩阵、Managed Cloud 配额/认证/provider-error/网络/取消/重试竞态等扩展矩阵、Local 长会话/性能/资源证据、D035 扩展边界/竞态矩阵，以及 Model Manager 未逐项验证的网络中断/校验失败/删除/迁移等异常设备路径。
 - 4B.3c realtime preedit UX。
 
 **D. 未来 / 可选（FUTURE）：**
@@ -93,7 +97,9 @@
 **结论（Voice 子系统视角）：RELEASE READY FROM THE VOICE SUBSYSTEM PERSPECTIVE。**
 产品**整体**是否即刻发布取决于 B 中的有界回归 pass 与（若首发含模型分发）许可证据收口——这两项均非 Voice 源缺陷,且当前产品已适合作为**完成一次有界回归后即可进入的首发候选（RELEASE CANDIDATE AFTER A BOUNDED FINAL REGRESSION PASS）**。
 
-## 6. 建议的下一个工作包（本 checkpoint 不实施）
+## 6. 历史建议的下一个工作包（已被后续状态 supersede；不是当前 next task；本 checkpoint 不实施）
+
+本节保留 2026-10-05 checkpoint 当时的建议。首个 Fusion Enhanced 发布及后续 D059/D068/current ROADMAP 状态已 supersede 其“下一工作包”定位；以下内容不是当前 next task。
 
 推荐：**D059 — Fusion Enhanced 首发候选收口工作包**：以 `4e14cde9` 之后的 release HEAD 打一次有界
 最终回归（B 项清单）+ 在最终 HEAD 复跑 JVM 单测与 release/minified 构建并核验 D058 指纹;同时裁定

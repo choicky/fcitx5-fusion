@@ -169,7 +169,7 @@ Phase 3 未定义独立的 "Exit Criteria" 小节（ROADMAP 中只有 Phase 2 �
 
 ## Phase 4 — Voice Input PoC
 
-**状态：实现已完成；阶段验收与后续验证仍 IN PROGRESS — 当前 Android 持续开发线已包含 Voice Input/ASR、Voice Settings、Provider selection、Local Model Manager、Toolbar 和 D035 fallback；历史 System/Direct/Local PoC 与双机关口按下文保留。尚未完成的是针对当前产品线的完整设备验收、真实云端/自托管服务矩阵、Local 长语音/性能/许可证证据和部分 UI 冻结审计，不是 Voice 功能本身尚未实现。**
+**状态：实现已完成；阶段验收与后续验证仍 IN PROGRESS — 当前 Android 持续开发线已包含 Voice Input/ASR、Voice Settings、Provider selection、Local Model Manager、Toolbar 和 D035 fallback；三生产 Local 核心 lifecycle、Qwen/Tencent 基本真实服务/设备识别及 D035 核心设备行为已有 owner-reported acceptance。尚未完成的是扩展设备/真实服务矩阵、Local 长语音/性能/许可证证据和部分 UI 冻结审计，不是 Voice 功能本身尚未实现。**
 
 ### 当前实现基线（跨仓库）
 
@@ -215,24 +215,31 @@ Phase 3 未定义独立的 "Exit Criteria" 小节（ROADMAP 中只有 Phase 2 �
   session gate 保持有效，但当前设置页和模型批次仍需按各自验收记录验证。
 - Provider selection / Managed Cloud / Self-hosted：当前源码包含 Doubao、Qwen、
   Tencent、OpenAI-compatible、FunASR 2-pass、Fun-ASR-Nano Server 和
-  sherpa-onnx Server 客户端/适配器。Doubao 有历史双机 Direct E2E；Qwen、Tencent
-  和自托管服务的真实 endpoint/设备矩阵仍是待验收项，不能因适配器和协议测试而写成
-  真实服务 PASS。
+  sherpa-onnx Server 客户端/适配器。Doubao 有历史双机 Direct E2E；Qwen 与 Tencent
+  已由所有者报告在真实凭据、真实服务、Android 设备上成功识别。配额、认证失败、
+  provider 错误、取消/中断/重试竞态等扩展矩阵，以及 Self-hosted 真实 endpoint/设备矩阵，
+  仍是 VALIDATION DEBT，不能由基本成功扩大为穷举 PASS。
 - Local ASR / Model Manager：当前产品模型为 FunASR Nano、X-ASR 离线 INT8、
   X-ASR 960 ms 流式 INT8；`LocalModelInstaller`、`ModelDownload`、`ModelTasks`
   支持固定来源、校验、临时/原子安装、暂停/取消/重试和删除。相关实现提交包括
   `1075184f`、`c8cab8d5`、`58c4d10f`；release `v0.1.3.7`（Android `b31ae5f7`，
-  CI `37045975799`）已包含三模型与 runtime，但未以新的真机验收作为 release gate。
+  CI `37045975799`）已包含三模型与 runtime。所有者已报告 release product path 上三模型
+  的下载、暂停、继续、取消、启用和实际语音识别均完成；长语音、资源/延迟、所有中断/竞态
+  与许可/来源审计仍为 VALIDATION DEBT。
 - Toolbar：`ToolbarAction`、`ToolbarEditorWindow`、`ToolbarEditorUi` 和 inline
   edit mode 已由 `172ac602`、`5af093c4` 实现，`ToolbarActionTest` 覆盖核心状态。
   Android 真机触摸、拖放、窄屏/字体/无障碍和 teardown gate 仍为 TBV。
 - D035：`AsrSelection.fallbackTarget` 与 `VoiceInputFlow` 已实现外部服务早期失败
   → 已启用、已安装、runtime-ready 且 `production` 的 Local 模型；System 不进入
-  fallback 链。`VoiceInputFlowTest`、`AsrSelectionTest` 覆盖逻辑，真实设备 fallback
-  验收仍未完成。
+  fallback 链。`VoiceInputFlowTest`、`AsrSelectionTest` 覆盖逻辑；所有者已报告核心真实设备
+  行为（会话建立前外部早期技术/服务失败 → 正式 Local 继续操作）通过。中断、授权、取消
+  时序、重复启动、麦克风所有权和 race 的穷举矩阵仍为 VALIDATION DEBT。
 
-上述状态区分“代码已实现”和“设备/真实服务/发布证据已验证”；后文历史 checkpoint
-中的“尚未实现”只适用于其记录时点。
+LLM / Text Post Processor 的当前口径：Android merged PR #15 保留 provider-neutral optional
+`TextPostProcessor` seam 及 VoiceInputFlow 异步 ownership；具体 processor 为 NONE/null/disabled，
+当前路径仍为 `ASR → Raw Transcript → IME`。已测试 Local-LLM 路线因保守质量门禁失败而停止，
+llama.cpp/JNI/GGUF runtime 已移除；Cloud LLM 未实现且不是当前开发方向。后文历史 checkpoint
+中的“尚未实现/待验收”只适用于其记录时点，或仍适用于 concrete processor/扩展验证，不得覆盖本段当前口径。
 
 优先复用：
 
@@ -798,8 +805,8 @@ paired punctuation 的 formatter-only repair 暴露出验证状态必须分层�
 - UI、推荐和 D035 候选顺序统一为 X-ASR 离线 → X-ASR 流式 → Nano；资格、触发、持久化、production、installed、enabled、runtime-ready 与许可状态继续分层。
 - debug/release 均支持应用内从固定上游按需下载上述模型，权重不内置 APK；archive NOTICE、转换来源等证据仍待补齐，不表述为独立法律审计 PASS。
 - **Local 分发/下载资格已由 D059 收口（four-rights closure）**：① bundle、② mirror/re-host 项目主动不做；③ 应用内 fixed-upstream 下载入口 = 所有者批准（D050），`distributionApproved` 从未 gate 下载且其陈旧“research only”文案已重命名为 `licenseAuditComplete` + 如实 audit-pending 披露；④ manual import 属用户行为。首发下载 UI 判定 **GO**；除 D059 reopen conditions 外不得重翻 A/B/C 研究阶段分发结论。
-- Dictionary、Voice/ASR 和 Toolbar 已有实现批次；剩余真机回归、长语音/下载控制与 Toolbar 冻结审计按各自 checkpoint 继续，不把未测项目记为 PASS。
-- 下一步入口：Toolbar/Voice Settings 真机回归与缺陷收口、Local 长语音/下载控制设备明细与 NOTICE/转换来源证据补齐（**下载 UI 资格本身已由 D059 定为 GO,非阻断项**）、Managed Cloud/Self-hosted checkpoint；LLM 仍为后续事项。
+- Dictionary、Voice/ASR 和 Toolbar 已有实现批次；剩余真机回归、Local 长语音与 Model Manager 异常路径、以及 Toolbar 冻结审计按各自 checkpoint 继续，不把未测项目记为 PASS。
+- 下一步入口：Toolbar/Voice Settings 真机回归与缺陷收口、Local 长语音与 Model Manager 未逐项验证的网络中断/校验失败/删除/迁移等异常设备路径、以及 NOTICE/转换来源证据补齐（**下载 UI 资格本身已由 D059 定为 GO,非阻断项**）、Managed Cloud 扩展矩阵与 Self-hosted checkpoint；已完成的三模型核心生命周期、Qwen/Tencent 基本真实设备识别和 D035 核心 fallback 不再作为下一开发任务。LLM 具体实现仍为未来独立决定，不在当前开发方向。
 - MoQi 上游贡献不在当前下一步：PR #300 已关闭并保留 `contribution/moqi-upstream-v2` 作为验证参考；不要为上游接受度继续重设计 MoQi 表格下载或发布流程。
 - （2026-10-06 新增，见 Phase 9 / D069）中英混输 Architecture A 收口 COMPLETE：addons `c5b78c9`（PR #3 绿、未 merge）、
   Android 集成 `e3cec1d8`、融合回归矩阵 `fa4c0d4` 19/19 PASS；剩余仅设备 smoke / 持久化 / 扩展语料类 VALIDATION DEBT；
@@ -990,6 +997,8 @@ addons 的 `9b3448e6` 位于用于发布固定的 punctuation 分支线上，不
 4. **License gate**：维护 `docs/THIRD_PARTY_LICENSES.md`，分开记录 runtime / model weights / 必要时 training-data provenance；A 在许可澄清前仅限研究测试。
 5. **4B.3b 已关闭**：A/B 在同一 sherpa-onnx runtime 与共同 Local 架构下完成双机测试（`204fc324` + `a8a0e1b3`）；A 仍仅限研究（许可）；B 当前 artifact 因约 1 GB 体积、约 2 GB PSS 与 `max_total_len` = 512 长语音空 final 不适合作为默认；两者均未选定（D036）。下一步寻找/验证正式发布候选；不为研究候选实现 Model Manager/Downloader。
 6. 正式 Provider selector、Provider-specific BYOK/API Key UI 与 Local Model Manager/Downloader 已进入 Requirements/D029/Phase 7，但**不提前塞进 4B.3b PoC**；正式版模型按需下载，不要求用户 adb。
+
+**2026-10-13 当前状态 supersession：** 上述 Phase 4C 执行顺序和 `7ed0fa78` 设备摘要是历史快照，保留其当时的“待验收/未执行”措辞作为历史证据；它们不再是当前下一步。后续 owner-reported evidence 已关闭三生产 Local 模型核心 release-device lifecycle、Qwen/Tencent 基本真实服务/设备识别和 D035 核心早期失败 fallback。当前只保留对应扩展验证债务（长语音、性能/资源、穷举网络/取消/竞态、Self-hosted 设备矩阵等）。
 7. 4B.3c realtime preedit UX 仍为后续有条件 PoC；LLM 后处理继续独立，本阶段不接入。upstream PR #899 / Android `SpeechRecognizer` 继续作为 System ASR backend 跟踪。
 
 ## Repository rename record
