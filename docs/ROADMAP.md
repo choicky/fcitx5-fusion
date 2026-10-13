@@ -1,10 +1,10 @@
 # Roadmap
 
-> This file is the compact delivery map. Durable requirements are in `docs/REQUIREMENTS.md`; accepted decisions are in `docs/DECISIONS.md`; the first-release current-state matrix is `docs/first-release-baseline.md`. Detailed execution evidence remains in the referenced evidence/checkpoint files and Git history.
+> This file is the compact delivery map. Durable requirements are in `docs/REQUIREMENTS.md`; accepted decisions are in `docs/DECISIONS.md`; `docs/first-release-baseline.md` is the frozen D068 first-release matrix, not the post-release current-next authority. Detailed execution evidence remains in the referenced evidence/checkpoint files and Git history.
 
 ## Current state
 
-The first Fusion Enhanced release is published. The current product baseline, scope, and release matrix are authoritative in `docs/first-release-baseline.md` (D060/D066/D068).
+The first Fusion Enhanced release is published. This table records post-D068 current state; the frozen D068 release matrix remains in `docs/first-release-baseline.md` (D060/D066/D068).
 
 | Area | Current status | Durable pointer |
 |---|---|---|

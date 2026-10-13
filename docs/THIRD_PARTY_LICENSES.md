@@ -52,6 +52,9 @@
 ① bundle 进 APK = 项目主动不做（许可证据不足以肯定授予再分发）；② mirror/re-host = 项目主动不做；
 ③ 应用内 fixed-upstream 下载入口 = 所有者批准（D050），当前 release 已实际提供；④ manual import = 用户
 自身合法取得的文件，非项目分发行为。“独立法律审计是否完成”不 gate ③，仅作如实 audit-pending 披露。
+因此本清单中 Nano/X-ASR 的未闭合 provenance/license/NOTICE 条目仍是证据状态，不能被 D050/D059
+改写为审计 PASS；同时它们也不应被扩大为固定上游下载或首发发布的笼统阻断项。D059 的六项 reopen
+conditions 仅在 `docs/DECISIONS.md` 中规定的实质新事实出现时适用。
 Android 侧陈旧字段 `distributionApproved`（原唯一作用是给产品模型显示“research only”横幅,从不 gate 下载）
 已重命名为 `licenseAuditComplete`。首发下载 UI 判定 **GO**。reopen conditions 见 `docs/DECISIONS.md` D059；
 除其列出的情形外不重开 A/B/C 研究阶段的分发结论。

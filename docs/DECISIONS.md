@@ -148,6 +148,10 @@ Users configure/enable concrete services; “current service” selects one. Fir
 recommendation is one-time and Local-first, then disclosed/authorized System,
 then configuration guidance. It never silently selects a cloud/self-hosted
 service or rewrites the user’s selection.
+Disabling the current service must prompt for a new choice rather than silently
+selecting another cloud service; System authorization and disclosure remain
+required before use. The durable selection/recommendation contract is also in
+REQUIREMENTS.md §9.1–9.2.
 
 ### D035 — bounded runtime fallback
 Only a selected external/network ASR may fall back on early technical/service
@@ -157,6 +161,10 @@ automatic target; there is no external-to-external chaining, quality-triggered
 fallback, post-establishment migration, or PCM replay. `onStarted` is not
 session establishment. The core early-failure path is DEVICE VERIFIED /
 COMPLETE; edge/race permutations are not a reopened core gate.
+User stop/cancel ends the session without fallback; Local/System failures do
+not chain; no external-to-external, Local-to-cloud, or any-to-System fallback
+is permitted. The detailed trigger, privacy, and session boundary contract is
+in REQUIREMENTS.md §9.3.
 
 ### D036–D038 — Local model selection
 The old A/B checkpoint remains historical. Current product models and order are
@@ -186,8 +194,12 @@ Current production/recommendation-eligible Local order is:
 X-ASR offline INT8 → X-ASR 960 ms streaming INT8 → FunASR Nano.
 Models are downloaded from fixed upstream sources on demand; weights are not
 bundled, mirrored, or project-hosted. Core release-device lifecycle and
-abnormal/error Model Manager paths are COMPLETE / DEVICE VERIFIED. Provenance,
-license, and NOTICE closure is COMPLETE; do not create another audit task.
+abnormal/error Model Manager paths are COMPLETE / DEVICE VERIFIED. Fixed-
+upstream download/distribution approval is distinct from independent
+provenance, license, and NOTICE evidence: the latter remains itemized and
+incomplete where `docs/THIRD_PARTY_LICENSES.md` says so. This evidence debt is
+not a blanket download or release blocker; do not start a new audit in this
+status-reconciliation task.
 
 ### D051 — paired punctuation
 The experimental paired-punctuation extension is PAUSED and excluded from the
@@ -219,17 +231,32 @@ system settings.
 
 ### D058 — release signing identity
 Fusion Enhanced has its own permanent release signing identity, separate from
-historical MoQi and debug identities.
+historical MoQi and debug identities. The canonical public certificate
+fingerprint is `A5:15:B7:4A:C4:C3:84:51:54:E1:7C:AD:D1:3D:02:75:BE:70:01:DD:CF:2B:97:2A:4F:2F:06:1A:FD:26:89:0C`;
+all `.fusionenhanced` release artifacts must verify against it or stop. Private
+keys, passwords, and secret material never enter Git, `/tmp`, logs, or chat;
+`.moqi` and `.fusionenhanced` identities remain permanently separate.
 
 ### D059 — Local distribution four-rights closure
 Bundle, mirror/re-host, fixed-upstream in-app download, and manual import are
 separate rights. The fixed-upstream download path is approved; project
 mirroring/bundling is not. `licenseAuditComplete` is disclosure state, not a
-download gate. Reopen only under D059’s explicit conditions.
+download gate. Independent license/provenance/NOTICE evidence remains an
+honest, per-model evidence status and is not converted into an audit PASS by
+download approval or used as a blanket release blocker. Reopen only when:
+(1) a model artifact, revision, URL, or SHA-256 changes; (2) an upstream
+license or authorization changes or is clarified; (3) the download host is no
+longer the author/original host; (4) the project starts mirroring or
+re-hosting weights; (5) the project bundles weights in the APK; or (6)
+concrete legal evidence contradicts this record. These conditions are
+exhaustive for reopening the A/B/C distribution record; per-model evidence
+remains in `docs/THIRD_PARTY_LICENSES.md`.
 
 ### D060 — stable baseline and authority
-`docs/first-release-baseline.md` is the single first-release current-state
-matrix. Other documents point to it rather than duplicating a competing matrix.
+`docs/first-release-baseline.md` is the frozen D068 first-release matrix and
+historical release authority. Other documents must not rewrite its rows with
+post-D068 status; current post-release state and next work belong in
+`docs/ROADMAP.md` and later accepted decisions.
 
 ### D061 / D066 — punctuation and RC supersession
 D061’s acceptance of the expanded punctuation pin was superseded by D066:
@@ -238,9 +265,22 @@ was rejected. These are historical release-boundary decisions, not current
 punctuation work.
 
 ### D063–D064 — signed RC and debug identity
-Signed RC production promotes the exact tested artifact; debug identity is
-separate and reproducibly verified. Do not mix identities or rebuild a tested
-release artifact.
+Signed RC production uses the existing signing route or its CI fallback, puts
+one SHA-256-recorded artifact in a draft release, and promotes that exact
+artifact only after the applicable device gate; publishing must not rebuild
+it. The D058 certificate is a hard gate. Never expose or copy private signing
+material, passwords, or GitHub secrets. Debug identity is separate from
+release identity and is shared by local/CI Debug/Test builds; do not mix
+identities or rebuild a tested release artifact. Reopen D063 only for a
+signing identity/material change, a second/bypass signing path, CI secret or
+permission changes, a regression invalidating the accepted artifact, a change
+to draft exact-artifact promotion, an owner-approved release-policy change, or
+a changed frozen baseline premise. Ordinary inability to access local signing
+credentials is not a reopen condition.
+The accepted Debug identity is the permanent Fusion Enhanced Debug/Test
+identity (certificate SHA-256
+`DC:49:71:82:C5:48:66:34:FD:68:E5:71:B8:78:A3:3E:CE:A6:8B:DA:D2:05:C3:D6:1A:ED:09:B9:83:92:A5:6A`),
+shared by local and CI Debug/Test builds and never used for Release/Signed RC.
 
 ### D068 — first release
 RC.2 was exactly promoted and the first Fusion Enhanced release was published.
@@ -250,10 +290,14 @@ the current baseline/ROADMAP.
 ## D069–D080 — Mixed Input, governance, lexicon, and latest release
 
 ### D069–D071 — Mixed Input foundations
-Preserve the accepted bounded mixed-input architecture, separate sourcing/
-lexicon/learning ownership, raw/output alignment, selection frontier, partial
-selection, and canonical/literal semantics. These decisions are not licenses
-to revive superseded Architecture A' or old ranking experiments.
+Preserve the accepted bounded mixed-input architecture: Chinese and English
+hypotheses share one bounded search, while sourcing, lexicon, learning, and
+resource ownership remain separate. Preserve raw/output alignment, selection
+frontier, partial selection, canonical/literal coexistence, and the rule that
+uncalibrated heterogeneous raw scores are not directly compared. Auxiliary
+Filter remains downstream of primary candidate generation. These decisions
+are not licenses to revive superseded Architecture A' or old ranking
+experiments; the normative architecture contract is in REQUIREMENTS.md §2.1.
 
 ### D072 — Windows boundary
 Windows Fusion is a separate product/research track with authority in
@@ -264,21 +308,48 @@ D073’s M3-B proposal was not accepted. D074 preserves the mixed-input contract
 and explicitly supersedes A' as product architecture. D075 accepts M2+/r4 as
 the current Mixed Input architecture baseline; A' is historical/reference,
 architecture competition is CLOSED, and no r5/r6 or new held-out competition is
-planned. Phase 11 productization and merged Android integration are
-VERIFIED / COMPLETE.
+planned. The validated r4 implementation uses `ENG_STATE=reset`; that is not
+a permanent architecture invariant. Preserve a centralized English transition
+strategy, Pinyin/Shuangpin support, the LibIME-unmodified principle, and the
+bounded-search/alignment/selection contract in REQUIREMENTS.md §2.1. M3-B and
+cross-English LM-state preservation remain deferred research, not
+productization blockers. Phase 11 productization and merged Android
+integration are VERIFIED / COMPLETE. Reopen only on concrete conflicting
+source/API/device/CI/release evidence or applicable accepted Decision
+conditions; more testing alone is not a reopen trigger.
 
 ### D076 — branch governance
 Canonical branches, PR/review flow, gitlink reachability, and deletion
 preconditions are governed by `docs/branch-policy.md`.
 
 ### D077 — versioning
-Fusion versions use the canonical upstream-version + `-fusion.N` policy.
+Fusion versions use the canonical upstream-version + `-fusion.N` policy, the
+sole primary authority for version/tag semantics; `docs/branch-policy.md` §9
+points to it. Preserve the complete upstream release version. The upstream
+component may advance only after that upstream baseline passes the branch
+policy integration/validation flow and enters permanent `fusion` trunk; an
+upstream release alone does not change the Fusion baseline. Fusion revisions
+increase monotonically within one upstream baseline and reset to 1 only when
+the accepted upstream baseline changes. Release tags are
+`v<complete-upstream-version>-fusion.<N>` with optional `-rc.K` after the
+Fusion revision; do not invent alpha/beta syntax without a future accepted
+decision. Android `versionCode` is independent and strictly monotonic across
+installable Fusion releases. Historical tags and release records are never
+rewritten. Reopen only for an unforeseen version representation ambiguity or
+a real release-infrastructure conflict, resolved by a new Accepted Decision.
 
 ### D078–D079 — English lexicon
-The current English Core uses the accepted single bundled lexicon policy and
-the D079 Ice/Frost/curated replacement. Android Spell remains a separate
-responsibility. Do not reopen the retired SCOWL comparison or invent ranking/
-metadata work.
+The current English Core uses one bundled system lexicon generated from the
+D079 Ice/Frost/curated replacement; Android Spell remains separate and is not
+merged into Fusion’s mixed-input lexicon. Do not restore the retired SCOWL
+comparison, a second runtime lexicon, external raw frequency/ranking metadata,
+or an uncalibrated ranking dimension. Preserve the M2+/r4 bounded-search,
+sourcing/ownership, and OOV boundaries in REQUIREMENTS.md §2.1. Any future
+downloadable/updatable English resource must carry a runtime/scoring
+compatibility generation and pass the corresponding mixed-input regression
+gate; this is not current implementation authorization. The D079 curated
+replacement supersedes only D078’s SCOWL-source wording; the remaining D078
+architecture and forward-compatibility rules remain valid.
 
 ### D080 — v0.1.3-fusion.7 and Dictionary Manager closure
 The v0.1.3-fusion.7 exact-artifact release, addons pin advancement, and
@@ -288,8 +359,9 @@ execution transcript as current NEXT.
 
 ## Current authority rule
 
-For current product state, use `docs/first-release-baseline.md` and the
-compact current-next section in `docs/ROADMAP.md`. For requirements use
-`docs/REQUIREMENTS.md`. For evidence use the referenced checkpoint/report
-documents; their historical PENDING/NOT RUN rows do not reopen later CLOSED,
-VERIFIED, STOPPED, or DEFERRED facts.
+For current post-release product state, use the compact current-state/current-
+next sections in `docs/ROADMAP.md` and later accepted decisions. Use
+`docs/first-release-baseline.md` for the frozen D068 first-release matrix. For
+requirements use `docs/REQUIREMENTS.md`; for evidence use the referenced
+checkpoint/report documents. Historical PENDING/NOT RUN rows do not reopen
+later CLOSED, VERIFIED, STOPPED, or DEFERRED facts.
