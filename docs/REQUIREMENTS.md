@@ -208,9 +208,7 @@ Auxiliary Filter:
 
 这 19 组是本项目的 authoritative target set。扩展到集合之外必须另行作出明确决定。
 
-实现方向仍复用现有上游 paired-punctuation mechanism；此前选定的 46-row mapping 实验已回滚，`fcitx5-chinese-addons/modules/punctuation/punc.mb.zh_CN` 当前恢复为官方 upstream 41-row baseline。不得因此引入 structured candidate API、Pinyin/Table paired-punctuation plumbing、新 punctuation state machine、LibIME/Fcitx core/Android candidate protocol 修改。此前的 abandoned structured-candidate implementation 已回滚。当前状态为 **Paired Punctuation work: PAUSED; experimental table rolled back; runtime validation pending**：19 组目标决定和历史研究证据保留，后续实现须重新开启任务并完成 source/runtime PoC；不得据此宣称编译、运行时、Pinyin/Shuangpin E2E 或 Android 真机验证通过。
-
-**首发范围（D061，2026-10-05）：** 上述 PAUSED/rolled-back 口径仅描述 structured-candidate 实验线与开发分支现状；**addons 发布 pin `9b3448e6` 携带 46-row 成对标点扩展，首个 Fusion Enhanced 发布有意接受并随该 pin 一并发布，D051 首发 scope 状态为 INCLUDED / VALIDATION DEBT，而非被排除**。有界 runtime 回归由 RC 验证任务执行；仅当产出具体回归证据才构成 RELEASE BLOCKER。current-state 权威见 D061 与 `first-release-baseline.md` §2/§6。
+实现方向仍复用现有上游 paired-punctuation mechanism；不得因此引入 structured candidate API、Pinyin/Table paired-punctuation plumbing、新 punctuation state machine、LibIME/Fcitx core/Android candidate protocol 修改。19 组目标及其历史实验保留为产品边界参考；D066 已将实验扩展移出当前首发范围并恢复发布 pin 的 upstream 基线。未来若重新开启该扩展，必须另行作出决定并完成适用的 source/runtime 验证；当前状态见 `docs/first-release-baseline.md` §2/§6。
 
 ## 6. 词库与语言模型
 
@@ -337,11 +335,9 @@ Mic / Long-press Space → VoiceInputFlow → Configured ASR Provider → Raw Tr
 → Optional Text Post Processor / LLM → Final Transcript → IME
 ```
 
-当前事实与计划的区分：
-
-- **已真机验证**：System（vivo 可用 / Redmi OEM error 9）；Managed Cloud 中仅 Doubao Seed-ASR 2.0（4B.3a 双机 PASS）；Local 候选 A 基础双机 gate PASS（仅研究用途，见 9.1）。
-- **计划 checkpoint 候选（均无 PoC）**：Managed Cloud 的 Alibaba Qwen ASR 系列（具体模型在 checkpoint 时依当时官方产品线核实）与 Tencent Realtime ASR；Self-hosted 的 FunASR 2-pass / Paraformer、Fun-ASR-Nano Server、sherpa-onnx Server。iFlytek 为未来候选，当前不实现。比较维度与核实项见 D033。
-- **未冻结**：任何 Managed Cloud 胜者、Self-hosted 是否需要共同的 backend/协议边界、Local 正式模型。
+实现、设备验收、服务凭据和发布状态属于
+`docs/first-release-baseline.md`、`docs/ROADMAP.md`、`docs/DECISIONS.md` 和证据文档；本节只规定
+Provider 分类与架构边界，不复制时点性 PoC/设备状态。
 
 正式版的可移植性要求：
 
@@ -353,7 +349,7 @@ Mic / Long-press Space → VoiceInputFlow → Configured ASR Provider → Raw Tr
 
 PoC 使用某个 Provider 不得使 Voice Trigger、Audio Capture 或 IME 层绑定该 Provider。对于 Android System ASR，不强制要求 Fcitx5 提供 PCM；对于 direct cloud/local Provider，使用最小的 Fcitx5-owned Audio Capture 边界，不提前建立复杂 Provider framework。
 
-Provider 选择见 D028（逻辑分类已由 D033 更新）：Phase 4B.3a 选定 Doubao Seed-ASR 2.0 作为首个真实 Direct Cloud ASR PoC 的 Provider/路径，并已在 vivo X100 Pro 与 Redmi K90 Pro Max 完成 Direct Cloud E2E 真机验证；这**不**表示 Doubao 是正式/默认 ASR Provider。当前 Android 产品线已实现 System、Local、Managed Cloud 和 Self-hosted 的统一 Voice flow、Provider selection 与 Provider-specific credentials；Qwen、Tencent 和自托管适配器已有源码/协议测试，但其真实 endpoint/设备验收仍需单独记录。当前 Local 产品模型为 FunASR Nano、X-ASR 离线 INT8、X-ASR 960 ms 流式 INT8；推荐与 fallback 顺序为 X-ASR 离线 → X-ASR 流式 → Nano，资格、触发、持久化、production、installed、enabled、runtime-ready 与许可状态必须分层。模型通过 Model Manager 按固定来源按需下载，不内置权重；许可证/NOTICE/provenance 缺口不得写成已完成法律审计。云端 Provider 采用 BYOK；API Key/credential 必须是 **Provider-specific runtime configuration**：各 Provider 独立配置、独立安全存储、独立使用，切换 Provider 不删除其他 Provider 已保存凭据，也不得跨 Provider 复用凭据；Local Provider 不需要云端凭据；ASR 与 LLM 的 Provider/credential 完全分离。维护者凭据不得进入 APK、仓库、CI 或 release，CI 与公开 APK 无需维护者凭据即可构建。详见 D028/D029。
+Provider 选择遵循 D028/D033：Provider-specific backend 复用统一 Voice flow；云端采用 BYOK，凭据独立安全存储，切换 Provider 不删除或复用其他 Provider 凭据；Local 不需要云端凭据；ASR 与 LLM 的 Provider/credential 完全分离。维护者凭据不得进入 APK、仓库、CI 或 release。当前产品 Provider/model 状态见 current baseline。
 
 ### 9.1 正式 Android Provider 设置与 Local Model Manager
 
@@ -389,7 +385,7 @@ Local ASR 的 **Provider / runtime / model** 必须区分：例如 Local Provide
 
 System ASR 授权：System ASR 与 Local ASR 在隐私上不等价，显式选为“当前使用”或首次推荐时，使用前需要用户事先一次性授权；启用条目不应绕过披露。设置应披露该服务由 Android/设备系统服务提供、语音数据处理取决于该系统服务且可能涉及远程处理；最终文案与 UI 未冻结。已有授权不意味着同意将 System 用作自动回落。
 
-首次使用推荐与 Local 模型按需下载已有实现；当前三模型顺序和资格由 D050 规定。推荐触发、下载控制、长语音和设备性能仍需按验收矩阵继续验证。
+首次推荐与 Local 模型按需下载必须遵循 D034/D050；推荐资格、配置持久化与 runtime readiness 是独立维度。
 
 ### 9.3 自动 fallback（D035）
 
@@ -402,7 +398,7 @@ System ASR 授权：System ASR 与 Local ASR 在隐私上不等价，显式选�
 
 **System 即使已授权也永不进入自动 fallback 链**；它只在用户显式选为当前服务，或首次推荐经披露/授权选定为当前服务时使用。不得静默发生 Doubao → Alibaba、Alibaba → Tencent、Managed Cloud ↔ Self-hosted、Local → 云端、任何服务 → System 等。
 
-V1 只处理启动/早期技术失败：Provider 不可用、无网络/连接失败、endpoint 不可用、认证/服务初始化失败、可用识别会话建立前的早期超时。早期边界是“可用识别会话已建立”，现有 `onStarted` 太早，不能用它判定。V1 不做会话中途跨 Provider PCM replay/迁移、不因质量差自动重识别、不做双 Provider 同时识别、不把已采集音频静默重放给其他第三方；用户停止/取消后不切换，会话中途失败报告失败/允许重试。D035 fallback 已在 `AsrSelection.fallbackTarget` 与 `VoiceInputFlow` 实现，并由 JVM tests 覆盖；真实设备 fallback 仍待验证。没有正式 Local 模型时不把研究/调试模型当作产品回落目标。
+V1 只处理启动/早期技术失败：Provider 不可用、无网络/连接失败、endpoint 不可用、认证/服务初始化失败、可用识别会话建立前的早期超时。早期边界是“可用识别会话已建立”，现有 `onStarted` 太早，不能用它判定。V1 不做会话中途跨 Provider PCM replay/迁移、不因质量差自动重识别、不做双 Provider 同时识别、不把已采集音频静默重放给其他第三方；用户停止/取消后不切换，会话中途失败报告失败/允许重试。没有正式 Local 模型时不把研究/调试模型当作产品回落目标。
 
 ## 10. ASR 与 LLM 解耦
 
@@ -482,8 +478,3 @@ Pinyin/Shuangpin
 10. repeated Auxiliary Filter use。
 
 PoC 证明现有接口不足前，不修改 LibIME。
-## 当前 Local ASR 发布口径（D050，2026-10-02）
-
-当前支持 FunASR Nano、X-ASR 离线 INT8、X-ASR 960 ms 流式 INT8；旧 Zipformer 不恢复，也不做兼容迁移。UI、推荐和 D035 候选顺序为 X-ASR 离线 → X-ASR 流式 → Nano，但推荐资格、触发、持久化、production、installed、enabled、runtime-ready 与许可状态必须分层表达。
-
-debug/release 均通过既有 Model Manager 从固定上游来源按需下载模型，三款模型 `production=true` 且 `recommendationEligible` 默认均为 `true`，实际使用仍需 installed/enabled/runtime-ready 检查。权重不得内置 APK，项目不镜像或托管权重。应用内上游下载、项目托管/镜像和 APK 内置是不同发布形态；archive NOTICE、转换来源等待补证事项必须单列，不得虚报法律审计完成，也不得仅据此笼统阻止 APK 发布。Provider、runtime、model、training-data provenance 与隐私/授权规则继续按现有章节执行。
