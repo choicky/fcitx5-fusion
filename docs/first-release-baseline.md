@@ -28,7 +28,7 @@ owner-reported device smoke，Phase 11 = COMPLETE）——由 `docs/ROADMAP.md`�
 | Android applicationId | `org.fcitx.fcitx5.android` + release `.fusionenhanced` / debug `.debug` → **`org.fcitx.fcitx5.android.fusionenhanced`** | `app/build.gradle.kts:30,60,70` |
 | Android 产品线（当前权威，D066 更正） | `choicky/fcitx5-android` **`contribution/fusion-enhanced-identity-naming-r8`** @ `f2a64da1`（= RC.1 head `2ba3a999` + pin 更正 `ce6b27e4` + Toolbar 首显修复 `f2a64da1`；RC.1 已驳回） | branch/HEAD == origin + 祖先核验 |
 | ↳ 血缘 | `2ba3a999` **包含**词库(`84b7f571`/`583a525a`)、Toolbar(`172ac602`/`5af093c4`)、Local 三模型(`1075184f`)、D056 修复(`4e14cde9`) 以及旧“字典线”tip `9163ec96`——即 `9163ec96` 是 `2ba3a999` 的**祖先** | `git merge-base --is-ancestor` = YES |
-| Controller | `choicky/fcitx5-fusion` `main` @ 本 D060 commit（父 `582d7a5`） | — |
+| Controller | `choicky/fusion-controller` `main` @ 本 D060 commit（父 `582d7a5`；历史仓库名 `choicky/fcitx5-fusion`） | — |
 | addons 开发 gitlink（Android 子模块树） | `19f06898`（upstream `fcitx/fcitx5-chinese-addons` master 提交，5.1.14-5-g19f0689）——**不含 MoQi**；仅用于本地/PR 递归子模块构建 | `.gitmodules` + `git ls-tree` |
 | addons **发布固定 pin**（首发权威，D066 更正） | **`47401b04`**（`choicky/fcitx5-chinese-addons`，分支 `fix/punctuation-candidate-pairs` tip）：`punctuation: restore upstream zh_CN profile`，为 `9b3448e6` 的直接子提交：`modules/punctuation/punc.mb.zh_CN` = **41 行、与 upstream 基线逐字节一致**（`6c120e2e…d91f`）；MoQi `modules/pinyinhelper/{moqi.cpp,moqi.h,moqima-gb18030.cmake}` + `third_party/moqima-tables.LICENSE` 保留 | `release-apk.yml` / `test-apk.yml` `ADDON_COMMIT` 显式 `checkout --detach`，**有意不跟随分支 gitlink**（workflow 注释：`not whatever the branch points at by then`） |
 | LibIME | upstream `github.com/fcitx/libime` @ `ecd2379`（1.1.16-3）——**项目无 LibIME fork** | `.gitmodules` submodule URL |

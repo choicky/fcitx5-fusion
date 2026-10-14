@@ -1,7 +1,7 @@
 # Upstream Contribution / Long-term Fork Assessment
 
 > 目的：明确各组改动的归属与长期维护边界，回答上游贡献与 fork 必要性。
-> 早期基线仅适用于 Phase 3 墨奇集成。当前 addons 发布依赖固定完整提交 `022028550c3827f7018df47dab96be7317298c27`；Android fork 已承载 Voice/ASR、Local Model Manager、词库管理、Toolbar 及发布基础设施；总控仓库现名为 `choicky/fcitx5-fusion`。历史基线和净 diff 数字保留作历史事实，不代表当前 fork 面。
+> 早期基线仅适用于 Phase 3 墨奇集成。当前 addons 发布依赖固定完整提交 `022028550c3827f7018df47dab96be7317298c27`；Android fork 已承载 Voice/ASR、Local Model Manager、词库管理、Toolbar 及发布基础设施；总控仓库现名为 `choicky/fusion-controller`（历史旧名 `choicky/fcitx5-fusion`）。历史基线和净 diff 数字保留作历史事实，不代表当前 fork 面。
 
 ## A. 适合提交 addon upstream（真正的通用价值）
 

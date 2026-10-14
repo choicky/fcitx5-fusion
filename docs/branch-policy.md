@@ -6,7 +6,7 @@
 （D060/D068 的发布边界、产品线与 pin）纳入统一命名与不变量框架，不改变其权威。
 
 治理范围仓库：`choicky/fcitx5-android`、`choicky/fcitx5-chinese-addons`（下称两个
-code repo）、`choicky/fcitx5-fusion`（本仓库，文档/治理线）、`researching-notes`
+code repo）、`choicky/fusion-controller`（本仓库，文档/治理线）、`researching-notes`
 （研究叙述线）。
 
 ## 1. Permanent branches（永久分支）
@@ -17,7 +17,7 @@ code repo）、`choicky/fcitx5-fusion`（本仓库，文档/治理线）、`rese
 | fcitx5-android | `master` | 上游同步线（upstream-only sync line） |
 | fcitx5-chinese-addons | `fusion` | 产品主干 |
 | fcitx5-chinese-addons | `master` | 上游同步线 |
-| fcitx5-fusion | `main` | 文档/治理主干 |
+| fusion-controller | `main` | 文档/治理主干 |
 
 GitHub default branch：两个 code repo 均为 `fusion`（Gate 1，2026-10-11 生效；
 证据见 `evidence/branch-governance-gate1-2026-10-11/github-settings-before-after.md`）。

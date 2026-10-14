@@ -1,5 +1,8 @@
 # 总控仓库改名记录
 
+> 当前身份指针（2026-10-14）：总控仓库现为
+> `choicky/fusion-controller`；本文中的 `choicky/fcitx5-fusion` 是历史溯源。
+
 > **2026-10-04 修订提示**：本记录第 8–9 行“applicationId/包名保持不变、`.moqi` 包名不追溯修改”
 > 的立场，已被 `docs/DECISIONS.md` **D054** 部分 supersede——release effective applicationId 由
 > `org.fcitx.fcitx5.android.moqi` 切换为 `org.fcitx.fcitx5.android.fusionenhanced`，且不承担旧安装迁移。
