@@ -35,11 +35,14 @@ DPs were derived from the accepted D072 boundary and its named mechanisms.
 
 ## Result
 
-The matrix is DECOUPLED: the legitimate design sequence produces a lower
-triangular matrix.  The dependency graph has 13 singleton strongly connected
-components and no cycle.  Open decisions remain parameterized seams or later
-recovery policy inputs; none requires a downstream implementation choice to
-redefine an upstream Windows correctness FR in this analysis.
+The corrected matrix is COUPLED. FR6 and FR12 both materially depend on DP8
+and DP12, producing a full 2×2 obstruction that no row/column permutation can
+make lower triangular. The DP dependency graph independently has 13 singleton
+strongly connected components and no directed cycle; that does not eliminate
+the matrix coupling. The gate is therefore FAIL and Stage 1 is hard-stopped.
+
+The open decisions remain open; resolving this finding requires owner review
+of the accepted architecture or decomposition and is not performed here.
 
 The gate verdict and the five reverse-coupling reviews are recorded separately
 in `gate-decision.md` and `reverse-coupling-review.md`.

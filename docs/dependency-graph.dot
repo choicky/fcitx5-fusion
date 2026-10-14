@@ -11,4 +11,7 @@ digraph D072_Axiomatic_Preflight {
   DP10 -> DP11; DP9 -> DP11;
   DP6 -> DP12; DP9 -> DP12; DP11 -> DP12;
   DP4 -> DP13; DP10 -> DP13;
+  // Complete matrix dependency evidence is in dependency-graph.json.
+  FR6 -> DP8; FR6 -> DP12;
+  FR12 -> DP8; FR12 -> DP12;
 }

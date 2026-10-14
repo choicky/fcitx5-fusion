@@ -1,26 +1,33 @@
 # Ordering, permutation, and cycle analysis
 
-The legitimate order is the DPs' causal construction order:
+The corrected matrix is COUPLED. The smallest obstruction is the submatrix
+formed by rows FR6 and FR12 and columns DP8 and DP12:
 
-`DP1 hard policy → DP2 ownership → DP3 identity/fencing → DP4 semantic/backend
-boundary → DP5 EVENT/STATE/EFFECT → DP6 recovery accounting → DP7 consumed
-watermark → DP8 materialization/readback → DP9 EFFECT barrier → DP10 IPC seam →
-DP11 Host/link health → DP12 restart/rebind → DP13 replaceable reference
-backend profile`.
+```text
+             DP8  DP12
+FR6           X    X
+FR12          X    X
+```
 
-The corresponding FR order is FR1 through FR13 in `fr-set.md`.  It is
-semantically legitimate: each later responsibility consumes contracts already
-established by earlier ones.  The matrix has no X above its diagonal in this
-order, so it is lower triangular, not diagonal.  It is therefore DECOUPLED,
-not UNCOUPLED.
+Both terminal-disposition and recovery correctness require document evidence
+and restart/rebind reconciliation. Every row/column permutation of this full
+2×2 block leaves an X above the diagonal, so no legitimate design sequence can
+make the complete matrix lower triangular. This is a matrix coupling result,
+not an SCC algorithm failure.
 
-The preserved graph input is `dependency-graph.json` / `.dot`.  A simple
-topological/SCC check over that graph returns 13 singleton SCCs, zero cycles,
-and the ordering above.  No reverse dependency violates the proposed design
-sequence.  The graph was checked independently from the CSV by rebuilding
-edges from each row's nonzero cells and verifying that every dependency points
-to the same or an earlier DP column.
+The original DPs' causal construction order remains the recorded order in
+`dp-set.md`: hard policy, ownership, identity/fencing, semantic/backend
+boundary, EVENT/STATE/EFFECT, recovery accounting, watermark,
+materialization/readback, EFFECT barrier, IPC seam, Host/link health,
+restart/rebind, and replaceable reference backend. The corrected matrix cannot
+be made triangular by changing that order or by an arbitrary permutation.
 
-This is not arbitrary row/column shuffling: the order follows D072's explicit
-authority boundaries and causal flow from Windows admission through ownership,
-semantic proposal, materialization, terminal accounting, and recovery.
+The preserved graph input is `dependency-graph.json` / `.dot`. Its DP
+dependency graph still has 13 singleton SCCs and zero directed cycles. That
+does not rescue the matrix: SCC analysis detects directed DP cycles, while the
+full FR6/FR12 × DP8/DP12 dependency block is already irreducibly coupled. The
+matrix was independently rebuilt from the CSV and the 2×2 obstruction was
+checked before the verdict.
+
+No D072 architecture change is proposed. Splitting or relocating these
+responsibilities requires owner review after this finding.
