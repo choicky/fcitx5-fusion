@@ -455,10 +455,10 @@ prevention、RSS/handles/threads。具体 latency/buffer/timeout 数值是 engin
 Stage 0    Architecture closure                         COMPLETE（D072）
 Stage 0.5  TSF Behavior Census — P0-C 所需部分          COMPLETE（0.5B/C/D）
            其余 census 应用/行为                         DEFERRED / UNKNOWN（§18）
-Stage 1    Portable sans-IO FusionCore                  NEXT（NOT STARTED）
+Stage 1    Portable sans-IO FusionCore                  COMPLETE（fusion-windows PR #1，已合并）
            + deterministic simulator + RG-0
-Stage 2    Mock Backend
-Stage 2.5  Real TSF + Mock Backend（representative Windows applications；Chromium 可在此重新取证）
+Stage 2    Mock Backend + Host 边界                      COMPLETE（fusion-windows PR #2，已合并）
+Stage 2.5  Real TSF + Mock Backend（representative Windows applications；Chromium 可在此重新取证）  NEXT
 Stage 3    Real Fcitx5 + chinese-addons + LibIME
 Stage 4    Full TSF integration
 Stage 5    Composition / candidate UI polish
@@ -502,7 +502,9 @@ P0-D  Windows Trust / IPC Topology    OPEN（含 §14 注册/提权观察）
 
 ## 25. 当前允许与禁止的工作
 
-**下一步：** Stage 1 — portable sans-IO FusionCore + deterministic simulator + RG-0（尚未开始）。
+**下一步：** Stage 2.5 — Real TSF + Mock Backend（representative Windows applications）。Stage 1（portable sans-IO
+FusionCore + deterministic simulator + RG-0）与 Stage 2（Mock Backend + `fusion::Host` 边界）均已实现并经独立评审
+合并进 fusion-windows `main`（PR #1 / PR #2）。
 
 **暂不应做：** freeze final wire protocol；freeze permanent identifiers；freeze recovery/timing thresholds；freeze
 未决 Host topology；full product TSF runtime；把 Fcitx5 当永久 backend；broad product UI；为 P0-C 继续 Chromium 实验。

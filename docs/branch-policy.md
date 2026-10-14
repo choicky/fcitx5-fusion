@@ -6,8 +6,8 @@
 （D060/D068 的发布边界、产品线与 pin）纳入统一命名与不变量框架，不改变其权威。
 
 治理范围仓库：`choicky/fcitx5-android`、`choicky/fcitx5-chinese-addons`（下称两个
-code repo）、`choicky/fusion-controller`（本仓库，文档/治理线）、`researching-notes`
-（研究叙述线）。
+code repo）、`choicky/fusion-windows`（Windows 产品实现线，greenfield，无上游同步线）、
+`choicky/fusion-controller`（本仓库，文档/治理线）、`researching-notes`（研究叙述线）。
 
 ## 1. Permanent branches（永久分支）
 
@@ -17,10 +17,28 @@ code repo）、`choicky/fusion-controller`（本仓库，文档/治理线）、`
 | fcitx5-android | `master` | 上游同步线（upstream-only sync line） |
 | fcitx5-chinese-addons | `fusion` | 产品主干 |
 | fcitx5-chinese-addons | `master` | 上游同步线 |
+| fusion-windows | `main` | 产品主干（product trunk），同时为 GitHub default branch |
 | fusion-controller | `main` | 文档/治理主干 |
 
 GitHub default branch：两个 code repo 均为 `fusion`（Gate 1，2026-10-11 生效；
-证据见 `evidence/branch-governance-gate1-2026-10-11/github-settings-before-after.md`）。
+证据见 `evidence/branch-governance-gate1-2026-10-11/github-settings-before-after.md`）；
+fusion-windows 为 `main`。
+
+### 1a. fusion-windows 分支约定
+
+- fusion-windows 是 greenfield Windows 产品仓库，**无**上游同步线：唯一长期分支是 `main`
+  （产品主干 + GitHub default）。除 `main` 外不设永久分支，直到有未来 Accepted Decision
+  另行确立。
+- 新的临时任务分支沿用本 policy §6 的既有命名空间：`feature/*`、`fix/*`、`docs/*`、可选
+  `experiment/*`、`integration/*`（仅确有需要时）、`ci/*`，`release/<version>` 仅 exceptional。
+  **不**新建 `phase/*` 或 `stage/*` 分支类别——Phase/Stage 是 `docs/ROADMAP.md` 的概念，不是分支类别；
+  Stage 标识符可作为任务分支 topic 的描述性一部分，但不得形成新的长期分支 taxonomy。
+- §2 的 master 不变量、§4 的上游集成模型不适用于 fusion-windows（无上游线）。§3 fusion 不变量中
+  “产品主干永不重写 / 禁 force-push·rebase / 变更须经 reviewed PR 合入”对本仓库的 `main` 同等适用。
+- 已存在分支 `feature/stage1-fusioncore-rg0`、`feature/stage2-mock-backend`（其 PR 已合并）为历史事实，
+  **不得**仅为符合前瞻命名规则而重命名、rebase、重建或扰动；不得为命名一致性重写历史。临时分支合并后
+  的正常删除仍须满足 §10/§12 安全清单，本 policy 不授权一次性分支清理，也不得为普通已合并任务分支补建
+  archive tag（§9）。
 
 ## 2. master 不变量（upstream sync line）
 
