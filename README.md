@@ -1,4 +1,4 @@
-# fcitx5-fusion
+# fusion-controller
 
 本项目旨在增加、改善 Fcitx5 的功能与体验，面向 Android 开展中文输入方案研究与实现；墨奇辅助码是其中一项功能。
 
@@ -80,7 +80,7 @@ Phase 3 已完成；Phase 4 的 Voice/ASR 产品化、Phase 5 的词库管理和
 
 项目优先复用上游能力并缩小长期 fork 面。
 
-- 总控仓库：[`choicky/fcitx5-fusion`](https://github.com/choicky/fcitx5-fusion)（原名 `choicky/fcitx5-moqi`，已保留原仓库身份与历史）
+- 总控仓库：[`choicky/fusion-controller`](https://github.com/choicky/fusion-controller)（历史旧名 `choicky/fcitx5-fusion`；更早的历史旧名 `choicky/fcitx5-moqi` 保留在历史证据中）
 - Phase 2 fork：`choicky/fcitx5-chinese-addons`；MoQi Auxiliary Filter 当前为
   downstream-only，不再计划上游 PR。历史上游提案 PR #300 已关闭；干净参考快照
   `contribution/moqi-upstream-v2` @ `ad4398c1252e4ad508b99e4300a4c3a1a7f1a59a`

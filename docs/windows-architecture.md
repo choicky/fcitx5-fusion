@@ -511,10 +511,10 @@ P0-D  Windows Trust / IPC Topology    OPEN（含 §14 注册/提权观察）
 
 | 仓库 | 职责 |
 |---|---|
-| `fcitx5-fusion` | normative architecture（本文）/ requirements / decisions（D072）/ roadmap |
+| `fusion-controller` | normative architecture（本文）/ requirements / decisions（D072）/ roadmap |
 | `researching-notes` | research narrative、证据解读、architecture history（`windows-ime/fcitx5-windows-architecture-evolution.md`，Stage L 记录本次迁移）、supporting reviews |
 | `fcitx5-windows-tsf-census` | 可复现的低层 TSF 实验实现、raw traces、HRESULT census、实验脚本/构建输出 |
-| `fcitx5-fusion-windows` | 产品实现 |
+| `fusion-windows` | Windows 产品实现 |
 
 读取顺序：本文与 D072（**现在是什么**）→ researching-notes evolution（**为什么变成这样**）→ researching-notes initial
 architecture 与已 SUPERSEDED 的 2026-10-07 snapshot（**历史状态**）→ census 仓库（**证据从哪里来**）。历史文档与本文在
