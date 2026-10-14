@@ -276,6 +276,7 @@ Raw Transcript → IME
 
 - **System ASR**：由 OEM/system `RecognitionService` 自行采集音频并识别；复用 upstream PR #899 思路；可选，行为随 OEM 而异。
 - **Direct/Fcitx-controlled ASR**：由 Fcitx5 在 IME 进程内用 `AudioRecord` 采集音频，再交给所配置的 ASR；这是正式版可移植性的基础。
+- Direct 采集必须有产品侧的硬性安全上限（与自动停用的端点判定相互独立）：到达上限等同于用户停止——正常收尾、交付最终结果并释放麦克风，不是取消、不是错误，也不触发 D035 回退；当现行模型/引擎/协议有更低的上限时采用较低值。语义见 D081。
 - `VoiceBackend` 是内部最小 session/backend 边界（start/stop/cancel 与 partial/final/error 事件），不是公开插件框架，也不是以 PCM 为中心的接口；System ASR 不接收 Fcitx5 PCM。
 - 当前 Direct ASR 不以自定义 `RecognitionService` 作为边界；仅当需要通过 Android RecognitionService API 对外提供本项目识别器时再评估。
 
