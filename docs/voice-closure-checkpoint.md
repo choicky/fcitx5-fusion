@@ -178,3 +178,8 @@ android.diff / validation.md）。
 Android 侧最终 HEAD `e1913eb9`。生命周期测试由 13 增至 19 项（套件 41 → 47,全套 365 项
 0 失败）,JVM 全套/`compileDebugAndroidTestKotlin`/arm64 `assembleDebug` 在最终状态复验通过;
 设备验收仍需独立 re-review 后由 owner 放行。
+
+**后续（2026-10-14, D081）**：本记录中各 backend 实现级的 60 s `MAX_SESSION_MS` 采集上限已被
+D081 有界采集时长策略取代（公共上限 180 s；FunASR Nano 现行 pin 30 s 保护上限、Tencent
+Hy-ASR-3.0-preview 与 OpenAI 兼容整段上传保持各自 60 s 下限；到限等同用户停止,不触发 D035）。
+本记录的端点判定/看门狗数值未变；当前权威见 D081。

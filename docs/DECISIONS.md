@@ -357,6 +357,27 @@ productized Dictionary Manager Phase 5D are recorded as COMPLETE / historical
 release facts. Do not treat the old Phase 5D forward pointer or release
 execution transcript as current NEXT.
 
+### D081 — Bounded ASR capture-duration policy
+Auto-stop (endpointing) remains the normal Microphone-session termination;
+the watchdog endpointing values recorded in `docs/voice-closure-checkpoint.md`
+are unchanged. Independently of endpointing, every Fcitx-owned Direct PCM
+capture path keeps a mandatory hard safety ceiling: it is the only bound on
+sessions that never auto-stop, such as a held Space gesture. The
+common Direct ceiling is 180 s where no lower applicable bound exists, and the
+effective bound is `min(common ceiling, applicable model/engine/protocol lower
+limit)`. Lower limits honored here: the FunASR Nano current pin gets a
+temporary 30 s protective ceiling (dual-device empty finals at ~34–39 s for
+that pinned export; revisiting it is a re-pin decision, not a policy change);
+selecting the Tencent Hy-ASR-3.0-preview engine honors its documented 60 s
+per-session limit; OpenAI-compatible whole-file self-hosted capture stays at
+60 s because its post-stop upload/transcription timeout is premised on at most
+60 s of audio. Ceiling expiry finalizes the session exactly like a user stop
+and releases the microphone: it is not a cancel, not an error, and never
+triggers D035 fallback. System ASR remains service-controlled and gains no
+Fcitx duration timer. A longer ceiling is a safety bound, not a claim that
+recognition quality at 180 s is device-verified; X-ASR lengths beyond the old
+60 s remain post-implementation validation debt.
+
 ## Current authority rule
 
 For current post-release product state, use the compact current-state/current-
