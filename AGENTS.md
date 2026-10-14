@@ -46,7 +46,38 @@
 - `docs/DECISIONS.md` 只记录已经接受的重要技术决定，不用于记录临时计划、未决方案、实现进度或未经验证的结论。
 - `docs/REQUIREMENTS.md` 描述需求和约束；发现需求、决定、路线图与源码事实不一致时，应明确指出，不得静默选择其中之一。
 - 文档中的完成状态必须有对应源码、测试或其他可核查证据。
-- 固化新事实/决定/状态前，先定位旧内容并分类为保留、修订、supersede 或删除；更新 canonical current state，移除陈旧 NEXT/PENDING 并协调交叉引用。详细执行证据放在 PR/证据文件，不在 ROADMAP/DECISIONS 重复堆叠。
+- 固化新事实/决定/状态遵循下节「文档一致性维护（Documentation Reconciliation）」：先定位并分类旧语句，
+  就地更新 canonical current state、协调交叉引用，不机械追加矛盾段落。详细执行证据放在 PR/证据文件，
+  不在 ROADMAP/DECISIONS 重复堆叠。
+
+## 文档一致性维护（Documentation Reconciliation）
+
+文档维护不是只追加书写。这是跨项目长期规则，适用于 fusion-controller 及其管辖的每个产品仓库。
+修改任何权威或 current-state 文档前，先定位并阅读现有支配同一 fact / status / decision / requirement /
+procedure / architecture / current phase-stage / next step 的语句，再对每条受影响语句分类并相应处理：
+
+- **CURRENT AND CORRECT**：保留。不得仅为新增一段更晚的话而在别处重复同一事实。
+- **STATE CHANGED**：原地更新 canonical/current 语句；不得既保留旧的 active 语句，又追加一个与之矛盾的新语句。
+- **OBSOLETE**：从 current-state / operational authority 移除。仅当丢失会导致重复调查、失去 provenance/可审计性、
+  引发未来错误结论或抹掉有用历史证据时，才在历史/证据材料中保留；否则删除。
+- **PARTIALLY SUPERSEDED**：显式标明仍有效的部分、被 supersede 的部分，以及管辖被 supersede 部分的新权威/决定；
+  不得静默改写历史证据。
+- **DETAILED EVIDENCE / TEST / PROVENANCE**：细节留在相应的证据/历史位置。current authority 通常只应含简洁的
+  当前结论、current operational consequence，以及在有用时指向细节的指针。
+- **DUPLICATED CURRENT FACT**：选定唯一 canonical current 权威；把其他 current-state 副本转为简洁指针。
+- **MISLEADING TO CURRENT ACTION**：若旧措辞会导致今天执行错误动作，更新或删除它；在 stale 可执行文本下面
+  追加一条免责声明并不足够。
+
+历史证据与当前权威的治理性原则（governing principle）：
+
+  Historical evidence preserves what was concluded at that time.
+  Current authority is reconciled in place.
+  Superseded or stale current-state statements must not remain active merely
+  because they appeared earlier in a document.
+
+编辑文档后，必须在受影响的权威面上搜索 stale 或矛盾的 current-state 措辞并就地协调，包括（where relevant）
+旧 NEXT/PENDING/OPEN/CLOSED 标签、旧 stage/phase 状态、过时分支名、过时 current SHA/pin、被 supersede 的架构
+语句、过时 next step、重复的 current-state 事实。不得机械改写历史证据。
 
 ## 实现与验证流程
 

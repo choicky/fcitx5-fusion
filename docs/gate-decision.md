@@ -1,5 +1,11 @@
 # Windows Axiomatic Gate Decision
 
+> **HISTORICAL / PREFLIGHT GATE ARTIFACT — NOT the current Windows stage-status authority.**
+> 本文记录的是 Stage 1 开工前的一次 axiomatic/preflight 门检查当时得出的结论，属历史证据，保留不改写。
+> 其中的 “Stage 1 is HARD STOPPED” 反映的是该时点状态，**不是**当前项目状态。当前 Windows Stage 状态以
+> `docs/windows-architecture.md`（D072 §22/§25）与 fusion-windows `main` 合并现实为准：Stage 1（PR #1）与
+> Stage 2（PR #2）已实现并经独立评审合并，下一步为 Stage 2.5。读者不得据本文判定当前阶段。
+
 ## Verdict: FAIL — COUPLED
 
 The FR set is traceable to current requirements and D072 invariants. The DP

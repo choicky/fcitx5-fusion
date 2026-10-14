@@ -1,5 +1,11 @@
 # Windows Axiomatic Design Preflight
 
+> **HISTORICAL / PREFLIGHT ARTIFACT — NOT the current Windows stage-status authority.**
+> 本文是 Stage 1 开工前的一次 axiomatic-design preflight 分析，保留其当时结论。“required before Windows Stage 1”
+> 指本分析在时序上先于 Stage 1，**不**表示 Stage 1 当前尚未开始。当前 Windows Stage 状态以
+> `docs/windows-architecture.md`（D072 §22/§25）与 fusion-windows `main` 合并现实为准：Stage 1（PR #1）与
+> Stage 2（PR #2）已合并，下一步为 Stage 2.5。
+
 Status: preflight evidence, not an Accepted Decision.  This document is based
 on the fetched `fusion-controller` `main` at `e65d3d3` and is required before
 Windows Stage 1.  It does not implement or freeze Stage 1 code.
