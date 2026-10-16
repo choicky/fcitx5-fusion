@@ -304,7 +304,8 @@ Windows Fusion is a separate product/research track with authority in
 `docs/windows-architecture.md`. D082 later sets the combined target
 (Windows-native architecture + faithful Fcitx5 port), separates Fcitx WHAT
 from Windows HOW, and makes a scoped supersession; D072's Windows mechanisms
-are otherwise unchanged.
+are otherwise unchanged. D083 closes Windows Stage 4 and partially supersedes
+the §9 open scope for the popped context-stack member.
 
 ### D073–D075 — M2+/r4 closure
 D073’s M3-B proposal was not accepted. D074 preserves the mixed-input contract
@@ -448,6 +449,64 @@ FcitxTransaction abstraction) remain rejected. Current normative wording is in
 `docs/windows-architecture.md` (header, §1–§2, §15, §22–§23, §25). No product
 requirement change (REQUIREMENTS.md unchanged); no runtime behavior changed by
 this Decision.
+
+## D083 — Windows Stage 4 closure and the popped-context lifecycle boundary (partial supersession of the D072 §9 open scope)
+
+### D083 — Stage 4 closure and OnPopContext scope
+
+Merged fusion-windows PR #8 (Stage 4A), #9 (Stage 4B) and #10 (Stage 4C) close
+Windows Stage 4 as recorded in `docs/windows-architecture.md` §22/§25. Stage 4 is
+COMPLETE / VERIFIED over the boundary it implemented and validated on the real
+product path: a thin client-only TSF DLL plus out-of-process `FusionHost.exe` over
+a per-user/per-session Named Pipe, the D072 §13 reconnect ladder with per-context
+semantic readiness, Host-incarnation/connection-generation fencing, and the TSF
+lifecycle obligation table.
+
+**Accepted lifecycle boundary (the part that was previously OPEN).** The popped
+context-stack member is reconciled/torn down on `OnPopContext`: the Fusion semantic
+incarnation for that popped context is audited, fenced to explicit terminals,
+unbound from the Host, and its entry generation advanced so late edit sessions and
+pumps can no longer match. This is **partial** supersession of D072 §9's statement
+that which TSF lifecycle events constitute a semantic discontinuity remains OPEN:
+
+- it does **not** mean the whole `ITfDocumentMgr` is destroyed — document-manager
+  destruction is the separate `OnUninitDocumentMgr` path;
+- it does **not** imply teardown of a different context (an underlying/main context
+  returning to the top of the stack);
+- a later push or use of an `ITfContext` establishes or binds a Fusion semantic
+  incarnation under the current Fusion lifecycle contract and must not resurrect
+  stale Host state — the Stage 4B incarnation/connection-generation fence carries
+  that barrier;
+- lifecycle sub-boundaries not actually resolved by Stage 4 evidence (transitory
+  contexts, context reuse/discontinuity, natural destruction while an async request
+  is pending, and every application other than Notepad) remain **OPEN / UNFROZEN**.
+
+**Evidence.** Microsoft TSF's context-stack contract (applications and text services
+both add and remove stack members through `ITfDocumentMgr::Push`/`Pop`, and a text
+service's own modal UI, such as a word list, enters and leaves the stack the same
+way — so popping one stack member is neither document destruction nor removal of
+the stack); mature TSF precedent such as Mozc establishing per-context private
+state on push and removing it on pop, carried here as independently reviewed
+rationale rather than first-hand verification by this Decision; and Fusion's own
+Stage 4C implementation and product-path evidence, where Notepad pops the context
+before `DOCMGR_UNINIT`, every teardown records an explicit `CONTEXT_TEARDOWN`
+audit, and closing a document that held an open composition delivers **no**
+`OnCompositionTerminated` callback.
+
+**Not superseded, not claimed.** D072's remaining §9 principle stands unchanged
+(`focus ≠ semantic incarnation`; focus loss alone neither advances the epoch nor
+terminates a composition), as do A′, drain-before-PASS, the consumed-STATE →
+EFFECT watermark, EVENT/STATE/EFFECT, the product replay prohibition, and the
+thin-DLL/out-of-process Host separation. P0-A, P0-B and P0-D remain OPEN,
+including the user-visible disposition of work that a teardown or a Host crash
+leaves unresolved. This closure claims **no** multi-application out-of-process
+re-verification: the real-product-path application evidence is Notepad, Firefox
+contributes one incidental reconnect observation only, and Chromium/Edge remain
+DEFERRED UNKNOWN (`docs/windows-architecture.md` §7.6/§18); that breadth is
+recorded as VALIDATION DEBT for the Stage 6 application gate, not as a Stage 4
+mechanism failure. No product code, requirement or runtime behavior changes under
+this Decision; current normative wording is in `docs/windows-architecture.md`
+(header, §9, §13, §18, §22–§25).
 
 ## Current authority rule
 
