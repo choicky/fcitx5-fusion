@@ -566,18 +566,25 @@ preedit 残留或崩溃；代表性真实 Forward 恰好送达应用一次）。
   1. **Out-of-process Host + bounded IPC。** 当前 Fcitx Host 库被直接链接进 TSF DLL，运行在目标应用进程内，不存在
      IPC；Stage 4 使 DLL 不再加载 Fcitx / chinese-addons / LibIME，改经 bounded IPC 连接 Host（§1–§3、§14）。
      采用 §14 的 baseline（one Host per user × session、Named Pipe、Medium IL），**不冻结**拓扑或 wire 格式。
+     该通用边界可自然承载后续 projection 所需的既有 frontend 数据（含已有 CandidateSnapshot），不引入新的 candidate
+     语义或 candidate 专用传输子系统。
   2. **Host 失效 / 重连 / incarnation fencing 接入产品路径（§13）。** Host 崩溃不得使应用崩溃；pipe connected ≠
-     semantic ready；重启是 transport replay barrier；owned key 与未决 EFFECT 经 Core 既有 fencing 到达显式终态。
-     所需的 Host-down 用户可见处置可以是临时、明确标为非最终的策略；P0-A recovery contract 仍 OPEN。
+     semantic ready；重启是 transport replay barrier；Core 既有 fencing/accounting 在真实路径上生效。已 owned 的 key
+     或未决 EFFECT 若其最终恢复语义仍属 P0-A/P0-B，不得静默消失、伪装为普通 PASS、被盲目 replay/retry、重复或跨
+     context materialize、或复活 stale state，其未决恢复责任须保持可检测、可审计。Stage 4 **不**选定最终用户可见的
+     recovery key policy、**不**冻结 recovery representation、**不**宣称每个崩溃窗口已有最终产品恢复语义；
+     P0-A / P0-B 仍 OPEN。
   3. **TSF 生命周期接线（§9）。** 当前 `OnSetFocus` / `OnPushContext` 为 no-op；Stage 4 按真实观察接通 focus、
      push/pop、document-manager 销毁与外部 composition termination 到 Host 侧的 context 绑定与 reconciliation。
      哪些事件构成 semantic discontinuity 由真实执行取证，取证不足的子边界保持 **UNFROZEN**。
-  4. **Candidate 数据跨 Host 边界传递**（已有 CandidateSnapshot），不含渲染。
 - **Gate / exit：** 在 Stage 3C 已验证的应用集合（Notepad、Firefox、Edge 地址栏与文本框）上，Stage 3C smoke 用例经
   out-of-process 路径保持通过；TSF DLL 不再链接 Fcitx / chinese-addons / LibIME；输入过程中强制终止并重启 Host 时应用
-  不崩溃，且无 silent owned-key loss、重复不可逆 EFFECT 或 PASS 越过未决 EFFECT（RG-0 不变量在真实路径上成立）；
-  focus/context 切换与 composition 外部终止产生显式终态；现有 Core / Stage 测试保持通过。
-- **不属于 Stage 4：** candidate renderer 与其进程/位置选择（§16）、composition 显示与 UI 打磨 → Stage 5；
+  不崩溃，重连与 incarnation fencing 生效，且无 silent owned-key loss、重复不可逆 EFFECT、跨 context EFFECT、stale
+  state 复活、不确定 mutation 后的盲目 replay/retry 或 PASS 越过未决 EFFECT（RG-0 不变量在真实路径上成立）；
+  仍属 P0-A/P0-B 的未决恢复责任被显式记账并可观察，而非要求其已有最终恢复语义；focus/context 切换与 composition
+  外部终止产生显式终态；现有 Core / Stage 测试保持通过。
+- **不属于 Stage 4：** candidate projection / renderer 与其进程/位置选择（§16）、composition 显示与 UI 打磨 → Stage 5，
+  Stage 4 PASS 不依赖 candidate UI 或 candidate 专用传输；
   安装器、持久注册/提权路径、签名、soak、延迟/阈值测量与冻结、更广的应用兼容性 → Stage 6 或 §18 DEFERRED。
   P0-A / P0-B / P0-D 的完整关闭不是 Stage 4 前提：Stage 4 只采用 §14 baseline，其余 P0-D 场景（High IL、
   AppContainer、多 session、RDP 等）仍 OPEN。
