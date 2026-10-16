@@ -37,7 +37,7 @@
 > correctness boundary 已有证据。D072 原文中把 Fcitx5 / chinese-addons / LibIME 表述为临时 v0.x reference
 > backend、把 Host 表述为独立语义权威的措辞已按 D082 在 §1、§2、§15、§25 原位收窄（§23 同步）。D072 的其余内容——thin TSF
 > DLL / out-of-process Host 分离、上列 Windows HOW 机制、通用 SendInput replay 禁令——仍 ACCEPTED，不因其
-> Windows 特有而失效。先前 Stage 3C 证据保留为历史证据；当前 Stage 3C 表述见 §22/§25。
+> Windows 特有而失效。Stage 3C 前的证据保留为历史证据；Stage 3C 结果与当前下一步见 §22/§25。
 
 ## 0. 证据基础与证据等级
 
@@ -492,12 +492,12 @@ Stage 2    Mock Backend + Host 边界                      COMPLETE（fusion-win
 Stage 2.5  Real TSF + Mock Backend（representative Windows applications；Chromium 可在此重新取证）  COMPLETE（fusion-windows PR #4，已合并；Edge 尝试记为 HARNESS/TOOL INVALID）
 Stage 3    Real Fcitx5 + chinese-addons + LibIME（faithful port：经 Fcitx 前端/InputContext 契约承载引擎语义）
            ├─ 3B Real-Fcitx5 backend PoC / Option-A frontend 边界验证  COMPLETE（fusion-windows PR #5，已合并）
-           └─ 3C Faithful Fcitx Windows frontend 路径  NEXT：普通输入交由 Fcitx 决定并复现成熟 Fcitx
-              基线行为 → 由 D072 Windows HOW 机制忠实承载其有序输出 → 仅在满足 D082 证据门槛时偏离
-              Fcitx 语义/机制；不在 TSF 层重实现 Fcitx 语义；P0-A/P0-B/P0-D 仍 OPEN
-Stage 4    Full TSF integration
-Stage 5    Composition / candidate UI polish
+           └─ 3C Faithful Fcitx Windows frontend 路径  VERIFIED / COMPLETE（fusion-windows PR #7，已合并；
+              物理按键验证范围见 §25）
+Stage 4    Production Host / TSF lifecycle integration      NEXT（范围与 gate 见 §25）
+Stage 5    Composition / candidate UI                         （含首个 candidate renderer，§16）
 Stage 6    Packaging / release / soak
+P0-A / P0-B / P0-D 仍 OPEN（§24）
 ```
 
 ## 23. Decision classification
@@ -537,25 +537,60 @@ P0-D  Windows Trust / IPC Topology    OPEN（含 §14 注册/提权观察）
 
 ## 25. 当前允许与禁止的工作
 
-**下一步：** Stage 3C — faithful Fcitx Windows frontend 路径。Stage 1（portable sans-IO FusionCore + deterministic
-simulator + RG-0）、Stage 2（Mock Backend + `fusion::Host` 边界）、Stage 2.5（Real TSF + Mock Backend，PR #4）与
-Stage 3B（real-Fcitx5 backend PoC / Option-A frontend 边界，PR #5）均已实现并经独立评审合并进 fusion-windows `main`
-（PR #1 / #2 / #4 / #5）。P0-A / P0-B / P0-D 仍 OPEN，恢复/线协议语义不在此冻结。
+**Stage 3C 结果（VERIFIED / COMPLETE，fusion-windows PR #7）：** Stage 1–3B（PR #1 / #2 / #4 / #5）与 Stage 3C
+（PR #7）均已合并。PR #7 经完整独立评审；real-Fcitx Debug 测试 42/42、Mock-only 39/39 通过；所有者在 Notepad、
+Firefox 与 Edge 的地址栏及文本框中完成物理按键验证（例如 `nihao,` → 恰为 `你好，`，无重复 ASCII 逗号、丢标点、
+preedit 残留或崩溃；代表性真实 Forward 恰好送达应用一次）。该范围**不**推广为通用 Windows 应用兼容性。
 
-- **已确立的证据（历史，仍有效）：** 当前 Windows 路径会在 Fcitx 看到按键之前预测语义归属，因而可能使逗号等普通按键
-  到达不了 Fcitx。
-- **已确立的事实：** 一次 Fcitx key dispatch 可以合法产生有序序列，例如
-  `CommitText("你好")` → `SetPreedit("")` → `CommitText("，")`。Windows port 保留该语义与顺序，除非真实 TSF 约束
-  证明某项具体适配必需。
-- **待 Stage 3C 最小解决的实现问题：** Windows 如何承载该序列（优先复用既有 D072 EVENT/STATE/EFFECT、ordering、
-  watermark、fencing 机制）。
-- **不是已接受架构：** 先前 Stage 3C Change Contract 的实验性提议——consumed + CommitText 必须合并为一个 Effect、
-  一个物理键对应一个语义 Effect、为适配当前 envelope 折叠有序 Fcitx 回调、需要新的 FcitxTransaction 抽象——以及
-  Windows-first key-admission 语义模型（L1/L2/L3 分类、comma ownership policy、Forward+effects、Mechanism A/B 等）。
-  这些保留为历史证据，或仅在满足 D082 证据门槛时作为条件性平台工具采用。
+- **历史（Stage 3C 前）：** Windows 路径曾在 Fcitx 看到按键之前预测语义归属，可使逗号等普通按键到达不了 Fcitx；
+  PR #7 在已实现的 faithful frontend 路径上消除了这一已知偏离。
+- **已确立：** 普通的、经翻译的 IME 相关按键到达真实 Fcitx，由 Fcitx 的 consumed/Forward 结果决定语义处置；
+  Windows 保留 hard-policy / routing eligibility 职责。一次 key dispatch 的有序回调（如 `CommitText("你好")` →
+  `SetPreedit("")` → `CommitText("，")`）经既有 D072 机制作为独立的有序 Core 记录/结算承载；不需要一键一 Effect，
+  不需要新的 FcitxTransaction 语义抽象；真实 Forward 不经通用 SendInput/PostMessage replay 恰好送达一次；未修改
+  Fcitx / chinese-addons / LibIME 语义。该实现证据支持 D082 边界，而非修订它。
+- **仍被拒绝（历史）：** 先前 Stage 3C Change Contract 的提议（consumed + CommitText 合并为一个 Effect、一个物理键
+  对应一个语义 Effect、为适配 envelope 折叠有序 Fcitx 回调、新的 FcitxTransaction 抽象）以及 Windows-first
+  key-admission 语义模型（L1/L2/L3 分类、comma ownership policy、Forward+effects、Mechanism A/B 等），仅在满足
+  D082 证据门槛时才可作为条件性平台工具重新考虑。
+
+**下一步：Stage 4 — Production Host / TSF lifecycle integration。**
+
+- **目标：** 把已验证的 faithful frontend 路径从开发期的同进程布局迁移到 D072 产品拓扑——thin TSF DLL +
+  out-of-process Fusion Host——并接通真实 TSF 生命周期，使 D072 的隔离、重连与 fencing 保证在真实产品路径上成立。
+- **已完成、因此不属于 Stage 4：** portable Core / RG-0（PR #1）；`fusion::Host` 边界（PR #2）；真实 TSF 注册、
+  key sink、EditSession materialization、drain-before-PASS、compartment hard policy 与 composition self-end/外部终止
+  处理（PR #4）；Host 边界内的真实 Fcitx5 backend（PR #5）；faithful key routing、有序回调承载与 Forward 恰好一次
+  （PR #7）。Stage 4 不重做这些，只把它们搬到产品拓扑上并保持行为不变。
+- **剩余范围（依据当前 fusion-windows `main`）：**
+  1. **Out-of-process Host + bounded IPC。** 当前 Fcitx Host 库被直接链接进 TSF DLL，运行在目标应用进程内，不存在
+     IPC；Stage 4 使 DLL 不再加载 Fcitx / chinese-addons / LibIME，改经 bounded IPC 连接 Host（§1–§3、§14）。
+     采用 §14 的 baseline（one Host per user × session、Named Pipe、Medium IL），**不冻结**拓扑或 wire 格式。
+     该通用边界可自然承载后续 projection 所需的既有 frontend 数据（含已有 CandidateSnapshot），不引入新的 candidate
+     语义或 candidate 专用传输子系统。
+  2. **Host 失效 / 重连 / incarnation fencing 接入产品路径（§13）。** Host 崩溃不得使应用崩溃；pipe connected ≠
+     semantic ready；重启是 transport replay barrier；Core 既有 fencing/accounting 在真实路径上生效。已 owned 的 key
+     或未决 EFFECT 若其最终恢复语义仍属 P0-A/P0-B，不得静默消失、伪装为普通 PASS、被盲目 replay/retry、重复或跨
+     context materialize、或复活 stale state，其未决恢复责任须保持可检测、可审计。Stage 4 **不**选定最终用户可见的
+     recovery key policy、**不**冻结 recovery representation、**不**宣称每个崩溃窗口已有最终产品恢复语义；
+     P0-A / P0-B 仍 OPEN。
+  3. **TSF 生命周期接线（§9）。** 当前 `OnSetFocus` / `OnPushContext` 为 no-op；Stage 4 按真实观察接通 focus、
+     push/pop、document-manager 销毁与外部 composition termination 到 Host 侧的 context 绑定与 reconciliation。
+     哪些事件构成 semantic discontinuity 由真实执行取证，取证不足的子边界保持 **UNFROZEN**。
+- **Gate / exit：** 在 Stage 3C 已验证的应用集合（Notepad、Firefox、Edge 地址栏与文本框）上，Stage 3C smoke 用例经
+  out-of-process 路径保持通过；TSF DLL 不再链接 Fcitx / chinese-addons / LibIME；输入过程中强制终止并重启 Host 时应用
+  不崩溃，重连与 incarnation fencing 生效，且无 silent owned-key loss、重复不可逆 EFFECT、跨 context EFFECT、stale
+  state 复活、不确定 mutation 后的盲目 replay/retry 或 PASS 越过未决 EFFECT（RG-0 不变量在真实路径上成立）；
+  仍属 P0-A/P0-B 的未决恢复责任被显式记账并可观察，而非要求其已有最终恢复语义；focus/context 切换与 composition
+  外部终止产生显式终态；现有 Core / Stage 测试保持通过。
+- **不属于 Stage 4：** candidate projection / renderer 与其进程/位置选择（§16）、composition 显示与 UI 打磨 → Stage 5，
+  Stage 4 PASS 不依赖 candidate UI 或 candidate 专用传输；
+  安装器、持久注册/提权路径、签名、soak、延迟/阈值测量与冻结、更广的应用兼容性 → Stage 6 或 §18 DEFERRED。
+  P0-A / P0-B / P0-D 的完整关闭不是 Stage 4 前提：Stage 4 只采用 §14 baseline，其余 P0-D 场景（High IL、
+  AppContainer、多 session、RDP 等）仍 OPEN。
 
 **暂不应做：** freeze final wire protocol；freeze permanent identifiers；freeze recovery/timing thresholds；freeze
-未决 Host topology；full product TSF runtime；无 D082 证据而偏离或替换 Fcitx 语义；broad product UI；为 P0-C 继续 Chromium 实验。
+未决 Host topology；把 Stage 5/6 范围（candidate renderer、安装/发布）提前并入 Stage 4；无 D082 证据而偏离或替换 Fcitx 语义；broad product UI；为 P0-C 继续 Chromium 实验。
 
 ## 26. 文档 authority 与仓库职责
 
