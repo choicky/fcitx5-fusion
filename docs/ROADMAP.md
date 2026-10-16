@@ -49,7 +49,7 @@ STOPPED/DEFERRED. The seam remains available, but no concrete processor is confi
 COMPLETE for the accepted Fusion Enhanced release/product line. Product boundaries and release identity are governed by D054, D058, D063–D068, and D080.
 
 ### Phase 8 — Additional platforms
-Windows is a separate research/implementation track governed by D072, D082 and `docs/windows-architecture.md`; it is outside this Android/Fusion roadmap. Current Windows stage status and next step are recorded in `docs/windows-architecture.md` §22/§25: Stage 3C proceeds as a faithful Fcitx Windows frontend path first — reproduce mature Fcitx baseline behavior on Windows, identify actual Windows/TSF incompatibilities from real execution, then add only the evidence-required minimum Windows-specific adaptations. Expanding Windows-first key-admission semantic models is not the default next implementation step (D082 scoped supersession).
+Windows is a separate research/implementation track governed by D072, D082 and `docs/windows-architecture.md`; it is outside this Android/Fusion roadmap. It pursues an advanced Windows-native architecture and a faithful Fcitx5 port together: Fcitx remains the default semantic authority, Windows owns TSF adaptation and reliability, and departures from mature Fcitx behavior need D082 evidence. Current stage status and next step (Stage 3C, faithful Fcitx frontend path) are in `docs/windows-architecture.md` §22/§25.
 
 ### Phase 9 — Mixed Input Architecture A
 HISTORICAL / SUPERSEDED as the current architecture. Preserve stable boundaries and evidence, but do not treat Architecture A/A' device smoke or old candidate text as current work.
