@@ -430,17 +430,21 @@ disposition, ledgers, fencing, recovery, observability and the SendInput-replay
 prohibition are valid Windows HOW mechanisms, not invalidated for being
 Windows-specific.
 
-**Stage 3C framing.** Historical Stage 3C evidence that the current Windows
-path can keep ordinary keys such as comma from reaching Fcitx, because Windows
-predicts semantic ownership first, remains valid. One Fcitx key dispatch may
-legitimately produce an ordered sequence (e.g. `CommitText("你好")`,
-`SetPreedit("")`, `CommitText("，")`); the Windows port preserves that
-semantics and order unless a real TSF constraint proves a specific adaptation
-necessary. How Windows carries it is a minimal Stage 3C implementation
-question. Prior Stage 3C Change-Contract proposals are not accepted
-architecture (e.g. merging consumed + CommitText into one Effect, one physical
-key = one semantic Effect, folding ordered Fcitx callbacks to fit the current
-envelope, a new FcitxTransaction abstraction). Current normative wording is in
+**Stage 3C framing and closure.** Historical pre-Stage-3C evidence that the
+Windows path could keep ordinary keys such as comma from reaching Fcitx,
+because Windows predicted semantic ownership first, remains valid as history.
+One Fcitx key dispatch may legitimately produce an ordered sequence (e.g.
+`CommitText("你好")`, `SetPreedit("")`, `CommitText("，")`); the Windows port
+preserves that semantics and order unless a real TSF constraint proves a
+specific adaptation necessary. Merged fusion-windows PR #7 closed Stage 3C:
+the faithful frontend carries those ordered callbacks through the accepted
+Windows HOW machinery as separate ordered records/settlements, without a
+one-key-one-Effect invariant, a new FcitxTransaction semantic abstraction, or
+any change to mature Fcitx/chinese-addons/LibIME semantics. D082 is therefore
+implementation-supported, not revised. The earlier Change-Contract proposals
+(merging consumed + CommitText into one Effect, one physical key = one
+semantic Effect, folding ordered Fcitx callbacks to fit the envelope, a new
+FcitxTransaction abstraction) remain rejected. Current normative wording is in
 `docs/windows-architecture.md` (header, §1–§2, §15, §22–§23, §25). No product
 requirement change (REQUIREMENTS.md unchanged); no runtime behavior changed by
 this Decision.
