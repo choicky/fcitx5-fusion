@@ -219,7 +219,7 @@ Fcitx5 是 **pull 模型**：核心只发出「重新读取 InputPanel/StatusAre
 - fcitx5-android 的 Kotlin 类名/事件编码、JNI 回调编号是 Android 平台机制，Windows 只参考其「消费了哪些
   契约字段」。
 - macOS/Qt frontend 不在 core 仓库，本文未读其源码，不作声明。
-- 本文不改变：D072/D082、Stage 顺序（Stage 4 仍 NEXT 且明确不含 candidate UI）、P0-A/P0-B/P0-D OPEN、
+- 本文不改变：D072/D082、Stage 顺序（Stage 4 为当前主线、进行中——4A 已经 fusion-windows PR #8 合并——且明确不含 candidate UI）、P0-A/P0-B/P0-D OPEN、
   §9/§16/§17 UNFROZEN；不授权任何实现批次。
 
 ## 9. 与现有拓扑的衔接（最小变更方向）

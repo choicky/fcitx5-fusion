@@ -37,7 +37,7 @@
 > correctness boundary 已有证据。D072 原文中把 Fcitx5 / chinese-addons / LibIME 表述为临时 v0.x reference
 > backend、把 Host 表述为独立语义权威的措辞已按 D082 在 §1、§2、§15、§25 原位收窄（§23 同步）。D072 的其余内容——thin TSF
 > DLL / out-of-process Host 分离、上列 Windows HOW 机制、通用 SendInput replay 禁令——仍 ACCEPTED，不因其
-> Windows 特有而失效。Stage 3C 前的证据保留为历史证据；Stage 3C 结果与当前下一步见 §22/§25。
+> Windows 特有而失效。Stage 3C 前的证据保留为历史证据；Stage 3C 结果与当前主线（Stage 4）见 §22/§25。
 
 ## 0. 证据基础与证据等级
 
@@ -499,7 +499,8 @@ Stage 3    Real Fcitx5 + chinese-addons + LibIME（faithful port：经 Fcitx 前
            ├─ 3B Real-Fcitx5 backend PoC / Option-A frontend 边界验证  COMPLETE（fusion-windows PR #5，已合并）
            └─ 3C Faithful Fcitx Windows frontend 路径  VERIFIED / COMPLETE（fusion-windows PR #7，已合并；
               物理按键验证范围见 §25）
-Stage 4    Production Host / TSF lifecycle integration      NEXT（范围与 gate 见 §25）
+Stage 4    Production Host / TSF lifecycle integration      CURRENT — 实现主线，进行中（4A out-of-process Host +
+           IPC baseline 已合并：fusion-windows PR #8；剩余范围与 gate 见 §25）
 Stage 5    Composition / candidate UI                         （含首个 candidate renderer，§16）
 Stage 6    Packaging / release / soak
 P0-A / P0-B / P0-D 仍 OPEN（§24）
@@ -559,7 +560,7 @@ preedit 残留或崩溃；代表性真实 Forward 恰好送达应用一次）。
   key-admission 语义模型（L1/L2/L3 分类、comma ownership policy、Forward+effects、Mechanism A/B 等），仅在满足
   D082 证据门槛时才可作为条件性平台工具重新考虑。
 
-**下一步：Stage 4 — Production Host / TSF lifecycle integration。**
+**当前主线：Stage 4 — Production Host / TSF lifecycle integration（进行中）。**
 
 - **目标：** 把已验证的 faithful frontend 路径从开发期的同进程布局迁移到 D072 产品拓扑——thin TSF DLL +
   out-of-process Fusion Host——并接通真实 TSF 生命周期，使 D072 的隔离、重连与 fencing 保证在真实产品路径上成立。
@@ -567,13 +568,15 @@ preedit 残留或崩溃；代表性真实 Forward 恰好送达应用一次）。
   key sink、EditSession materialization、drain-before-PASS、compartment hard policy 与 composition self-end/外部终止
   处理（PR #4）；Host 边界内的真实 Fcitx5 backend（PR #5）；faithful key routing、有序回调承载与 Forward 恰好一次
   （PR #7）。Stage 4 不重做这些，只把它们搬到产品拓扑上并保持行为不变。
-- **剩余范围（依据当前 fusion-windows `main`）：**
-  1. **Out-of-process Host + bounded IPC。** 当前 Fcitx Host 库被直接链接进 TSF DLL，运行在目标应用进程内，不存在
-     IPC；Stage 4 使 DLL 不再加载 Fcitx / chinese-addons / LibIME，改经 bounded IPC 连接 Host（§1–§3、§14）。
-     采用 §14 的 baseline（one Host per user × session、Named Pipe、Medium IL），**不冻结**拓扑或 wire 格式。
-     该通用边界可自然承载后续 projection 所需的既有 frontend 数据（含已有 CandidateSnapshot），不引入新的 candidate
-     语义或 candidate 专用传输子系统。
-  2. **Host 失效 / 重连 / incarnation fencing 接入产品路径（§13）。** Host 崩溃不得使应用崩溃；pipe connected ≠
+- **范围与状态（依据 fusion-windows `main` `45f34a7`）：**
+  1. **Out-of-process Host + bounded IPC — Stage 4A 已合并（fusion-windows PR #8）。** TSF DLL 为 client-only，不再
+     链接 Fcitx / chinese-addons / LibIME（PR #8 `dumpbin /dependents` 核查），经 per-user/per-session Named Pipe 连接
+     外部 `FusionHost.exe`（§1–§3；§14 baseline：one Host per user × session、Named Pipe、Medium IL）。IPC 协议与标识符
+     是工程常量，**不冻结**拓扑或 wire 格式；Host 启动/生命周期属 P0-D，DLL 不自动拉起 Host。该通用边界承载后续
+     projection 所需的既有 frontend 数据（含已有 CandidateSnapshot），不引入新的 candidate 语义或 candidate 专用传输
+     子系统。
+  2. **Host 失效 / 重连 / incarnation fencing 接入产品路径（§13）。** 当前 DLL 仅在 `Activate` 时尝试一次连接，
+     Host 不可达即 fail-open，尚无产品路径重连。Host 崩溃不得使应用崩溃；pipe connected ≠
      semantic ready；重启是 transport replay barrier；Core 既有 fencing/accounting 在真实路径上生效。已 owned 的 key
      或未决 EFFECT 若其最终恢复语义仍属 P0-A/P0-B，不得静默消失、伪装为普通 PASS、被盲目 replay/retry、重复或跨
      context materialize、或复活 stale state，其未决恢复责任须保持可检测、可审计。Stage 4 **不**选定最终用户可见的
