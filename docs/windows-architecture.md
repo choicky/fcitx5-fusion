@@ -11,6 +11,35 @@
 > **SUPERSEDED / HISTORICAL**，保留原文不删除。本文 §1–§26 的编号沿用该 snapshot，便于逐节对照；
 > 未在本文修订的条款按原意迁入并在此继续有效。
 
+> **架构方向澄清与 scoped supersession（2026-10-16，D082；接受的决定见 `docs/DECISIONS.md` D082）：**
+> Windows 是对成熟 Fcitx5 行为与语义向 TSF 的 **faithful port**。Fcitx5 前端/InputContext
+> 契约与既有 Fcitx5 引擎语义（Pinyin/Shuangpin 处理、标点、候选生成/选择/部分选择、composition、
+> engine key-event acceptance、commit/preedit/forward 语义）是输入方法**语义权威**；Windows 前端
+> 复用并忠实承载这些语义，不得仅因平台是 TSF 而重新实现或独立预测引擎行为。治理关系：
+> mature Fcitx5 framework / engines / semantics → faithful Windows frontend → Windows TSF
+> adaptation；**不是** Windows 自建语义模型 → 独立预测 IME 行为 → 选择性调用 Fcitx。
+> Windows 特有适配仅在真实 Windows/TSF 约束经证据证明必需时引入，且必须最小化，不得在 Windows
+> 前端内建立第二个输入方法语义权威。“Faithful port”不要求复制 Linux/Android/macOS 前端源码结构，
+> 而是要求保全 Fcitx 语义所有权、忠实实现 Fcitx 前端/InputContext 契约、在 Fcitx 语义与原生 TSF
+> 机制之间做翻译。
+>
+> **被 supersede 的实现方向（仅在此范围内）：** “先扩展独立的 Windows key-admission /
+> ownership 语义模型，再经该模型适配或选择性暴露 Fcitx 行为”，在其导致 Windows 代码独立预测或
+> 替代 Fcitx 引擎语义的范围内 SUPERSEDED。据此，Windows 侧分类器不得仅凭对引擎行为的预测阻止
+> Fcitx 看到一个输入，除非真实 Windows/TSF 约束要求此类 pre-admission 行为且其 correctness
+> boundary 已有证据。
+>
+> **D072 仍 ACCEPTED，不被整体 supersede：** thin TSF DLL / out-of-process Host 分离、
+> Fcitx5 + chinese-addons + LibIME backend 复用、Windows context identity、合法 EditSession
+> materialization、causal ordering/barriers、generation fencing、recovery 与 observability
+> 边界、通用 SendInput replay 禁令均仍有效。§1–§25 的 EVENT/STATE/EFFECT、ownership、ledger、
+> settlement、recovery 等机制按 **Windows transport / materialization / reliability 机器**理解：
+> 它们约束已定义的 Fcitx 语义**如何（HOW）**在 TSF 上安全表示，不独立重定义输入方法**是什么
+> （WHAT）**。先前证据（TSF ownership 约束、ordering、replay hazards、settlement、
+> context/generation、recovery、Forward 行为）保留为历史证据；其中发现的 Windows 特有机制在
+> 真实 Windows/TSF 证据证明必需时仍可后续采用，但不再是 architecture-first 起点。当前 Stage 3C
+> 实现顺序见 §22/§25。
+
 ## 0. 证据基础与证据等级
 
 P0-C 收口的事实基础是 `fcitx5-windows-tsf-census`（本地 evidence 仓库，branch `master`）在
@@ -458,8 +487,13 @@ Stage 0.5  TSF Behavior Census — P0-C 所需部分          COMPLETE（0.5B/C/
 Stage 1    Portable sans-IO FusionCore                  COMPLETE（fusion-windows PR #1，已合并）
            + deterministic simulator + RG-0
 Stage 2    Mock Backend + Host 边界                      COMPLETE（fusion-windows PR #2，已合并）
-Stage 2.5  Real TSF + Mock Backend（representative Windows applications；Chromium 可在此重新取证）  NEXT
-Stage 3    Real Fcitx5 + chinese-addons + LibIME
+Stage 2.5  Real TSF + Mock Backend（representative Windows applications；Chromium 可在此重新取证）  COMPLETE（fusion-windows PR #4，已合并；Edge 尝试记为 HARNESS/TOOL INVALID）
+Stage 3    Real Fcitx5 + chinese-addons + LibIME（faithful port：经 Fcitx 前端/InputContext 契约承载引擎语义）
+           ├─ 3B Real-Fcitx5 backend PoC / Option-A frontend 边界验证  COMPLETE（fusion-windows PR #5，已合并）
+           └─ 3C Faithful Fcitx Windows frontend 路径  NEXT：先建立 faithful Fcitx frontend 路径 →
+              在 Windows 上复现成熟 Fcitx 基线行为 → 从真实执行中识别实际 Windows/TSF 不兼容 →
+              仅加证据必需的最小 Windows 特有适配；不在 TSF 层重实现 Fcitx 语义，不改 LibIME；
+              P0-A/P0-B/P0-D 仍 OPEN
 Stage 4    Full TSF integration
 Stage 5    Composition / candidate UI polish
 Stage 6    Packaging / release / soak
@@ -502,9 +536,16 @@ P0-D  Windows Trust / IPC Topology    OPEN（含 §14 注册/提权观察）
 
 ## 25. 当前允许与禁止的工作
 
-**下一步：** Stage 2.5 — Real TSF + Mock Backend（representative Windows applications）。Stage 1（portable sans-IO
-FusionCore + deterministic simulator + RG-0）与 Stage 2（Mock Backend + `fusion::Host` 边界）均已实现并经独立评审
-合并进 fusion-windows `main`（PR #1 / PR #2）。
+**下一步：** Stage 3C — 建立 faithful Fcitx Windows frontend 路径：先让 Fcitx5 既有前端/InputContext
+契约与引擎语义（Pinyin/Shuangpin、标点、候选/部分选择、composition、commit/preedit/forward）在
+Windows 上端到端跑通并复现成熟 Fcitx 基线行为；仅当真实执行暴露实际 Windows/TSF 不兼容且有证据时，
+补充最小 Windows 特有适配。Stage 1（portable sans-IO FusionCore + deterministic simulator + RG-0）、
+Stage 2（Mock Backend + `fusion::Host` 边界）、Stage 2.5（Real TSF + Mock Backend，PR #4）与
+Stage 3B（real-Fcitx5 backend PoC / Option-A frontend 边界，PR #5）均已实现并经独立评审合并进
+fusion-windows `main`（PR #1 / #2 / #4 / #5）。P0-A / P0-B / P0-D 仍 OPEN，恢复/线协议语义不在此冻结。
+继续扩展 Windows-first key-admission 语义模型（L1/L2/L3 分类、comma ownership policy、
+Forward+effects、Mechanism A/B 等）**不再**是默认下一实现步骤；这些概念保留为历史证据，或作为
+仅当真实 Windows/TSF 证据证明必需时才采用的条件性平台工具（见头部 scoped supersession 与 D082）。
 
 **暂不应做：** freeze final wire protocol；freeze permanent identifiers；freeze recovery/timing thresholds；freeze
 未决 Host topology；full product TSF runtime；把 Fcitx5 当永久 backend；broad product UI；为 P0-C 继续 Chromium 实验。
