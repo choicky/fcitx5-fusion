@@ -416,6 +416,11 @@ A′ 的同步 EFFECT 主路径使 effect-capable key 的 backend 尾延迟成�
 candidate renderer process/location 未冻结；至少比较 Host-owned native window、TSF UIElement、minimal specialized
 in-process presentation surface。不得为了 UI 简单而把 backend semantics 搬入 TSF DLL。
 
+Stage 5 契约输入（research 级，非 Accepted Decision）：`research/windows-stage5-candidate-contract-inputs.md`
+——一手 Fcitx5 frontend 契约（5.1.23-11）与 fcitx5-android / fusion-windows `CandidateSnapshot` 的字段与生命周期
+mapping；D082 下 Windows 只运输/投影 Fcitx 已定义语义，候选 select/page 等动作须经非键 semantic stimulus 回送
+引擎，不得以合成键 replay 模拟。
+
 ## 17. State representation — UNFROZEN
 
 旧 flat FSM（DISABLED / PASS_THROUGH / READY / COMPOSING / RECOVERING / DEGRADED_PASS）不永久冻结；应与
