@@ -301,9 +301,10 @@ experiments; the normative architecture contract is in REQUIREMENTS.md §2.1.
 
 ### D072 — Windows boundary
 Windows Fusion is a separate product/research track with authority in
-`docs/windows-architecture.md`. D082 later clarifies its faithful-Fcitx-port
-interpretation and scopes one superseded implementation direction; D072 is not
-otherwise changed.
+`docs/windows-architecture.md`. D082 later sets the combined target
+(Windows-native architecture + faithful Fcitx5 port), separates Fcitx WHAT
+from Windows HOW, and makes a scoped supersession; D072's Windows mechanisms
+are otherwise unchanged.
 
 ### D073–D075 — M2+/r4 closure
 D073’s M3-B proposal was not accepted. D074 preserves the mixed-input contract
@@ -380,43 +381,69 @@ Fcitx duration timer. A longer ceiling is a safety bound, not a claim that
 recognition quality at 180 s is device-verified; X-ASR lengths beyond the old
 60 s remain post-implementation validation debt.
 
-## D082 — Windows faithful-Fcitx-port clarification (scoped supersession of one implementation direction)
+## D082 — Windows-native architecture carrying a faithful Fcitx5 port (scoped supersession of one implementation direction)
 
-### D082 — Windows is a faithful Fcitx5 port to TSF
-Windows is a faithful port of mature Fcitx5 behavior and semantics to TSF.
-Fcitx5 (framework/engines and its frontend/InputContext contract) remains the
-semantic authority for ordinary input-method behavior — Pinyin/Shuangpin
-processing, punctuation, candidate generation/selection/partial selection,
-composition, engine key-event acceptance, and Fcitx commit/preedit/forward
-semantics; the Windows frontend reuses and faithfully carries that contract
-and must not reimplement or independently predict these semantics merely
-because the platform uses TSF. Windows owns platform adaptation (TSF
-callbacks/hard policy, context identity, thin DLL↔Host transport, lawful
-EditSession materialization, ordering/barriers, generation fencing, recovery,
-observability, candidate/preedit/UI projection); those mechanisms carry Fcitx
-semantics onto Windows and must not become a second input-method semantic
-authority. Windows-specific semantic adaptation requires first-hand
-Windows/TSF constraint evidence and stays minimal.
+### D082 — Advanced Windows-native architecture + faithful Fcitx5 port
+The Windows line pursues both an advanced, reliable, Windows-native input-method
+architecture and a faithful Windows port of Fcitx5; the two are complementary.
 
-Scope-limited supersession: the Stage 3C working direction of first expanding
-an independent Windows key-admission/ownership semantic model and then
-adapting or selectively exposing Fcitx behavior through that model is
-SUPERSEDED to the extent it lets Windows code predict or replace Fcitx engine
-semantics; a Windows-side classifier must not prevent Fcitx from seeing an
-input merely because Windows predicts the engine's behavior, absent a proven
-Windows/TSF constraint requiring pre-admission. D072 remains accepted
-otherwise: thin TSF DLL/Host separation, Fcitx5 + chinese-addons + LibIME
-backend reuse, context identity, lawful EditSession materialization,
-ordering/barriers, generation fencing, recovery/observability boundaries, and
-the SendInput-replay prohibition remain valid; D072's EVENT/STATE/EFFECT,
-ownership, ledger and settlement machinery is interpreted as Windows
-transport/materialization/reliability machinery constraining how already
-defined Fcitx semantics are represented, not what they mean. Prior Stage 3C
-experiments remain historical evidence, not invalidated by this clarification.
-Current normative wording is in `docs/windows-architecture.md` (header
-clarification, §22/§25); Stage 3C implementation order there now starts from
-a faithful Fcitx frontend path. No product requirement changes
-(REQUIREMENTS.md unchanged); no runtime behavior changed by this Decision.
+**Fcitx WHAT.** Fcitx5 framework/engines (with chinese-addons and LibIME) are
+the default semantic authority for mature ordinary IME behavior: Pinyin/
+Shuangpin, engine key-event handling, consume/forward semantics, punctuation,
+QuickPhrase, composition, candidate generation/selection/partial selection,
+commit/preedit behavior and ordering, frontend callbacks/InputContext contract,
+and user learning. Mature Fcitx functionality, semantics, frontend contracts,
+event behavior and implementation mechanisms are preserved and reused by
+default and are not changed merely to fit a Windows-specific abstraction.
+
+**Windows HOW.** Windows owns the platform adaptation and reliability TSF
+requires: TSF hard policy and ownership disposition, context/document
+identity, DLL/Host isolation and transport, causal ordering/barriers,
+generation fencing, lawful EditSession materialization, recovery, bounded
+ledger/reliability mechanisms, Host/link health, observability, and
+candidate/preedit/UI projection. These mechanisms may be sophisticated and
+robust; they exist to carry Fcitx faithfully and reliably on Windows, not to
+become an independent input-method semantic authority.
+
+**Evidence threshold.** A mature Fcitx behavior or implementation mechanism is
+changed only when concrete evidence establishes at least one of: a correctness
+defect; a serious portability defect; a major product-relevant defect; a
+genuine Windows/TSF incompatibility that cannot be solved faithfully in the
+Windows adaptation layer; or an existing Fcitx API/frontend boundary that is
+demonstrably insufficient for a required TSF capability. "The Windows
+implementation would be easier if Fcitx behaved differently" is not
+sufficient. Such changes stay minimal and scoped to the evidenced defect.
+
+**Scoped supersession.** Superseded only to that extent: (1) the Stage 3C
+working direction of first expanding an independent Windows key-admission/
+ownership semantic model and then adapting or selectively exposing Fcitx
+behavior through it — a Windows-side classifier must not keep an input from
+Fcitx merely because Windows predicts the engine's behavior, absent a proven
+TSF constraint requiring pre-admission; (2) D072 wording that frames
+Fcitx5/chinese-addons/LibIME as a provisional v0.x reference backend or the
+Host as an independent semantic authority — the Host hosts Fcitx semantics, and
+replacing or departing from Fcitx requires this Decision's evidence threshold
+(D072 §15 Exit Gate signals are such evidence candidates). D072 otherwise
+remains accepted: thin TSF DLL/out-of-process Host separation, A′ ordering,
+drain-before-PASS, watermarks, EVENT/STATE/EFFECT, ownership/terminal
+disposition, ledgers, fencing, recovery, observability and the SendInput-replay
+prohibition are valid Windows HOW mechanisms, not invalidated for being
+Windows-specific.
+
+**Stage 3C framing.** Historical Stage 3C evidence that the current Windows
+path can keep ordinary keys such as comma from reaching Fcitx, because Windows
+predicts semantic ownership first, remains valid. One Fcitx key dispatch may
+legitimately produce an ordered sequence (e.g. `CommitText("你好")`,
+`SetPreedit("")`, `CommitText("，")`); the Windows port preserves that
+semantics and order unless a real TSF constraint proves a specific adaptation
+necessary. How Windows carries it is a minimal Stage 3C implementation
+question. Prior Stage 3C Change-Contract proposals are not accepted
+architecture (e.g. merging consumed + CommitText into one Effect, one physical
+key = one semantic Effect, folding ordered Fcitx callbacks to fit the current
+envelope, a new FcitxTransaction abstraction). Current normative wording is in
+`docs/windows-architecture.md` (header, §1–§2, §15, §22–§23, §25). No product
+requirement change (REQUIREMENTS.md unchanged); no runtime behavior changed by
+this Decision.
 
 ## Current authority rule
 

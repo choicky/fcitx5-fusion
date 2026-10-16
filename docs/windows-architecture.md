@@ -11,34 +11,33 @@
 > **SUPERSEDED / HISTORICAL**，保留原文不删除。本文 §1–§26 的编号沿用该 snapshot，便于逐节对照；
 > 未在本文修订的条款按原意迁入并在此继续有效。
 
-> **架构方向澄清与 scoped supersession（2026-10-16，D082；接受的决定见 `docs/DECISIONS.md` D082）：**
-> Windows 是对成熟 Fcitx5 行为与语义向 TSF 的 **faithful port**。Fcitx5 前端/InputContext
-> 契约与既有 Fcitx5 引擎语义（Pinyin/Shuangpin 处理、标点、候选生成/选择/部分选择、composition、
-> engine key-event acceptance、commit/preedit/forward 语义）是输入方法**语义权威**；Windows 前端
-> 复用并忠实承载这些语义，不得仅因平台是 TSF 而重新实现或独立预测引擎行为。治理关系：
-> mature Fcitx5 framework / engines / semantics → faithful Windows frontend → Windows TSF
-> adaptation；**不是** Windows 自建语义模型 → 独立预测 IME 行为 → 选择性调用 Fcitx。
-> Windows 特有适配仅在真实 Windows/TSF 约束经证据证明必需时引入，且必须最小化，不得在 Windows
-> 前端内建立第二个输入方法语义权威。“Faithful port”不要求复制 Linux/Android/macOS 前端源码结构，
-> 而是要求保全 Fcitx 语义所有权、忠实实现 Fcitx 前端/InputContext 契约、在 Fcitx 语义与原生 TSF
-> 机制之间做翻译。
+> **架构方向（D082；接受的决定见 `docs/DECISIONS.md` D082）：** Windows 线同时追求**先进、可靠的
+> Windows-native 输入法架构**与**对 Fcitx5 的 faithful Windows port**，二者互补而非竞争。
 >
-> **被 supersede 的实现方向（仅在此范围内）：** “先扩展独立的 Windows key-admission /
-> ownership 语义模型，再经该模型适配或选择性暴露 Fcitx 行为”，在其导致 Windows 代码独立预测或
-> 替代 Fcitx 引擎语义的范围内 SUPERSEDED。据此，Windows 侧分类器不得仅凭对引擎行为的预测阻止
-> Fcitx 看到一个输入，除非真实 Windows/TSF 约束要求此类 pre-admission 行为且其 correctness
-> boundary 已有证据。
+> - **Fcitx WHAT（默认语义权威）：** Fcitx5 framework/engines（含 chinese-addons、LibIME）决定成熟的普通
+>   输入法行为——Pinyin/Shuangpin、引擎 key-event 处理、consume/forward 语义、标点、QuickPhrase、
+>   composition、候选生成/选择/部分选择、commit/preedit 行为及其顺序、前端回调/InputContext 契约、用户学习。
+>   成熟的 Fcitx 功能、语义、前端契约、事件行为与实现机制默认保留并复用，不得仅为适配 Windows 抽象而改变。
+>   Faithful port 不要求复制 Linux/Android/macOS 前端源码结构，而要求忠实实现 Fcitx 前端/InputContext 契约。
+> - **Windows HOW（平台适配与可靠性）：** TSF hard policy 与 ownership 处置、context/document identity、
+>   DLL/Host 隔离与 transport、causal ordering/barriers、generation fencing、合法 EditSession
+>   materialization、recovery、bounded ledger/reliability、Host/link health、observability、
+>   candidate/preedit/UI projection。本文 §1–§25 的 EVENT/STATE/EFFECT、A′、drain-before-PASS、watermark、
+>   ledger、settlement 等机制属于 Windows HOW，可以且应当做得先进、稳健；它们承载 Fcitx 语义，约束其在 TSF 上
+>   **如何**安全表示，不独立定义输入法**是什么**。“Windows 前端必须始终最薄”不是本文的原则；边界是 Windows
+>   的复杂性不得在无证据时替代成熟 Fcitx 语义。
+> - **偏离 Fcitx 的证据门槛：** 仅当具体证据证明至少一项——correctness defect、严重 portability defect、与
+>   产品相关的重大缺陷、无法在 Windows 适配层内忠实解决的真实 Windows/TSF 不兼容、或既有 Fcitx API/前端边界
+>   对所需 TSF 能力被证明不足——才改变 Fcitx 行为或实现机制，且改动限于该缺陷。“Fcitx 换种行为 Windows 实现
+>   更容易”不构成证据。
 >
-> **D072 仍 ACCEPTED，不被整体 supersede：** thin TSF DLL / out-of-process Host 分离、
-> Fcitx5 + chinese-addons + LibIME backend 复用、Windows context identity、合法 EditSession
-> materialization、causal ordering/barriers、generation fencing、recovery 与 observability
-> 边界、通用 SendInput replay 禁令均仍有效。§1–§25 的 EVENT/STATE/EFFECT、ownership、ledger、
-> settlement、recovery 等机制按 **Windows transport / materialization / reliability 机器**理解：
-> 它们约束已定义的 Fcitx 语义**如何（HOW）**在 TSF 上安全表示，不独立重定义输入方法**是什么
-> （WHAT）**。先前证据（TSF ownership 约束、ordering、replay hazards、settlement、
-> context/generation、recovery、Forward 行为）保留为历史证据；其中发现的 Windows 特有机制在
-> 真实 Windows/TSF 证据证明必需时仍可后续采用，但不再是 architecture-first 起点。当前 Stage 3C
-> 实现顺序见 §22/§25。
+> **Scoped supersession（仅此范围）：** “先扩展独立的 Windows key-admission / ownership 语义模型，再经该模型
+> 适配或选择性暴露 Fcitx 行为”的实现方向，在其使 Windows 代码预测或替代 Fcitx 引擎语义的范围内 SUPERSEDED：
+> Windows 侧分类器不得仅凭对引擎行为的预测阻止 Fcitx 看到一个输入，除非真实 TSF 约束要求 pre-admission 且其
+> correctness boundary 已有证据。D072 原文中把 Fcitx5 / chinese-addons / LibIME 表述为临时 v0.x reference
+> backend、把 Host 表述为独立语义权威的措辞已按 D082 在 §1、§2、§15、§25 原位收窄（§23 同步）。D072 的其余内容——thin TSF
+> DLL / out-of-process Host 分离、上列 Windows HOW 机制、通用 SendInput replay 禁令——仍 ACCEPTED，不因其
+> Windows 特有而失效。先前 Stage 3C 证据保留为历史证据；当前 Stage 3C 表述见 §22/§25。
 
 ## 0. 证据基础与证据等级
 
@@ -87,12 +86,12 @@ Chromium，而 Chromium 未取得合格运行，且缺少回调不可用/drain �
                             ▼
                 ┌───────────────────────┐
                 │ Fusion Input Host     │
-                │ semantic state        │
+                │ Fcitx5 hosting        │
                 │ context routing       │
                 │ backend integration   │
                 │ recovery              │
                 │ observability         │
-                │ candidate semantics   │
+                │ candidate data relay  │
                 └───────────┬───────────┘
                             │
                      backend boundary
@@ -104,7 +103,8 @@ Chromium，而 Chromium 未取得合格运行，且缺少回调不可用/drain �
                 └───────────────────────┘
 ```
 
-Fcitx5 + chinese-addons + LibIME 是 **v0.x reference backend**，不是永久 Windows runtime 的既定事实。
+Fcitx5 + chinese-addons + LibIME 是 Windows 输入语义的**默认权威基础**（D082 faithful port）；替换或偏离只能满足
+D082 证据门槛（§15 Exit Gate 信号属于此类证据候选），不是预设。
 
 ## 2. Authority model
 
@@ -117,13 +117,14 @@ TSF DLL
     + 唯一的 document materializer（Host 只产生 proposal）
 
 Fusion Host
-    = semantic/session authority
+    = session/context-routing authority
+    + Fcitx5 宿主（承载而非重定义 Fcitx 语义）
 
 Fcitx5
-    = v0.x framework/reference-backend authority
+    = 成熟普通输入法行为的默认语义权威（D082 Fcitx WHAT）
 
 LibIME
-    = v0.x Chinese decoding / language-model authority
+    = Chinese decoding / language-model authority
 
 Application Document
     = materialized text authority
@@ -396,7 +397,7 @@ HKLM/HKCU COM 使跨进程加载生效。这是安装/拓扑输入，**不是**�
 
 ## 15. Backend policy
 
-Fcitx5 继续作为 v0.x reference backend（Pinyin、candidate behavior、punctuation、QuickPhrase、configuration、MoQi、
+Fcitx5 是 faithful port 的语义基础（D082；Pinyin、candidate behavior、punctuation、QuickPhrase、configuration、MoQi、
 lifecycle、user dictionary、prediction、mode behavior）。
 
 **Entry Gate**：能否在 Host 中干净嵌入，同时满足 Fusion ownership/lifecycle/ordering/reliability contract？
@@ -404,10 +405,11 @@ lifecycle、user dictionary、prediction、mode behavior）。
 **Exit Gate**：若出现以下证据，应认真转向 Native Fusion Runtime + chinese-addons/LibIME：大量 Fcitx internal state 被迫
 泄漏到 DLL；normal typing 经常依赖 synchronous Fcitx decision；Fcitx lifecycle 无法可靠映射 TSF context；为维持 Fusion
 authority 需要反复 patch/deception/bypass；Fcitx 明显恶化 tail latency；soak degradation 根因位于 framework；
-Windows correctness 与 Fcitx 结构性冲突。
+Windows correctness 与 Fcitx 结构性冲突。上述信号是 D082 证据门槛下的证据候选，须由具体证据确立并逐项判断，
+不是默认方向。
 
 A′ 的同步 EFFECT 主路径使 effect-capable key 的 backend 尾延迟成为直接约束：Windows 上 backend 延迟尚未测量
-（census 中的 Linux 后端数据为所有者提供、未在 Windows 复测）。LibIME 同样是 v0.x engine，不永久冻结。
+（census 中的 Linux 后端数据为所有者提供、未在 Windows 复测）。LibIME 的调整同样服从 D082 证据门槛。
 
 ## 16. Candidate UI — UNFROZEN
 
@@ -490,10 +492,9 @@ Stage 2    Mock Backend + Host 边界                      COMPLETE（fusion-win
 Stage 2.5  Real TSF + Mock Backend（representative Windows applications；Chromium 可在此重新取证）  COMPLETE（fusion-windows PR #4，已合并；Edge 尝试记为 HARNESS/TOOL INVALID）
 Stage 3    Real Fcitx5 + chinese-addons + LibIME（faithful port：经 Fcitx 前端/InputContext 契约承载引擎语义）
            ├─ 3B Real-Fcitx5 backend PoC / Option-A frontend 边界验证  COMPLETE（fusion-windows PR #5，已合并）
-           └─ 3C Faithful Fcitx Windows frontend 路径  NEXT：先建立 faithful Fcitx frontend 路径 →
-              在 Windows 上复现成熟 Fcitx 基线行为 → 从真实执行中识别实际 Windows/TSF 不兼容 →
-              仅加证据必需的最小 Windows 特有适配；不在 TSF 层重实现 Fcitx 语义，不改 LibIME；
-              P0-A/P0-B/P0-D 仍 OPEN
+           └─ 3C Faithful Fcitx Windows frontend 路径  NEXT：普通输入交由 Fcitx 决定并复现成熟 Fcitx
+              基线行为 → 由 D072 Windows HOW 机制忠实承载其有序输出 → 仅在满足 D082 证据门槛时偏离
+              Fcitx 语义/机制；不在 TSF 层重实现 Fcitx 语义；P0-A/P0-B/P0-D 仍 OPEN
 Stage 4    Full TSF integration
 Stage 5    Composition / candidate UI polish
 Stage 6    Packaging / release / soak
@@ -514,7 +515,7 @@ Stage 6    Packaging / release / soak
 
 TSF primary；Thin TSF DLL + out-of-process Host；Host crash must not crash app；TSF ownership != Fcitx accepted；
 fail-open before ownership；explicit responsibility after ownership；EVENT/STATE/EFFECT；document = materialized-text
-authority；Host = semantic authority；per-context causal serialization；bounded waits/queues；Host restart = transport
+authority；Host 承载 Fcitx 语义（D082）；per-context causal serialization；bounded waits/queues；Host restart = transport
 replay barrier；zero duplicate irreversible effect；zero cross-context effect；zero stale resurrection；no PASS overtakes
 unresolved prior document EFFECT；every owned key reaches terminal disposition。
 
@@ -536,19 +537,25 @@ P0-D  Windows Trust / IPC Topology    OPEN（含 §14 注册/提权观察）
 
 ## 25. 当前允许与禁止的工作
 
-**下一步：** Stage 3C — 建立 faithful Fcitx Windows frontend 路径：先让 Fcitx5 既有前端/InputContext
-契约与引擎语义（Pinyin/Shuangpin、标点、候选/部分选择、composition、commit/preedit/forward）在
-Windows 上端到端跑通并复现成熟 Fcitx 基线行为；仅当真实执行暴露实际 Windows/TSF 不兼容且有证据时，
-补充最小 Windows 特有适配。Stage 1（portable sans-IO FusionCore + deterministic simulator + RG-0）、
-Stage 2（Mock Backend + `fusion::Host` 边界）、Stage 2.5（Real TSF + Mock Backend，PR #4）与
-Stage 3B（real-Fcitx5 backend PoC / Option-A frontend 边界，PR #5）均已实现并经独立评审合并进
-fusion-windows `main`（PR #1 / #2 / #4 / #5）。P0-A / P0-B / P0-D 仍 OPEN，恢复/线协议语义不在此冻结。
-继续扩展 Windows-first key-admission 语义模型（L1/L2/L3 分类、comma ownership policy、
-Forward+effects、Mechanism A/B 等）**不再**是默认下一实现步骤；这些概念保留为历史证据，或作为
-仅当真实 Windows/TSF 证据证明必需时才采用的条件性平台工具（见头部 scoped supersession 与 D082）。
+**下一步：** Stage 3C — faithful Fcitx Windows frontend 路径。Stage 1（portable sans-IO FusionCore + deterministic
+simulator + RG-0）、Stage 2（Mock Backend + `fusion::Host` 边界）、Stage 2.5（Real TSF + Mock Backend，PR #4）与
+Stage 3B（real-Fcitx5 backend PoC / Option-A frontend 边界，PR #5）均已实现并经独立评审合并进 fusion-windows `main`
+（PR #1 / #2 / #4 / #5）。P0-A / P0-B / P0-D 仍 OPEN，恢复/线协议语义不在此冻结。
+
+- **已确立的证据（历史，仍有效）：** 当前 Windows 路径会在 Fcitx 看到按键之前预测语义归属，因而可能使逗号等普通按键
+  到达不了 Fcitx。
+- **已确立的事实：** 一次 Fcitx key dispatch 可以合法产生有序序列，例如
+  `CommitText("你好")` → `SetPreedit("")` → `CommitText("，")`。Windows port 保留该语义与顺序，除非真实 TSF 约束
+  证明某项具体适配必需。
+- **待 Stage 3C 最小解决的实现问题：** Windows 如何承载该序列（优先复用既有 D072 EVENT/STATE/EFFECT、ordering、
+  watermark、fencing 机制）。
+- **不是已接受架构：** 先前 Stage 3C Change Contract 的实验性提议——consumed + CommitText 必须合并为一个 Effect、
+  一个物理键对应一个语义 Effect、为适配当前 envelope 折叠有序 Fcitx 回调、需要新的 FcitxTransaction 抽象——以及
+  Windows-first key-admission 语义模型（L1/L2/L3 分类、comma ownership policy、Forward+effects、Mechanism A/B 等）。
+  这些保留为历史证据，或仅在满足 D082 证据门槛时作为条件性平台工具采用。
 
 **暂不应做：** freeze final wire protocol；freeze permanent identifiers；freeze recovery/timing thresholds；freeze
-未决 Host topology；full product TSF runtime；把 Fcitx5 当永久 backend；broad product UI；为 P0-C 继续 Chromium 实验。
+未决 Host topology；full product TSF runtime；无 D082 证据而偏离或替换 Fcitx 语义；broad product UI；为 P0-C 继续 Chromium 实验。
 
 ## 26. 文档 authority 与仓库职责
 
