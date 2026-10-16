@@ -18,7 +18,7 @@
 >   输入法行为——Pinyin/Shuangpin、引擎 key-event 处理、consume/forward 语义、标点、QuickPhrase、
 >   composition、候选生成/选择/部分选择、commit/preedit 行为及其顺序、前端回调/InputContext 契约、用户学习。
 >   成熟的 Fcitx 功能、语义、前端契约、事件行为与实现机制默认保留并复用，不得仅为适配 Windows 抽象而改变。
-  Faithful port 不要求复制 Linux/Android/macOS 前端源码结构，而要求忠实实现 Fcitx 前端/InputContext 契约。
+>   Faithful port 不要求复制 Linux/Android/macOS 前端源码结构，而要求忠实实现 Fcitx 前端/InputContext 契约。
 > - **Windows HOW（平台适配与可靠性）：** TSF hard policy 与 ownership 处置、context/document identity、
 >   DLL/Host 隔离与 transport、causal ordering/barriers、generation fencing、合法 EditSession
 >   materialization、recovery、bounded ledger/reliability、Host/link health、observability、
