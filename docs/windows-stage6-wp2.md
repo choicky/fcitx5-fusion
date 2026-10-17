@@ -18,8 +18,8 @@ Notepad A–E and the U5 minimum outcome in Firefox and Edge.
 implementation or from these results.
 
 New findings from the Firefox diagnosis, kept in the plan register:
-- **R24:** the TSF test-key eligibility readiness deadlock, confirmed and fixed by fusion-windows PR #15, merged (`main` `0cd0374`). The checks above ran
-  on `559d9ce`, before the fix.
+- **R24:** the TSF test-key eligibility readiness deadlock, confirmed and fixed by fusion-windows PR #15 (merged as `main`
+  `0cd0374`). The checks above ran on `559d9ce`, before the fix. PR #15 changed only `SemanticController::routes_key`: it removed the semantic-readiness and backend-health (`healthy()`) terms and left key-class eligibility unchanged. The T-path decision that produced the Firefox password-field result (`mapped && hard_policy_allows(...)` in `OnTestKeyDown`) and the K path are unchanged, and Notepad and Edge did not deliver T in the recorded runs. The U5 minimum-outcome and Notepad A–E conclusions therefore apply to `0cd0374` by source analysis; they were not re-run on `0cd0374`.
 - **R25:** the Firefox candidate popup is not shown.
 
 Next action: the owner's U3/U5 decisions, which are the remaining WP2 exit dependency. No later work package, distribution or CI dispatch is authorized.
