@@ -451,7 +451,7 @@ Stage 5 契约输入（research 级，非 Accepted Decision）：`research/windo
 mapping；D082 下 Windows 只运输/投影 Fcitx 已定义语义，候选 select/page 等动作须经非键 semantic stimulus 回送
 引擎，不得以合成键 replay 模拟。
 
-fusion-windows PR #11（评审中，未合并）实现了首个最小 in-process presentation 接缝（candidate popup 经
+fusion-windows PR #11（已合并，`main` `3e7fc35`）实现了首个最小 in-process presentation 接缝（candidate popup 经
 `ITfContext::GetActiveView` 取权威 active view 锚定；焦点丢失仅隐藏 presentation）。该接缝是本节允许的
 "minimal specialized in-process presentation surface" 的一个候选实现，**不决定也不冻结** renderer 的最终
 进程/位置；§16 仍为 UNFROZEN。
@@ -543,10 +543,11 @@ Stage 3    Real Fcitx5 + chinese-addons + LibIME（faithful port：经 Fcitx 前
               物理按键验证范围见 §25）
 Stage 4    Production Host / TSF lifecycle integration      COMPLETE / VERIFIED（4A PR #8、4B PR #9、
            4C PR #10 均已合并；exit gate 的实际证据范围与明确未主张项见 §25）
-Stage 5    Composition / candidate UI                         CURRENT — 实现主线，进行中（含首个 candidate
+Stage 5    Composition / candidate UI                         CURRENT — NOT COMPLETE（含首个 candidate
            renderer，§16；契约输入为 research evidence，不是 Accepted Decision）
-           首个 candidate projection/action 接缝 = fusion-windows PR #11（评审中，未合并）；PR #11 ≠
-           Stage 5 closure，收口门见 §25
+           首个 candidate projection/action 接缝 = fusion-windows PR #11（已合并，`main` `3e7fc35`）；
+           剩余能力已逐项分类（2026-10-17），收口仍差 3 项 IMPLEMENT blocker 与 Notepad 产品路径
+           smoke，见 §25
 Stage 6    Packaging / release / soak
 P0-A / P0-B / P0-D 仍 OPEN（§24）
 ```
@@ -688,7 +689,8 @@ preedit 残留或崩溃；代表性真实 Forward 恰好送达应用一次）。
 - **契约输入：** `research/windows-stage5-candidate-contract-inputs.md` 为 research / evidence，**不是** Accepted
   Decision，不冻结 wire schema，本身不构成实现授权；其中的 Fcitx 契约事实须经一手源码核对后方可依赖。
 
-**PR #11 — 首个 Stage 5 candidate projection/action 接缝（评审中，未合并；2026-10-17 记录）。**
+**PR #11 — 首个 Stage 5 candidate projection/action 接缝（已合并；canonical fusion-windows `main` `3e7fc35`，
+其 tree 与经评审的 PR head `d8bc8c0` 一致）。**
 
 - **PR #11 是 Stage 5 的第一个接缝，不是 Stage 5 closure。** 其已实现、因此不得再被描述为未解决的能力：
   有界的 candidate page 投影（STATE，index 与 `CandidateList::candidate(i)` 对齐，含 `layoutHint()` 的
@@ -705,19 +707,47 @@ preedit 残留或崩溃；代表性真实 Forward 恰好送达应用一次）。
   binding / backend session / Host incarnation / connection generation）满足，而非新增独立的 candidate
   revision/generation 计数器；接缝未引入第二 candidate 账本。这是对既有建议的收口记账，不构成新的
   Accepted Decision。
-- **研究识别出的剩余能力缺口（单一持久指针，不是十五个独立任务，也不主张"全部必须实现"）：**
-  segmented `FormattedPreedit`/`Text` format flags；preedit 字节光标 → UTF-16 投影；`auxUp`/`auxDown`；
-  `overlayMessage`；更丰富的候选字段（labels/comments/placeholder/spacing）；bulk candidate access /
-  windowing；`ActionableCandidateList`；`TabbedCandidateList`；preedit 点击 / `InvokeActionEvent` 重定位；
-  `commitStringWithCursor` / InputContextV2 边界；surrounding-text 的合法 TSF 边界；`cursorRect` /
-  scale-factor；`StatusArea`；更广的键盘-候选 UX。以上各项的处置仍服从 §16 UNFROZEN、wire/数值边界
-  UNFROZEN 与 P0-A / P0-B / P0-D OPEN。
-- **Stage 5 closure gate（唯一一条）：** 在 Stage 5 被宣告 COMPLETE 之前，上一项中的每个剩余能力须逐项
-  分类为 **IMPLEMENT / DEFER WITH REASON / NOT APPLICABLE ON WINDOWS / NEEDS SEPARATE EVIDENCE/DECISION**
-  并记录于 §22/§25；且 PR #11 所在接缝须满足：**blocker 修复 → 独立 blocker-only 复审 PASS → 合并进
-  canonical fusion-windows `main`**。仅把 blocker 修复推送到同一 PR 分支不构成满足；未合并或评审仍为
-  REJECTED 的接缝不能关闭本 gate。blocker 修复后不需要重跑完整全量评审——项目工作流即 blocker-only
-  复审。在该 gate 满足前，Stage 5 保持 CURRENT。
+- **剩余能力逐项处置（closure accounting，2026-10-17，依据 canonical `main` `3e7fc35` 与一手 fcitx5
+  `a7f2528` / chinese-addons `61474bd` 源码）。** 背景事实：Host 静态加载 pinyin / punctuation / pinyinhelper /
+  quickphrase / spell / clipboard，frontend 只声明 `Preedit`；Windows 构建下 pinyin 的编译期默认为
+  `PreeditMode=ComposingPinyin`、`PreeditCursorPositionAtBeginning=true`——client preedit 为
+  `[HighLight|Underline：引擎光标之前][Underline：其后]`、cursor=0，HighLight 边界是引擎光标的唯一显示。
+  分类是对当前事实的处置记账，不是新的 Accepted Decision；分类不冻结 §16、wire、标识符或数值。
+
+  | 能力 | 处置 | 阻塞收口 | 理由 / owner · trigger · 依赖 |
+  |---|---|---|---|
+  | segmented `FormattedPreedit` / format flags + preedit 字节光标 → UTF-16 | **IMPLEMENT** | **是** | 现状把 client preedit 扁平为字符串、caret 恒置 composition 末尾、未过 `outputFilter`；pinyin 在默认键（Left/Right/Home/End）上移动/编辑引擎光标、Left 在已选边界撤销部分选择，Windows 无从显示——偏离 D082 composition 语义，TSF 无限制（composition 内可置 selection，样式经 display attribute）。实现：投影分段+flags+byte cursor，TSF 侧换算 UTF-16 caret 与逐段 display attribute |
+  | `auxUp` / `auxDown`（含 server-side `preedit()` 行；隐藏条件 = 整个 `InputPanel::empty()`） | **IMPLEMENT** | **是** | pinyin 笔画筛选（默认键 `` ` ``）所输入的笔画**只**显示在 auxUp，QuickPhrase 模式提示亦在 auxUp；现状不投影 aux，且候选页为空即隐藏——引擎吞键而用户无可见输入，隐藏条件窄于 Fcitx 契约。classic-ui 与 dbusfrontend 均承载 |
+  | 候选 comment 呈现 | **IMPLEMENT** | **是** | comment 已投影（过 `outputFilter`）但 renderer 只画 label+text；pinyin 用 comment 区分同字异读候选（`(full pinyin)`；同字候选可对应不同读音与选择长度）、`(Half)` 标点与笔画候选读音 |
+  | label / placeholder | 已解决（PR #11） | 否 | — |
+  | `customLabel` | DEFER WITH REASON | 否 | 固定源码中无 producer。trigger：Host 加载的引擎调用 `setCustomLabel`；做法：非空时优先（同 classic/dbus） |
+  | `spaceBetweenComment` | DEFER WITH REASON | 否 | 默认 `true`，唯一 producer 为 table IM（未加载）。trigger：Host 加载 table IM 或其他置 `false` 的引擎；依赖 comment 呈现 |
+  | `overlayMessage` | DEFER WITH REASON | 否 | 唯一 producer 为切换输入法时的 IM 信息；Host 仅一个 IM，修饰键切换不到达。trigger：Host 注册第二个 IM / IM 切换可达；依赖 aux 行 |
+  | bulk candidate access / windowing | DEFER WITH REASON | 否 | 分页契约（`hasPrev/hasNext` + next/prev，已实现）是桌面成熟前端路径；bulk 仅服务展开式网格（Android）。owner：§16 renderer 决定；trigger：采用展开/滚动候选 UI |
+  | `ActionableCandidateList` / `TabbedCandidateList` | DEFER WITH REASON | 否 | 可选能力接口；pinyin 的 action = 忘词/置顶/删除自定义短语（用户词库管理），tab = 音节/笔画筛选；classic-ui 与 dbusfrontend 均不消费。owner：§16 renderer 决定 + 所有者产品请求；依赖：在同一 PageFence/stimulus identity 下扩展非键 stimulus，禁止合成键 |
+  | preedit 点击 / `InvokeActionEvent` | DEFER WITH REASON | 否 | 依赖上面的 preedit 光标投影与 composition range 上的 TSF mouse sink。trigger：preedit 投影合并后的所有者请求 |
+  | `cursorRect` / scale-factor | DEFER WITH REASON | 否 | 当前 presentation 在 TSF 侧经 `GetActiveView`/`GetTextExt` 锚定，Host 内无 Fcitx UI 消费者。owner：§16；trigger：选定 Host 侧 renderer 或 Host 模块消费 `cursorRect` |
+  | 键盘-候选 UX（无修饰键） | 已解决（Stage 3C 路由 + PR #11 投影） | 否 | 数字/Space 选择、`-`/`=`/PageUp/PageDown 翻页、方向/Home/End、Tab、Esc、Backspace 均以 keysym 到达 Fcitx，高亮/页状态以 STATE 回投 |
+  | 修饰键组合（Ctrl/Alt/Win）引擎绑定 | NEEDS SEPARATE EVIDENCE/DECISION | 否 | 现为平台策略 Pass，如 Ctrl+7 忘词、Ctrl+←/→ 永不到达 Fcitx。问题（D082 key admission）：哪些组合是真实 TSF / §10 preserved-key 约束，哪些只是被预先扣留；证据：TSF preserved-key/系统快捷键 census 对照 pinyin 默认绑定 |
+  | `commitStringWithCursor` / `InputContextV2` | NEEDS SEPARATE EVIDENCE/DECISION | 否 | 仅非默认 `TypePairedPunctuationsTogether` 可达；无该 capability 时 pinyin 退回 commit + 合成 `forwardKey(Left)`，Windows 视为非原始 Forward 而 fail-closed（CancelledRecovery，无 replay）。问题：是否升 V2 并把 commit + 文档内 caret 作为一个 EFFECT；证据：所有者是否在 Windows 支持成对标点，及目标应用同一 EditSession 内插入后置 caret 的可靠性 |
+  | surrounding text | NEEDS SEPARATE EVIDENCE/DECISION | 否 | 维持 fence 为合法默认。问题：是否以 TSF 只读 readback + 有序 EFFECT 的 `deleteSurroundingText` 声明 `SurroundingText`；证据：Host 引擎依赖面与目标应用的合法 readback/delete（§8） |
+  | `StatusArea` | NEEDS SEPARATE EVIDENCE/DECISION | 否 | 模式/状态 UI，非 composition/候选语义。问题：Fcitx status action 与 active 状态如何投影到 TSF（language bar / Host UI / §10 conversion-mode compartment）；依赖修饰键路由决定 |
+  | `ClientUnfocusCommit`（研究 §7.3，原列表遗漏） | NEEDS SEPARATE EVIDENCE/DECISION | 否 | 与 §9 focus/termination 语义绑定，§9 未取证子边界仍 OPEN；取证前不声明 |
+  | 客户端字段类型 capability（Password/Sensitive 等；原列表遗漏） | NEEDS SEPARATE EVIDENCE/DECISION | 否 | 属 §10 hard policy（input scope/private/password），TSF 侧尚无 InputScope 处理；pinyin 学习以 `PasswordOrSensitive` 为门，故含隐私面。问题：密码/隐私 scope 是 FailOpen 还是传 capability 给 Fcitx |
+  | 悬停高亮 | DEFER WITH REASON | 否 | 纯外观（classic-ui 本地 hover，不改引擎 cursor）；随 §16 renderer 打磨 |
+  | UI suspend/resume、OSK `VirtualKeyboardUserInterface`、`FCITX_NO_PREEDIT_APPS` | NOT APPLICABLE ON WINDOWS | 否 | Host 内单一 frontend；Windows 触摸键盘是 OS 表面；按程序名关闭 preedit 是 X11/Wayland 变通，TSF composition 是逐应用契约 |
+
+  DEFER 项的 owner 默认是 Stage 5 收口之后的 Windows composition/candidate UI 增量，按所列 trigger 启动；
+  NEEDS SEPARATE EVIDENCE/DECISION 项各归其所列权威（§9 / §10 / D082 key admission / §16），不在 Stage 5 内
+  隐式决定。逐项一手源码依据见 fusion-controller PR（本次 closure accounting）描述。
+- **Stage 5 closure gate（唯一一条，当前状态）：** (1) 剩余能力逐项分类——**已满足**（上表）；(2) PR #11 接缝
+  合并进 canonical fusion-windows `main`——**已满足**（`3e7fc35`）；(3) 上表三项 **IMPLEMENT** blocker 合并进
+  canonical `main`——**未满足**；(4) 在含 (3) 的 canonical `main` 上，Notepad（既定最小 owner-visible 应用）
+  产品路径 smoke 取得原始证据并 PASS：输入 `nihao` 出现候选 popup、popup 锚定到 composition/caret、点击某个
+  显示位解析到正确的显示 index、点击经显式非键候选动作到达引擎、选择/提交在应用中正确结算——**未满足**
+  （canonical `main` 上尚无该证据，2026-10-17 的 smoke 未执行；已有证据仅为 Host/IPC 层的
+  `stage4a_ipc_integration`）。四项全部满足前 Stage 5 保持 CURRENT、NOT COMPLETE；收口不要求多应用验证
+  （仍归 Stage 6 应用广度门）。
 
 **暂不应做：** freeze final wire protocol；freeze permanent identifiers；freeze recovery/timing thresholds；freeze
 未决 Host topology；无证据即冻结 §16 candidate renderer 的进程/位置；借 Stage 5 偷跑 P0-A / P0-B 的最终 recovery
