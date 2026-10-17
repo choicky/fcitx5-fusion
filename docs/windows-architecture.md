@@ -546,8 +546,9 @@ Stage 4    Production Host / TSF lifecycle integration      COMPLETE / VERIFIED�
 Stage 5    Composition / candidate UI                         CURRENT — NOT COMPLETE（含首个 candidate
            renderer，§16；契约输入为 research evidence，不是 Accepted Decision）
            首个 candidate projection/action 接缝 = fusion-windows PR #11（已合并，`main` `3e7fc35`）；
-           剩余能力已逐项分类（2026-10-17），收口仍差 3 项 IMPLEMENT blocker：集成候选 → Notepad
-           产品路径 smoke（PENDING）→ 独立评审 → 合并已验证 delta，见 §25
+           剩余能力已逐项分类（2026-10-17）；3 项 IMPLEMENT blocker 已在未合并候选 PR #12
+           `36912ff` 实现并通过实现评审，但 Notepad A–E smoke 未通过（A/B PASS，C 在 CANDIDATE_HIT
+           之前失败）；当前工作 = 候选 popup 指针送达/选择 blocker，见 §25
 Stage 6    Packaging / release / soak
 P0-A / P0-B / P0-D 仍 OPEN（§24）
 ```
@@ -742,19 +743,31 @@ preedit 残留或崩溃；代表性真实 Forward 恰好送达应用一次）。
   隐式决定。逐项一手源码依据见 fusion-controller PR（本次 closure accounting）描述。
 - **Stage 5 closure gate（唯一一条，当前状态）：** (1) 剩余能力逐项分类——**已满足**（上表）；(2) PR #11 接缝
   合并进 canonical fusion-windows `main`——**已满足**（`3e7fc35`）；(3) 上表恰好三项 **IMPLEMENT** blocker 按
-  项目常规流程收口——**未满足**。(3) 的顺序：实现三项 → 形成最终集成、可评审的候选 revision / 候选 HEAD →
-  本地 build/tests 与适用验证 PASS → 在**该确切集成候选**上执行 Notepad（既定最小 owner-visible 应用）产品
-  路径 smoke 并 PASS → 独立评审 PASS → 把已验证的实现 delta 合并进 canonical fusion-windows `main` → 若其余
-  已记录条件仍成立，Stage 5 可宣告 COMPLETE。smoke 的 A–E：A 输入 `nihao` 出现可见候选 popup；B popup 锚定到
-  active TSF text context / caret；C 点击某个显示位解析到正确的显示 index；D 点击经显式非键候选动作到达
-  Fcitx；E 选择/提交在应用中正确结算。
-  - **Notepad A–E smoke 状态：PENDING——trigger：包含全部三项 IMPLEMENT 修复的最终集成、可评审 Stage 5 候选
-    已存在。** 在此之前对现有 canonical `main` 重跑 smoke 不是收口要求：即便 PASS 也只证明已合并的 PR #11
-    popup/select 接缝（该接缝现有证据为 Host/IPC 层的 `stage4a_ipc_integration`）。
-  - 三项可经一个或多个 commit/PR 开发；不要求各组成部分先单独合并进 canonical `main` 再做集成 smoke。须保持
-    的不变量：接受产品路径 smoke 与独立评审的最终集成实现，必须与随后合并进 canonical `main` 的实现
-    delta/tree 一致；合并本身不触发冗余的合并后 smoke。
+  项目常规流程收口——**未满足**。smoke 的 A–E：A 输入 `nihao` 出现可见候选 popup；B popup 锚定到 active TSF
+  text context / caret；C 点击某个显示位解析到正确的显示 index；D 点击经显式非键候选动作到达 Fcitx；E 选择/
+  提交在应用中正确结算。
+  - **(3) 的当前状态（2026-10-17）：** 三项已在**未合并**的集成候选 fusion-windows PR #12（HEAD `36912ff`）中
+    实现，并通过独立实现评审；它们**尚不是** canonical `main` 的收口，因为该确切候选上的 Notepad A–E 产品路径
+    smoke 未通过：A PASS（可见 popup）、B PASS（锚定到 composition/caret）、**C FAIL**——对可见、已锚定 popup
+    的一次指针点击未产生 `CANDIDATE_HIT`；因此 D（无 `CANDIDATE_ACTION`）与 E（无结算）**未被到达**，是 C 的下游
+    后果，不是独立的语义动作或结算缺陷结论。PR #12 保持未合并。
+  - **当前 Stage 5 工作（唯一的当前产品路径 blocker）：** 真实 Windows 产品路径上的候选 popup 指针送达 / 候选
+    选择（现有 Stage 5 candidate renderer/action 接缝内修复；不是新阶段，不重开已评审的三项投影 blocker）。
+    当前首要**假设（未证实）**：no-activate popup 的 Win32 鼠标激活/焦点/消息行为使活动 composition 与 popup 在
+    `WM_LBUTTONUP` 到达 `CandidateView` 之前被终止；修复前须以最小的消息顺序证据加以区分，不构成 Accepted
+    Decision。
+  - **剩余收口顺序：** 修复后的集成候选 → blocker-only 独立复审 → 在**该确切 HEAD** 上重跑 Notepad A–E smoke →
+    PASS → 把已验证的 PR #12 delta 合并进 canonical fusion-windows `main` → Stage 5 最终 authority 收口。须保持的
+    不变量：接受 smoke 与评审的实现必须与随后合并的 delta/tree 一致；合并本身不触发冗余的合并后 smoke；不要求
+    各组成部分先单独合并。
   - 收口不要求多应用验证（仍归 Stage 6 应用广度门）。(3) 满足前 Stage 5 保持 CURRENT、NOT COMPLETE。
+- **已报告的运行时发现（非 Stage 5 指针 blocker；证据待独立核验）：** PR #12 实现工作报告：pinyin 笔画筛选模式下
+  输入笔画键会在固定的 MSVC Debug runtime 中触发 string/string_view 迭代器断言，并声称仅用 base API 的探针在
+  fusion-windows base `3e7fc35` 上同样复现。独立评审尚未读取原始 base 复现日志，因此这是有证据依据的**已报告
+  发现 / 假设**，不是 CONFIRMED EVIDENCE。owner：Windows pinned-runtime 兼容性跟进；trigger：在当前 Stage 5
+  收口工作之后、且不晚于相关 Stage 6 / release 兼容性门核验原始与 base 复现，若其成为当前产品路径 blocker 则提前；
+  核验后：若独立复现，记为已确认的既有 runtime 兼容性债并决定最小兼容性修复；若未复现，保留失败/无效的证据结论，
+  不静默删除。
 
 **暂不应做：** freeze final wire protocol；freeze permanent identifiers；freeze recovery/timing thresholds；freeze
 未决 Host topology；无证据即冻结 §16 candidate renderer 的进程/位置；借 Stage 5 偷跑 P0-A / P0-B 的最终 recovery
