@@ -30,8 +30,8 @@ scenario — without promising universal Windows compatibility and without silen
 | Build configuration | All Stage 3C–5 product-path evidence is **Debug** (debug CRT). A Release native runtime exists (`runtime-release`) and Stage 3B ran Release tests; Stage 4/5 were never validated in Release | build logs / `dumpbin` (CONFIRMED) |
 | Architecture | x64 only | build scripts (CONFIRMED) |
 | Registration | `tools/tsf/register.ps1` / `unregister.ps1` = elevated `regsvr32` (HKLM COM + CTF TIP + categories incl. display-attribute provider); `check-state.ps1` read-only inventory; `FusionTsfProfile.exe on/off/query` = development session activation | source (CONFIRMED); arch §14 |
-| Host start | **Manual.** The DLL never starts the Host (P0-D, arch §25 Stage 4). With no Host, keys are not owned (fail open **before ownership**) and reconnect is armed on the key path | `src/tsf/service.cpp`, arch §13/§25 (CONFIRMED) |
-| Failure mechanisms | Implemented and verified at Stage 4 scope: write-certainty (definitely-not-written may stay caller-owned/Forward; uncertain or post-write response loss → Reject, no blind replay/retry); disconnect keeps unresolved ownership/uncertainty and the undelivered materialization queue; `probe_pass`/watermark stop later keys overtaking an unresolved EFFECT; Host incarnation + connection-generation fencing of stale results; teardown audit (`CONTEXT_TEARDOWN`) | arch §13, §25 Stage 4A/4B/4C (CONFIRMED, Notepad + deterministic real-process tests) |
+| Host start | **Manual.** The DLL never starts the Host (P0-D, arch §25 Stage 4). With no Host, a key is not owned (fail open **before ownership**) once any unresolved prior EFFECT has been drained or the key cancelled (§8.2 rule 1), and reconnect is armed on the key path | `src/tsf/service.cpp`, arch §13/§25 (CONFIRMED) |
+| Failure mechanisms | Implemented and verified at Stage 4 scope: request write certainty (a request that provably wrote no byte may leave the key caller-owned/Forward; an uncertain write or post-write response loss → Reject, no blind replay/retry); disconnect keeps unresolved ownership/uncertainty and the undelivered materialization queue; `probe_pass`/watermark stop later keys overtaking an unresolved EFFECT; Host incarnation + connection-generation fencing of stale results; teardown audit (`CONTEXT_TEARDOWN`) | arch §13, §25 Stage 4A/4B/4C (CONFIRMED, Notepad + deterministic real-process tests) |
 | Pipe identity | `FusionHost-v1-<user SID>-<session id>`; DACL grants only the current user SID; client checks server session | `src/ipc/pipe_security.cpp` (CONFIRMED) |
 | Runtime layout | Host needs Fcitx/LibIME DLLs, addon libs, `data/`, `lib/libime` beside its output (CMake post-build copy) | `cmake/FcitxBackend.cmake` (CONFIRMED) |
 | Request bound | One backend request waiting > 2 s marks the backend session permanently unhealthy until the Host process restarts | `src/fcitx/backend.cpp` (CONFIRMED) |
@@ -79,13 +79,13 @@ this plan is in §10.
 | R5a | **Input-method/scheme selection** is hard-coded to `pinyin`; Shuangpin cannot be selected | Source (CONFIRMED) | Correct. Opening the user path alone does not make Shuangpin selectable | REQUIRED (WP3) | Windows Host · WP3 · Fcitx input-method manager/group API; U1 (how the user selects) | WP3 exit: Pinyin and Shuangpin each selectable, representative input commits correctly through the product path | this plan |
 | R5b | **Persisted per-user configuration** (selected input method, Shuangpin profile, pinyin options) absent (`SKIP_FCITX_USER_PATH`) | Source (CONFIRMED) | Correct | REQUIRED (WP3) | Windows Host · WP3 · Fcitx standard paths (AppData), U1 | WP3 exit: selected options survive Host restart | this plan |
 | R5c | **Persisted learning / user dictionary** absent | Source (CONFIRMED) | Correct; learning semantics are Fcitx's (D082) | REQUIRED (WP3) | Windows Host · WP3 · Fcitx/LibIME existing save mechanisms, U5 (no learning in sensitive fields) | WP3 exit: learning/user dictionary persist across Host restart via Fcitx's mechanisms; upgrade/uninstall data policy (U1) applied | this plan; D082 |
-| R6 | No Host start mechanism; the DLL must not start the Host | Source + arch (CONFIRMED) | Without one, users get silent not-owned typing | REQUIRED (WP4) | Windows packaging · U2 · P0-D startup sub-question | WP4 startup / singleton / session-identity evidence (§8.2) | arch §14 P0-D, this plan |
+| R6 | No Host start mechanism; the DLL must not start the Host | Source + arch (CONFIRMED) | Without one, users get silent not-owned typing | REQUIRED (WP4) | Windows packaging · U2 · P0-D startup sub-question | WP4 startup / singleton / session-identity evidence (§7.3) | arch §14 P0-D, this plan |
 | R7 | 2 s request bound → permanent backend-session fence until the Host **process** restarts | Source (CONFIRMED) | Correct. An alive-but-unhealthy Host is not restarted by a logon-start mechanism | REQUIRED (WP5 evidence; recovery path decision) | Windows Host + P0-A owner · WP5 · U2, U7 | WP5 timeout-fence scenario (§8.2) and soak frequency (WP7) | arch §12/§13, this plan |
 | R8 | x64 only; 32-bit apps unsupported | Build (CONFIRMED) | Correct | DEFERRED (exclusion) | Windows build · owner requests 32-bit or a target app is x86 · x86 runtime | Matrix app found to be x86 | this plan |
 | R9 | Persistent registration requires elevation (HKLM) | arch §14 (CONFIRMED, scoped) | Correct for cross-process TIP load | REQUIRED (WP4: elevated install/uninstall) | Windows packaging · WP4 · — | — | arch §14 |
 | R10 | Pipe DACL = user SID → AppContainer/LPAC clients cannot connect; High-IL / RDP / multi-session / FUS untested | Source (CONFIRMED) + arch §14 (OPEN) | AppContainer exclusion follows from the ACL; others UNKNOWN | DEFERRED (exclusions); CONDITIONAL if a matrix field needs them | P0-D owner · a required app needs it · P0-D evidence | Per-scenario P0-D evidence | arch §14 |
 | R11 | Password / private InputScope not handled (TSF side) | arch §25 NEEDS SEPARATE row (CONFIRMED gap) | With R4 and R5c this is a privacy boundary | Decision (U5) and its minimum validation REQUIRED before any package leaves the local developer machine (WP2); faithful long-term handling stays the §25 row | arch §10 hard-policy owner · U5 · — | WP2 minimum check: password fields in Firefox/Edge produce no composition, no learning, no logged key content | arch §25 table row (unchanged) |
-| R12 | Multi-application out-of-process re-verification (Stage 4 VALIDATION DEBT) | arch §25 Stage 4 (CONFIRMED debt) | Debt, not a known failure | REQUIRED (WP6) | WP6 · after WP4/WP5 | Matrix results | arch §25 |
+| R12 | Multi-application out-of-process re-verification (Stage 4 VALIDATION DEBT) | arch §25 Stage 4 (CONFIRMED debt) | Debt, not a known failure | REQUIRED (WP6) | WP6 · after WP4 (may overlap WP5, as WP6 permits) | Matrix results | arch §25 |
 | R13 | Chromium/Edge P0-C census DEFERRED UNKNOWN | arch §7.6/§18 | UNKNOWN | REQUIRED in matrix (Edge); a failure is classified, not assumed | WP6 | Edge results | arch §7.6/§18 |
 | R14 | Exact-caret popup anchoring | arch §25 DEFER row (CONFIRMED source) | Limitation at current scope | CONDITIONAL (§7.4); collapsed caret/selection measurement preserved as a candidate approach, not accepted | Windows composition/candidate UI follow-up · its §25 trigger · WP6 results | Popup detached from / obscuring the edit point in a matrix field | arch §25 table row (unchanged) |
 | R15 | Popup geometry/font are fixed pixel constants, not DPI-scaled | Source (CONFIRMED) | Likely tiny/misplaced at >100 % or mixed-DPI — **hypothesis** | REQUIRED check (WP6); fix CONDITIONAL | Windows candidate UI · WP6 | DPI 100/150 % and two-monitor checks | this plan |
@@ -120,8 +120,8 @@ execution instruction after the plan review (WP0).
 | WP0 | Owner review of this plan; decisions U2, U3, U5 (others may follow) | — | this PR | Plan accepted or amended |
 | WP1 | **Pinned-runtime compatibility (R1–R3).** Record raw identity first (pinned source SHAs, patch-applied state, installed headers, build logs, binary hashes of the current runtime); rebuild Debug and Release runtimes with the current patches via `build-native.ps1` into a new versioned directory; rerun the existing suites and Notepad A–E; punctuation and `;` QuickPhrase on the product path (old vs new); independently verify R3 | WP0 + explicit WP1 instruction | Clean fusion-windows `main`; pinned revisions unchanged | R1 closed or re-classified with a root cause; R2 resolved; R3 dispositioned with evidence kept |
 | WP2 | **Release configuration and distribution prerequisites.** Release build of DLL + Host on the rebuilt runtime; diagnostics per U3; sensitive/password-field policy per U5 with its minimum validation (R11); artifact identity manifest | WP1, U3, U5 | WP1 exit | Release suites + Notepad A–E pass; default build writes no key/text content; U5 minimum check passes. **No package leaves the local developer machine before this exit.** |
-| WP3 | **Input methods and user data (R5a–R5c).** Pinyin/Shuangpin selection (replacing the hard-coded `pinyin`), per-user configuration persistence, learning/user dictionary persistence through Fcitx's existing mechanisms, upgrade/uninstall data policy (U1) | WP2, U1 | WP2 exit | Pinyin and Shuangpin each selectable with representative input committing correctly; selected options survive Host restart; learning/user dictionary persist across Host restart; U1 data policy documented and applied; no learning in U5-sensitive fields |
-| WP4 | **Packaging and lifecycle.** Package layout (TIP DLL; Host + runtime + `data/` + `lib/libime` + user-data location from WP3); elevated install/uninstall on the existing `register.ps1`/`unregister.ps1`/`check-state.ps1`; Host start per U2; upgrade while the DLL is loaded in running apps (stage, re-register, require app restart/sign-out); test-package delivery | WP3, U2 | WP3 exit | §8.2 startup / singleton / session-identity evidence; install → uninstall leaves no TIP/COM/start entry/files except per U1 user data; upgrade evidence |
+| WP3 | **Input methods and user data (R5a–R5c).** Pinyin/Shuangpin selection (replacing the hard-coded `pinyin`), per-user configuration persistence, learning/user dictionary persistence through Fcitx's existing mechanisms, upgrade/uninstall data policy (U1). Registering Shuangpin as a second input method fires the trigger of the unchanged arch §25 `overlayMessage` DEFER row ("Host registers a second IM / IM switching reachable"); WP3 records whether IM switching is reachable on the product path and, if so, dispositions that row per its own terms (it depends on the already implemented aux row). Other §25 rows are not pulled in | WP2, U1 | WP2 exit | Pinyin and Shuangpin each selectable with representative input committing correctly; selected options survive Host restart; learning/user dictionary persist across Host restart; U1 data policy documented and applied; no learning in U5-sensitive fields; the §25 `overlayMessage` trigger check recorded |
+| WP4 | **Packaging and lifecycle.** Package layout (TIP DLL; Host + runtime + `data/` + `lib/libime` + user-data location from WP3); elevated install/uninstall on the existing `register.ps1`/`unregister.ps1`/`check-state.ps1`; Host start per U2; upgrade while the DLL is loaded in running apps (stage, re-register, require app restart/sign-out); test-package delivery | WP3, U2 | WP3 exit | §7.3 startup / singleton / session-identity evidence; install → uninstall leaves no TIP/COM/start entry/files except per U1 user data; upgrade evidence |
 | WP5 | **Failure and recovery acceptance (R7, R22).** The §8.2 failure scenarios on the packaged build with existing mechanisms; evidence for U7 | WP4 | WP4 exit | §8.2 failure evidence recorded; U7 decided before WP8 |
 | WP6 | **Application compatibility and positioning.** Matrix §8.3; positioning/DPI/monitor checks §7.4; U6 observation | WP4 (WP5 may overlap) | WP4 exit | §8.3 gate |
 | WP7 | **Stability, resources, latency** §8.4 | WP4 (overlaps WP6) | WP4 exit | §8.4 numbers recorded for owner decisions (R7, R17, U7) |
@@ -172,19 +172,46 @@ crash (does anything restart it, and how the TIP reconnects); behaviour with an 
 
 ### 8.2 Failure and recovery acceptance evidence (WP5, existing mechanisms)
 
-Each scenario records, per key and per prior EFFECT, the terminal disposition from the target process's diagnostics
-and the Host log, plus the user-visible document state. Required invariants in every scenario (arch §7.3–§7.5, §20):
+Each scenario records, per key and per prior EFFECT, the disposition from the target process's diagnostics and the
+Host log, plus the user-visible document state. Required invariants in every scenario (arch §7.3–§7.5, §20):
 explicit terminal disposition for every owned key; no cancelled key represented as a genuine PASS; consumed STATE →
 EFFECT watermark and causal order preserved (no later key overtakes an unresolved prior EFFECT); no blind replay or
 retry after an indeterminate mutation; no duplicate irreversible EFFECT; no cross-context EFFECT; no stale/late result
 applied after incarnation/connection fencing; no silent loss of an owned key.
 
+The dispositions below are the existing mechanisms (arch §7.1–§7.5, §13, §25 Stage 4A/4B; fusion-windows `0f724af`
+`service.cpp` `OnKeyDown`, `semantic.cpp` `begin_real_key`, `ipc_backend.cpp` `send`), applied in this order to
+every key; WP5 evidences them, it does not redesign them:
+
+1. **Prior-EFFECT ordering first, independent of Host state.** Before admission is considered, an unresolved prior
+   EFFECT is probed (`probe_pass`): drain-before-PASS where lawful; if the required terminal is not reached the
+   current key is cancelled with an explicit `CANCELLED_RECOVERY` terminal (eaten, never a PASS). Host absence, crash
+   or an unhealthy session does not by itself bypass this obligation.
+2. **Pre-ownership admission.** Only after (1) is clear: hard policy, semantic readiness (link + incarnation +
+   binding), backend health, capacity and `probe_pass` decide whether the TIP takes ownership. If not, the key is not
+   owned (fail open before ownership) and it still reaches the application only through the PASS path, which again
+   requires drain + `finish_pass`/watermark before returning it as a genuine PASS.
+3. **Request write certainty (an owned stimulus sent to the Host).** No established link at send time, or a request
+   write that provably accepted no byte (`NotWritten`), leaves the physical key caller-owned and lawfully answered as
+   **Forward** — still subject to the PASS-path conditions of (2). An `Uncertain` write, or any failure after the
+   request is on the wire (missing/mismatched/undecodable response), is **Reject**: explicit cancelled terminal, no
+   retry, no replay.
+4. **Responsibility already accepted (owned records).** Callbacks admitted from a valid batch are owned STATE/EFFECT
+   records and must each reach an explicit terminal; on disconnect they are retained (not dropped, not converted to
+   PASS) together with any undelivered materialization queue, and results of a fenced incarnation/connection are not
+   applied.
+5. **Document mutation outcomes are distinct.** A synchronous EditSession refusal (no session ran) leaves the work
+   queued for the async fallback — no mutation, not an uncertain write; asynchronous work still pending is unresolved
+   (`TF_S_ASYNC` is admission, not completion) and keeps blocking later PASS per (1); `RefusedNoMutation` observed
+   inside a session is a definite no-effect terminal; only `Indeterminate` (mutation attempted, result not provable,
+   e.g. failed `SetText` or readback mismatch) is uncertain, recorded as such and never blindly retried.
+
 | Scenario | Key classes to account for | Expected disposition with existing mechanisms (to be evidenced) |
 |---|---|---|
-| Host absent before input | Pre-ownership keys | Not owned: the key reaches the application unmodified as a genuine PASS because the TIP never took ownership; reconnect attempted on later keys; no records left behind |
-| Host crash during composition | Pre-ownership keys after the crash; keys already owned when the link died; unresolved prior EFFECT; definitely-not-written vs uncertain/post-write failures; late results | Pre-ownership keys: not owned. Owned key whose operation is definitely not written: may stay caller-owned/Forward per Stage 4A. Uncertain write or post-write response loss: Reject / `CANCELLED_RECOVERY` (eaten, never shown as PASS), no retry. Unresolved prior EFFECT: retained in the ledger, later PASS blocked by `probe_pass`/watermark until a terminal is reached. Results of the dead incarnation: fenced. Composition text left in the document and its teardown audit recorded |
-| Backend timeout → permanent unhealthy session (R7) | The owned key whose request timed out; later keys while the Host process is alive but unhealthy | Timed-out owned key: explicit cancelled/rejected terminal, not PASS. Later keys: not owned (fail open before ownership) for as long as the session stays unhealthy — evidence must show how long and what restores service (U2/U7) |
-| Uncertain document mutation / unresolved EFFECT | Indeterminate EFFECT, refused or async-pending EditSession | Recorded as uncertain/indeterminate, never blindly retried; teardown/audit reports it; user-visible representation per U7 |
+| Host absent before input | Keys arriving with no prior unresolved EFFECT; keys arriving while an earlier EFFECT is still unresolved (e.g. Host lost mid-session) | Rule (1) first: an unresolved prior EFFECT is drained or the key is cancelled (`CANCELLED_RECOVERY`), never passed ahead of it. Otherwise rule (2): not owned; returned through the PASS path (drain + `finish_pass`) as a genuine PASS; reconnect attempted on later keys; no owned records created |
+| Host crash during composition | Keys after the crash; the key whose request was being sent; owned records from earlier keys; unresolved prior EFFECT; late results | Keys after the crash: rules (1) and (2) — not owned only when no unresolved prior EFFECT forbids it. The in-flight key: rule (3) — `NotWritten` → Forward (via the PASS-path conditions), `Uncertain`/post-write → Reject, no retry. Owned records: rule (4) — retained to an explicit terminal, teardown audit recorded. Results of the dead incarnation: fenced. Composition text left in the document recorded as the user-visible state (U7) |
+| Backend timeout → permanent unhealthy session (R7) | The owned key whose request timed out; later keys while the Host process is alive but unhealthy; unresolved prior EFFECT | Timed-out key: post-write failure → rule (3) Reject (explicit terminal, not PASS). Later keys: rule (1) first, then rule (2) — not owned while the session stays unhealthy, passed only via the PASS-path conditions. Evidence must show how long this lasts and what restores service (U2/U7) |
+| Document mutation refused, pending or indeterminate | Synchronous refusal; async work still pending; `RefusedNoMutation`; `Indeterminate` | Rule (5): refusal → queued for async fallback (later keys follow rule (1)); pending → unresolved, blocks later PASS until a terminal; `RefusedNoMutation` → definite no-effect terminal; `Indeterminate` → uncertain, never blindly retried, reported by the teardown/audit; user-visible representation per U7 |
 
 ### 8.3 Application matrix (bounded)
 
@@ -244,7 +271,7 @@ Release-vs-Debug difference is investigated before it is classified.
 ## 10. Accounting and reverse-omission
 
 **Identifier mapping from the first revision (`d4a37a1`):**
-R1–R4, R6, R8–R21 keep their IDs (texts corrected where noted: R1 provenance; R7 alive-but-unhealthy; R11 distribution
+R1–R4 and R6–R21 keep their IDs (texts corrected where noted: R1 provenance; R7 alive-but-unhealthy; R11 distribution
 prerequisite; R17 adds settlement latency and refusal frequency; R20 signing as proposal). R5 → R5a (scheme
 selection), R5b (configuration persistence), R5c (learning/user dictionary), all REQUIRED. New R22 (failure-path
 accounting and minimum recovery representation). U1 → implementation/data-lifecycle choices only; U2 → candidate
@@ -253,7 +280,8 @@ minimum on WP5 evidence. Old WP1 → WP1; old WP2 → WP2 (+U5 minimum); new WP3
 new WP5 (failure/recovery); old WP4 → WP6; old WP5 → WP7; old WP6 → WP8.
 
 **Reverse-omission:**
-- Discovered gaps without scheduled work: none — R1–R22 each have a WP or an explicit DEFERRED/CONDITIONAL disposition.
+- Discovered gaps without scheduled work: none — R1–R22 each have a WP or an explicit DEFERRED/CONDITIONAL disposition;
+  the §25 `overlayMessage` row whose trigger WP3 fires (second input method) is accounted in WP3.
 - Useful recommendations preserved: collapsed caret/selection measurement (R14, candidate approach); stroke finding
   verification (R3); Stage 4 multi-app debt (R12); Chromium census (R13); WP1 raw identity evidence.
 - Resolved matters still labelled unresolved: none; Stage 5 remains CLOSED / VERIFIED.
