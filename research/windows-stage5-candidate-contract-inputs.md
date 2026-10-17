@@ -126,6 +126,14 @@ Fcitx5 是 **pull 模型**：核心只发出「重新读取 InputPanel/StatusAre
 
 ## 4. fusion-windows 现状（`main@45f34a7`，一手）
 
+> **2026-10-17 复核（Stage 4 收口时）：** 本节记录的是 `45f34a7` 时点的一手快照，file:line 亦以该时点为准。
+> 对合并 Stage 4B（PR #9）/4C（PR #10）后的 `main` `11ef4b2` 复核确认本节关键事实仍成立：backend capability
+> 仍仅 `Preedit`；候选捕获仍为 `candidate(i).text().toString()`、每页 ≤10、无 `cursorIndex/label/comment/
+> hasPrev/hasNext`；materialization 循环仍显式跳过 `CandidateSnapshot`（原 :219–222，现已位移至
+> `src/tsf/semantic.cpp` 的 batch 校验与 materialize 两处）。Stage 4B/4C 新增的 Host incarnation /
+> connection-generation 与生命周期义务表是本文 §4 之后的实现现实，候选 STATE/动作须在其之上 fencing，
+> 不得沿用本文对现状的旧描述。
+
 - `include/fusion/backend.hpp`：`BackendOperation::Type{ SetPreedit, CandidateSnapshot, CommitText, ForwardKey }`；
   payload 仅 `std::string text` + `std::vector<std::string> candidates` + `bool original_key`。
   **CandidateSnapshot 数据面 = 纯字符串候选列表**；`Binding{context,lifetime,epoch}`、`stimulus_id`、
@@ -180,8 +188,9 @@ Fcitx5 是 **pull 模型**：核心只发出「重新读取 InputPanel/StatusAre
 - **隐藏/清空**：`InputPanel::empty()` 的 update 就是「清 composition + 关候选窗」的权威信号；Windows 不得
   预测「引擎大概要隐藏了」而提前/延后（D082）。
 - **focus/reset/termination**：`focusIn/focusOut/reset/created/destroy` 是 Fcitx 显式语义事件，映射到 Host 的
-  context 绑定/reconciliation；哪些 TSF lifecycle 事件构成 semantic discontinuity 仍 OPEN（§9），Stage 5
-  不借 candidate 工作偷跑冻结它。Android 的 restarting 序列仅作参考。
+  context 绑定/reconciliation；哪些 TSF lifecycle 事件构成 semantic discontinuity 仍 OPEN（§9：D083 只接受
+  「被 pop 的栈成员」这一个子边界的定界），Stage 5 不借 candidate 工作偷跑冻结其余子边界。
+  Android 的 restarting 序列仅作参考。
 - **UI 切换 suspend/resume + UIChangedEvent**：v0.x Host 内单一 frontend，不涉及；若未来出现多 backend UI
   竞争再议。
 - **动作回送是引擎语义、Windows 只运输**：select/page/tab/action 调用在 Fcitx 线程上执行、随后产生的
@@ -219,8 +228,9 @@ Fcitx5 是 **pull 模型**：核心只发出「重新读取 InputPanel/StatusAre
 - fcitx5-android 的 Kotlin 类名/事件编码、JNI 回调编号是 Android 平台机制，Windows 只参考其「消费了哪些
   契约字段」。
 - macOS/Qt frontend 不在 core 仓库，本文未读其源码，不作声明。
-- 本文不改变：D072/D082、Stage 顺序（Stage 4 为当前主线、进行中——4A 已经 fusion-windows PR #8 合并——且明确不含 candidate UI）、P0-A/P0-B/P0-D OPEN、
-  §9/§16/§17 UNFROZEN；不授权任何实现批次。
+- 本文不改变：D072/D082/D083、Stage 顺序与当前主线、P0-A/P0-B/P0-D OPEN、§9/§16/§17 的 OPEN/UNFROZEN 状态；
+  不授权任何实现批次。Stage 状态是**会变的事实**，本文不复述：一律以 `docs/windows-architecture.md` §22/§25
+  与 fusion-windows `main` 合并现实为准（本文撰写时的状态已由 controller PR #24 与 Stage 4 收口变更）。
 
 ## 9. 与现有拓扑的衔接（最小变更方向）
 
