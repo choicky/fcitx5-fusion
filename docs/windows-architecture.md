@@ -37,8 +37,8 @@
 > correctness boundary 已有证据。D072 原文中把 Fcitx5 / chinese-addons / LibIME 表述为临时 v0.x reference
 > backend、把 Host 表述为独立语义权威的措辞已按 D082 在 §1、§2、§15、§25 原位收窄（§23 同步）。D072 的其余内容——thin TSF
 > DLL / out-of-process Host 分离、上列 Windows HOW 机制、通用 SendInput replay 禁令——仍 ACCEPTED，不因其
-> Windows 特有而失效。Stage 3C 前的证据保留为历史证据；Stage 3C 结果、Stage 4 收口与当前主线（Stage 5）
-> 见 §22/§25。
+> Windows 特有而失效。Stage 3C 前的证据保留为历史证据；Stage 3C 结果、Stage 4 与 Stage 5 收口及下一阶段
+> （Stage 6）见 §22/§25。
 
 ## 0. 证据基础与证据等级
 
@@ -543,13 +543,10 @@ Stage 3    Real Fcitx5 + chinese-addons + LibIME（faithful port：经 Fcitx 前
               物理按键验证范围见 §25）
 Stage 4    Production Host / TSF lifecycle integration      COMPLETE / VERIFIED（4A PR #8、4B PR #9、
            4C PR #10 均已合并；exit gate 的实际证据范围与明确未主张项见 §25）
-Stage 5    Composition / candidate UI                         CURRENT — NOT COMPLETE（含首个 candidate
-           renderer，§16；契约输入为 research evidence，不是 Accepted Decision）
-           首个 candidate projection/action 接缝 = fusion-windows PR #11（已合并，`main` `3e7fc35`）；
-           剩余能力已逐项分类（2026-10-17）；3 项 IMPLEMENT blocker 与候选 popup 指针 blocker 的
-           修复均在未合并的 PR #12 中；最终候选 `670dfc0` 的 exact-HEAD Notepad A–E smoke PASS；
-           剩余：对该 HEAD 的独立定向复审 → 合并，见 §25
-Stage 6    Packaging / release / soak
+Stage 5    Composition / candidate UI                         VERIFIED / COMPLETE（在 §25 记录的范围内；
+           PR #11 与 PR #12 均已合并，canonical `main` `0f724af` 的 tree = 经评审与 exact-HEAD
+           Notepad A–E smoke 的 `670dfc0`；controller PR #29 已合并；未主张项与 DEFER 项见 §25）
+Stage 6    Packaging / release / soak                       NEXT — 尚未启动（无已定义的实现包）
 P0-A / P0-B / P0-D 仍 OPEN（§24）
 ```
 
@@ -676,9 +673,11 @@ preedit 残留或崩溃；代表性真实 Forward 恰好送达应用一次）。
   打磨 → Stage 5；安装器、持久注册/提权路径、签名、soak、延迟/阈值测量与冻结、更广的应用兼容性 → Stage 6 或
   §18 DEFERRED。
 
-**当前主线：Stage 5 — Composition / candidate UI（含首个 candidate renderer，§16）。**
+**Stage 5 — Composition / candidate UI（含首个 candidate renderer，§16）：VERIFIED / COMPLETE（在下文 closure
+gate 记录的范围内；fusion-windows PR #11 与 PR #12 均已合并）。** 下列目标、必须保持与边界是 Stage 5 的契约，
+收口后继续约束后续工作。
 
-- **目标：** 让真实 Fcitx composition / 候选 UI 经既有 D072 通道进入 Windows 产品路径，并以**非键** semantic
+- **目标（已达成）：** 让真实 Fcitx composition / 候选 UI 经既有 D072 通道进入 Windows 产品路径，并以**非键** semantic
   stimulus 把候选动作回送引擎。
 - **必须保持：** Stage 3C 的有序回调与独立结算；Stage 4A write-certainty；Stage 4B incarnation /
   connection-generation fencing 与 per-context semantic readiness；Stage 4C 生命周期义务表与 §9 被 pop 栈成员的
@@ -742,41 +741,47 @@ preedit 残留或崩溃；代表性真实 Forward 恰好送达应用一次）。
   DEFER 项的 owner 默认是 Stage 5 收口之后的 Windows composition/candidate UI 增量，按所列 trigger 启动；
   NEEDS SEPARATE EVIDENCE/DECISION 项各归其所列权威（§9 / §10 / D082 key admission / §16），不在 Stage 5 内
   隐式决定。逐项一手源码依据见 fusion-controller PR（本次 closure accounting）描述。
-- **Stage 5 closure gate（唯一一条，当前状态）：** (1) 剩余能力逐项分类——**已满足**（上表）；(2) PR #11 接缝
-  合并进 canonical fusion-windows `main`——**已满足**（`3e7fc35`）；(3) 上表恰好三项 **IMPLEMENT** blocker 按
-  项目常规流程收口——**未满足**。smoke 的 A–E：A 输入 `nihao` 出现可见候选 popup；B popup 锚定到 active TSF
-  text context / caret；C 点击某个显示位解析到正确的显示 index；D 点击经显式非键候选动作到达 Fcitx；E 选择/
-  提交在应用中正确结算。
-  - **(3) 的当前状态（2026-10-17）：** 三项已在**未合并**的 fusion-windows PR #12 中实现并通过独立实现评审。
-    首个集成候选 `36912ff` 的 Notepad A–E smoke：A PASS、B PASS、**C FAIL**（对可见、已锚定 popup 的点击未产生
-    `CANDIDATE_HIT`），D/E 因此未被到达（C 的下游后果，不是独立缺陷结论）。
-  - **候选 popup 指针 blocker——已在 PR #12 修复（`6d54592`），待最终评审与合并。** 最小消息顺序诊断（临时
-    instrumentation，未提交）显示物理点击与注入点击行为一致：`WM_MOUSEACTIVATE` 交给 `DefWindowProc` 后 popup
-    被点击激活（WA_CLICKACTIVE），夺走应用焦点，应用终止 composition、popup 被隐藏，选择用的 button-up 未到达。
-    修复：popup 以 `MA_NOACTIVATE` / `PA_NOACTIVATE` 拒绝激活（Win32 实现细节，不是 Accepted Decision）。修复后
-    的诊断运行（基于 `36912ff` 的 dirty 诊断构建，非收口证据）到达 `CANDIDATE_HIT 2 → CANDIDATE_ACTION index=2 →
-    EFFECT_APPLIED`。
-  - **最终候选 `670dfc0`（= `6d54592` + 四个 `stage5_candidates` 模式的 CTest 注册）的 exact-HEAD Notepad A–E
-    smoke：PASS。** 新 Notepad 进程实际加载的 `FusionTsf.dll` 与该 HEAD 的构建哈希一致；A 可见 popup；B 锚定到
-    active text context（当前 Stage 5 范围；精确 caret 锚定为上表 DEFER 项，不是本门条件）；C 点击解析为显示
-    index 2；D `CANDIDATE_ACTION action=0 index=2 route=Effect`，无合成键；E `EFFECT_APPLIED`，文档读回为该候选
-    文本。本地验证：Mock-only 64/64；real-Fcitx 70/72（`stage3c_faithful_frontend`、`fcitx_msvc_empty_range_guards`
-    为既有 `xstring(54)` 中止，与 base 相同）。
-  - **剩余收口顺序（唯一剩余门）：** 对 `670dfc0` 及其证据的独立定向复审 PASS → 把已验证的 PR #12 delta 合并进
-    canonical fusion-windows `main` → Stage 5 最终 authority 收口。须保持的不变量：被 smoke 与评审接受的 tree
-    必须与合并的 delta 一致；合并本身不触发冗余的合并后 smoke；此后任何产品源码变更都使 smoke 证据失效。
-  - 收口不要求多应用验证（仍归 Stage 6 应用广度门）。(3) 满足前 Stage 5 保持 CURRENT、NOT COMPLETE。
+- **Stage 5 closure gate（唯一一条）：已满足（2026-10-17）。** (1) 剩余能力逐项分类——已满足（上表）；(2) PR #11
+  接缝合并进 canonical fusion-windows `main`——已满足（`3e7fc35`）；(3) 上表三项 **IMPLEMENT** blocker 按项目常规
+  流程收口——已满足：fusion-windows PR #12 已合并（merge `0f724af1a912daaf83bad65f9deb92b779352f54`），其 tree
+  `ee2f5536e684406a3b9db174277dbe7a681221cb` 与经独立定向复审并通过 exact-HEAD Notepad A–E smoke 的 PR HEAD
+  `670dfc03cd6992681ed800570413ddd9a789582f` 完全一致，即被验证的产品 tree 已在 canonical `main` 上；独立评审门与
+  exact-HEAD smoke 门均已满足。smoke 的 A–E：A 输入 `nihao` 出现可见候选 popup；B popup 锚定到 active TSF text
+  context；C 点击某个显示位解析到正确的显示 index；D 点击经显式非键候选动作到达 Fcitx；E 选择/提交在应用中正确结算。
+  - **收口证据（`670dfc0`）：** 新 Notepad 进程实际加载的 `FusionTsf.dll` 与该 HEAD 的构建哈希一致；A 可见 popup；
+    B 锚定到 active text context（当前 Stage 5 范围）；C 点击解析为显示 index 2；D `CANDIDATE_ACTION action=0
+    index=2 route=Effect`，无合成键；E `EFFECT_APPLIED`，文档读回为该候选文本。本地验证：Mock-only 64/64；
+    real-Fcitx 70/72——`stage3c_faithful_frontend`、`fcitx_msvc_empty_range_guards` 两项为既有 `xstring(54)` 中止
+    （已记录的基线，与 base 相同），并非全部测试通过。
+  - **本收口主张的范围：** 三项投影 blocker（faithful preedit、aux/panel + 整个 InputPanel 隐藏、候选 comment）
+    与候选 popup 指针送达/选择，在 Notepad（既定最小 owner-visible 应用）真实产品路径上成立。**不主张：** 多应用
+    兼容性（仍归 Stage 6 应用广度门，Chromium/Edge 仍为 §7.6/§18 DEFERRED UNKNOWN）；精确 caret 锚定（上表 DEFER
+    项）；上表其余 DEFER / NEEDS SEPARATE EVIDENCE/DECISION 能力；P0-A / P0-B / P0-D 的任何结论；§16 renderer 进程/
+    位置或 wire schema 的冻结；上述两项基线中止的修复。
+  - **历史（PR #12 期间，保留为证据）：** 首个集成候选 `36912ff` 的 Notepad A–E smoke 为 A PASS、B PASS、**C FAIL**
+    （对可见、已锚定 popup 的点击未产生 `CANDIDATE_HIT`），D/E 因此未被到达（C 的下游后果，不是独立缺陷结论）。
+    最小消息顺序诊断（临时 instrumentation，未提交）显示物理点击与注入点击行为一致：`WM_MOUSEACTIVATE` 交给
+    `DefWindowProc` 后 popup 被点击激活（WA_CLICKACTIVE），夺走应用焦点，应用终止 composition、popup 被隐藏，选择用
+    的 button-up 未到达。修复 `6d54592`：popup 以 `MA_NOACTIVATE` / `PA_NOACTIVATE` 拒绝激活（Win32 实现细节，不是
+    Accepted Decision）；修复后的诊断运行基于 dirty 诊断构建，仅为诊断证据，收口证据为上面的 `670dfc0` exact-HEAD
+    smoke。`670dfc0` 另把四个 `stage5_candidates` 模式（utf16/preedit/panel/comment）注册进 CTest。
 - **已报告的运行时发现（非 Stage 5 指针 blocker；证据待独立核验）：** PR #12 实现工作报告：pinyin 笔画筛选模式下
   输入笔画键会在固定的 MSVC Debug runtime 中触发 string/string_view 迭代器断言，并声称仅用 base API 的探针在
   fusion-windows base `3e7fc35` 上同样复现。独立评审尚未读取原始 base 复现日志，因此这是有证据依据的**已报告
-  发现 / 假设**，不是 CONFIRMED EVIDENCE。owner：Windows pinned-runtime 兼容性跟进；trigger：在当前 Stage 5
-  收口工作之后、且不晚于相关 Stage 6 / release 兼容性门核验原始与 base 复现，若其成为当前产品路径 blocker 则提前；
+  发现 / 假设**，不是 CONFIRMED EVIDENCE。owner：Windows pinned-runtime 兼容性跟进；trigger：Stage 5 已收口，
+  须不晚于相关 Stage 6 / release 兼容性门核验原始与 base 复现，若其成为当前产品路径 blocker 则提前（Stage 5 收口
+  未核验也未确认该发现）；
   核验后：若独立复现，记为已确认的既有 runtime 兼容性债并决定最小兼容性修复；若未复现，保留失败/无效的证据结论，
   不静默删除。
 
+**下一阶段：Stage 6 — Packaging / release / soak（NEXT，尚未启动）。** 本文不定义 Stage 6 实现包；其已记录的
+输入只有既有指针：多应用 out-of-process 兼容性验证债（§25 Stage 4 收口、§18）、上表以 Stage 6 为 trigger 的 DEFER
+项（如精确 caret 锚定）、上面的 pinned-runtime 发现核验，以及安装/注册/签名/soak/阈值测量（§21、§25 Stage 4
+"不属于"条款）。Stage 6 的范围与门须由其自身的任务/契约确定后再开始。
+
 **暂不应做：** freeze final wire protocol；freeze permanent identifiers；freeze recovery/timing thresholds；freeze
-未决 Host topology；无证据即冻结 §16 candidate renderer 的进程/位置；借 Stage 5 偷跑 P0-A / P0-B 的最终 recovery
-policy 或 recovery representation；把 Stage 6 范围（安装/发布/soak/应用广度兼容性）提前并入 Stage 5；无 D082
+未决 Host topology；无证据即冻结 §16 candidate renderer 的进程/位置；借其他阶段的工作偷跑 P0-A / P0-B 的最终
+recovery policy 或 recovery representation；未经 Stage 6 自身的任务/契约就开始 Stage 6 实现；无 D082
 证据而偏离或替换 Fcitx 语义；在 TSF DLL 建立第二候选语义模型或 candidate 专用传输；broad product UI；
 为 P0-C 继续 Chromium 实验。
 
