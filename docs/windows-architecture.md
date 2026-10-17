@@ -547,7 +547,7 @@ Stage 5    Composition / candidate UI                         VERIFIED / COMPLET
            PR #11 与 PR #12 均已合并，canonical `main` `0f724af` 的 tree = 经评审与 exact-HEAD
            Notepad A–E smoke 的 `670dfc0`；controller PR #29 已合并；未主张项与 DEFER 项见 §25）
 Stage 6    Packaging / release / soak                       PLAN PROPOSED — 未接受；WP1 已合并并在其范围内收口；
-           WP2 实现已合并，最终候选验收未完成；后续工作包未授权（`docs/windows-stage6-plan.md`）
+           WP2 实现已合并，最终候选技术检查已完成，出口待 U3/U5；后续工作包未授权（`docs/windows-stage6-plan.md`）
 P0-A / P0-B / P0-D 仍 OPEN（§24）
 ```
 
@@ -734,7 +734,7 @@ gate 记录的范围内；fusion-windows PR #11 与 PR #12 均已合并）。** 
   | surrounding text | NEEDS SEPARATE EVIDENCE/DECISION | 否 | 维持 fence 为合法默认。问题：是否以 TSF 只读 readback + 有序 EFFECT 的 `deleteSurroundingText` 声明 `SurroundingText`；证据：Host 引擎依赖面与目标应用的合法 readback/delete（§8） |
   | `StatusArea` | NEEDS SEPARATE EVIDENCE/DECISION | 否 | 模式/状态 UI，非 composition/候选语义。问题：Fcitx status action 与 active 状态如何投影到 TSF（language bar / Host UI / §10 conversion-mode compartment）；依赖修饰键路由决定 |
   | `ClientUnfocusCommit`（研究 §7.3，原列表遗漏） | NEEDS SEPARATE EVIDENCE/DECISION | 否 | 与 §9 focus/termination 语义绑定，§9 未取证子边界仍 OPEN；取证前不声明 |
-  | 客户端字段类型 capability（Password/Sensitive 等；原列表遗漏） | NEEDS SEPARATE EVIDENCE/DECISION | 否 | 属 §10 hard policy（input scope/private/password）；pinyin 学习以 `PasswordOrSensitive` 为门，故含隐私面。Stage 6 WP2（fusion-windows PR #14）已实现**有界的 InputScope admission 策略**：以同步读取当前 selection 的 InputScope，Password/Private/PIN 类 scope 在 backend admission 前阻断；metadata 不可得时记为 Unknown，按普通字段处理，不做启发式判定（已知限制）。最终候选浏览器验证（2026-10-18）：Edge 密码框无 composition、无 backend admission，但拦截来自既有的 keyboard-disabled/empty-context compartment，InputScope 读为 Unknown；Firefox（新进程，普通框对照有效）同样在接管前被该 gate 拦截（拦截发生在 T 路径）；此前一次 Firefox 运行的不确定结果，由 test-key 资格对就绪状态的死锁解释（plan R24，修复见 fusion-windows PR #15）。Notepad 与两种浏览器均观察到 Unknown，原因未诊断（应用不提供 metadata、探测/读取失败均为假设）。Sensitive 分类路径尚未在浏览器中得到证明；U5 未经所有者接受。**忠实的 Password/Sensitive capability（把字段类型传给 Fcitx）仍延后**，本行处置不变。问题：长期是 FailOpen 还是传 capability 给 Fcitx |
+  | 客户端字段类型 capability（Password/Sensitive 等；原列表遗漏） | NEEDS SEPARATE EVIDENCE/DECISION | 否 | 属 §10 hard policy（input scope/private/password）；pinyin 学习以 `PasswordOrSensitive` 为门，故含隐私面。Stage 6 WP2（fusion-windows PR #14）已实现**有界的 InputScope admission 策略**：以同步读取当前 selection 的 InputScope，Password/Private/PIN 类 scope 在 backend admission 前阻断；metadata 不可得时记为 Unknown，按普通字段处理，不做启发式判定（已知限制）。最终候选浏览器验证（2026-10-18）：Edge 密码框无 composition、无 backend admission，但拦截来自既有的 keyboard-disabled/empty-context compartment，InputScope 读为 Unknown；Firefox（新进程，普通框对照有效）同样在接管前被该 gate 拦截（拦截发生在 T 路径）；test-key 资格依赖就绪状态会阻止 K 路径恢复，此缺陷已确认（复现，修复后恢复），并由 fusion-windows PR #15 修复（已合并，plan R24）。此前一次 Firefox 运行不确定的具体触发（先前的 Host incarnation 已停止、初次 bind 失败）属推断：bind 结果未被直接记录，但与该缺陷一致。Notepad 与两种浏览器均观察到 Unknown，原因未诊断（应用不提供 metadata、探测/读取失败均为假设）。Sensitive 分类路径尚未在浏览器中得到证明；U5 未经所有者接受。**忠实的 Password/Sensitive capability（把字段类型传给 Fcitx）仍延后**，本行处置不变。问题：长期是 FailOpen 还是传 capability 给 Fcitx |
   | 精确 caret 锚定（popup 锚定到 TSF selection/caret 本身） | DEFER WITH REASON | 否 | `AnchorProbeSession` 以 composition range 的 `GetTextExt` 右/下边界为锚点，而非精确的 TSF selection/caret；当前 Stage 5 门的 B 项（锚定到 active text context）在 Notepad 成立。重要但非阻塞的 UI 限制。owner：Windows composition/candidate UI 跟进；trigger：Stage 6 定位/应用兼容性工作、在宣称精确 caret 定位兼容性之前，若当前门的真实失败证明有必要则提前；建议（候选方案，需相称验证）：测量折叠的 caret/selection range |
   | 悬停高亮 | DEFER WITH REASON | 否 | 纯外观（classic-ui 本地 hover，不改引擎 cursor）；随 §16 renderer 打磨 |
   | UI suspend/resume、OSK `VirtualKeyboardUserInterface`、`FCITX_NO_PREEDIT_APPS` | NOT APPLICABLE ON WINDOWS | 否 | Host 内单一 frontend；Windows 触摸键盘是 OS 表面；按程序名关闭 preedit 是 X11/Wayland 变通，TSF composition 是逐应用契约 |
@@ -778,7 +778,7 @@ gate 记录的范围内；fusion-windows PR #11 与 PR #12 均已合并）。** 
   `FusionTsf.dll` 加重建的 Host/runtime，是该组合的兼容性证据，不是整套新构建二进制的 smoke。未修改 `cmake/patches` 或固定版本；fusion-windows
   PR #13 仅修正一个早于 Stage 5 的测试判定。证据与处置见 `docs/windows-stage6-plan.md` R1–R3。
 
-**下一阶段：Stage 6 — Packaging / release / soak（PLAN PROPOSED，未接受；WP1 已合并收口；WP2 实现已合并、最终候选验收未完成；后续工作包未授权）。** 唯一的 Stage 6
+**下一阶段：Stage 6 — Packaging / release / soak（PLAN PROPOSED，未接受；WP1 已合并收口；WP2 实现已合并、技术检查已完成、出口待 U3/U5；后续工作包未授权）。** 唯一的 Stage 6
 规划位置是 `docs/windows-stage6-plan.md`：提议的目标场景（Pinyin 与 Shuangpin、Fcitx 学习的持久化为目标要求）、过渡期
 测试产物的限制与排除项、发现登记表、P0 子问题与故障恢复取证、待所有者决定的事项、有序工作包与门；每个工作包须
 另有明确的执行指令才可开始。该计划不是 Accepted Decision，不改变本文的 OPEN/UNFROZEN 项，也不复制上表；其输入包括
