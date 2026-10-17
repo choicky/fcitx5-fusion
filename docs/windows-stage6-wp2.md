@@ -3,19 +3,26 @@
 Date: 2026-10-18
 
 **Current status (2026-10-18).** WP2 implementation is merged (fusion-windows PR #14 → `main` `559d9ce`, tree
-`53b392b`; controller PR #33). WP2 **acceptance remains incomplete**. On the final candidate:
+`53b392b`; controller PR #33). On the final candidate `559d9ce`:
 - Notepad A–E: **PASS**.
 - Edge password field: **PASS** for the observed minimum protection outcome.
-- Firefox password field: **INCONCLUSIVE**, because the ordinary-field control did not compose.
+- Firefox password field: **PASS** for the observed minimum protection outcome, with an effective ordinary-field control.
+  An earlier INCONCLUSIVE run is consistent with the confirmed R24 defect; its specific trigger is inferred (see the
+  Firefox row).
 - InputScope `Sensitive` classification in a browser: **NOT DEMONSTRATED**.
 
-Details are in the final-candidate section below. U3 and U5 remain owner decisions; no acceptance is inferred from the
-implementation or from these results. Current next action (a WP2 prerequisite, also relevant to the WP6 matrix):
-1. Diagnose why Firefox's ordinary-field control did not compose. Distinguish harness, focus, input-mode and TSF
-   key-routing causes.
-2. Then rerun the Firefox password check.
+**Technical acceptance** of the WP2 final-candidate checks is complete on `559d9ce`. These are the Release suites,
+Notepad A–E and the U5 minimum outcome in Firefox and Edge.
 
-No later work package, distribution or CI dispatch is authorized.
+**The overall WP2 exit is not complete.** U3 and U5 remain owner decisions, and no acceptance is inferred from the
+implementation or from these results.
+
+New findings from the Firefox diagnosis, kept in the plan register:
+- **R24:** the TSF test-key eligibility readiness deadlock, confirmed and fixed by fusion-windows PR #15 (merged as `main`
+  `0cd0374`). The checks above ran on `559d9ce`, before the fix. PR #15 changed only `SemanticController::routes_key`: it removed the semantic-readiness and backend-health (`healthy()`) terms and left key-class eligibility unchanged. The T-path decision that produced the Firefox password-field result (`mapped && hard_policy_allows(...)` in `OnTestKeyDown`) and the K path are unchanged, and Notepad and Edge did not deliver T in the recorded runs. The U5 minimum-outcome and Notepad A–E conclusions therefore apply to `0cd0374` by source analysis; they were not re-run on `0cd0374`.
+- **R25:** the Firefox candidate popup is not shown.
+
+Next action: the owner's U3/U5 decisions, which are the remaining WP2 exit dependency. No later work package, distribution or CI dispatch is authorized.
 
 ### Repair accounting as recorded by controller PR #33 (before final-candidate acceptance)
 
@@ -29,7 +36,7 @@ columns.
 | Sensitive scope | Actual admission path blocks before backend routing | Repaired for the bounded policy | Browser proof was required. Final candidate: Sensitive classification NOT DEMONSTRATED in a browser (both read Unknown) |
 | Unknown/refused metadata | Unknown is preserved and logged; stale classification is not reused | Explicit limitation, ordinary-field behavior retained | Final candidate: Unknown observed in Notepad, Edge and Firefox (confirmed observation; cause undiagnosed — app metadata absence and probe/read failure are hypotheses) |
 | Release validation | Mock Release 66/66; real-Fcitx smoke exit 0,0,0 | Passed for available suites | Final candidate: CTest 74/74 and Notepad A–E PASS (2026-10-18) |
-| Firefox/Edge password fields | No browser surface in the PR #33 environment | NOT RUN at PR #33; no PASS claim | Final candidate: Edge PASS (minimum outcome); Firefox INCONCLUSIVE |
+| Firefox/Edge password fields | No browser surface in the PR #33 environment | NOT RUN at PR #33; no PASS claim | Final candidate: Edge and Firefox PASS (minimum outcome) |
 | Historical Notepad oracle | Stage 3B record, not final WP2 proof | Preserved as historical only | Original Stage 3B evidence |
 
 ## Final-candidate acceptance (2026-10-18)
@@ -61,7 +68,7 @@ were on only through the technical opt-in. The DLL loaded by each target process
 |---|---|---|
 | Notepad A–E | **PASS** | [UI] A: popup visible. B: popup over the composition. E: the clicked candidate applied; readback `拟好`. [log] C: `CANDIDATE_HIT 2` (zero-based: the third displayed row). D: `CANDIDATE_ACTION action=0 index=2 route=Effect`, with no synthetic key. E: `EFFECT_APPLIED via=composition len=2` |
 | Edge password field (guest mode, isolated data directory) | **PASS** for the observed minimum protection outcome | [UI] The ordinary-field control composed and committed `你好`. The password field showed 8 masked characters, with no popup and no preedit. [log/source] Each key logged `HARD_POLICY guid-blocked` (the existing keyboard-disabled/empty-context compartment gate), then route `FailOpen` (`OWN_FAIL_OPEN`) and a genuine `PASS`. The segment has 0 `FCITX_BATCH`, `COMPOSITION_START` and `EFFECT_APPLIED`; the `BACKEND` routing-decision records present are consistent with FailOpen. Per source, FailOpen before ownership dispatches nothing to Fcitx, so the keys were not admitted and could not be learned. The log contains no key content. InputScope read Unknown, so the protection came from the compartment gate, not from Sensitive classification |
-| Firefox password field (owner's default profile, with approval) | **INCONCLUSIVE** | [UI] The password field showed 8 masked characters and no popup, but the ordinary-field control did not compose. [log] The TIP took no key anywhere in Firefox: only `TEST_KEY`, 0 `KEY_ARRIVAL`. The password segment logged `INPUT_SCOPE class=unknown` and `HARD_POLICY guid-blocked`. Without an effective control this proves neither protection nor failure. The cause (harness, focus, input mode or TSF routing) is undiagnosed. This is the current WP2 next action and is also relevant to the WP6 matrix |
+| Firefox password field (owner's default profile, with approval; fresh process) | **PASS** for the observed minimum protection outcome | **Run 1c (2026-10-18), current result.**<br>[UI] The ordinary-field control composed and committed `你好` (`EFFECT_APPLIED`; no candidate popup was shown, see R25). The password field showed 8 masked characters with no popup.<br>[log/source] Firefox consults T. For each of the 8 keys T logged `INPUT_SCOPE class=unknown` and `HARD_POLICY guid-blocked`, so T was FALSE and K never ran. The segment has 0 `KEY_ARRIVAL`, `FCITX_BATCH`, `COMPOSITION_START` and `EFFECT_APPLIED`, so nothing was admitted and nothing could be learned. The log contains no key content. Evidence: `stage6-wp2-firefox/runs/run1c-*`.<br>**History (first run, INCONCLUSIVE).** Observed: only `TEST_KEY`, 0 `KEY_ARRIVAL` anywhere in Firefox. CONFIRMED later (R24): readiness-dependent T eligibility can prevent K-path recovery; the defect was reproduced, and the fix restored recovery. INFERRED, consistent with R24: the run was triggered because the reused Firefox process's TIP link pointed at a stopped Host incarnation, so the first context's initial bind failed. That bind result was not directly logged |
 | InputScope `Sensitive` classification in a browser | **NOT DEMONSTRATED** | Both browsers reported `INPUT_SCOPE class=unknown` for the password field. This is a confirmed observation with an undiagnosed cause. Future bounded validation, not done here: one minimal case with a known sensitive InputScope (for example `IS_PASSWORD`), reusing the existing smoke/diagnostic facilities, must show `INPUT_SCOPE class=sensitive` with `SENSITIVE_SCOPE admission=blocked`. The long-term faithful Password/Sensitive capability remains the arch §25 field-capability row, a separate decision |
 
 The Host has no per-key log, so non-admission is established from the TIP-side log and the routing source semantics.
@@ -73,8 +80,11 @@ The Host has no per-key log, so non-admission is established from the TIP-side l
   verified. The test then used guest mode with an isolated data directory, which showed no sign-in.
 - **Firefox, isolated profile:** a fresh isolated profile stopped at Firefox's Terms of Use consent, which was not
   accepted.
-- **Firefox, default profile:** the run used the owner's default profile, with approval, after the owner closed
-  Firefox. The test instance was closed normally. Its effect on Firefox's session restoration was not verified.
+- **Firefox, default profile:** the runs used the owner's default profile, with approval, each after the owner
+  closed Firefox. The test instances were closed normally. Their effect on Firefox's session restoration was not
+  verified.
+- **Registration:** at the owner's choice, the registered TIP is now the R24 fix build (branch head `7a6542b` of fusion-windows PR #15,
+  whose tree the merge `0cd0374` carries; `FusionTsf.dll` `1B1744A5…`). The `559d9ce` results above were recorded while the `E58DB2C5…` candidate was registered.
 
 The Chinese checklist below is the procedure for a manual rerun.
 
@@ -101,11 +111,15 @@ established by the TSF diagnostic log, loaded-module identity, or the routing se
    - Edge（已验证可用的方式：访客模式加独立数据目录。不要用非访客的新数据目录，它会自动登录 Microsoft 账号）：
      `& 'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe' --user-data-dir="$C\..\..\edge-profile" --guest --no-first-run --no-default-browser-check "$C\..\..\password-test.html"`；
      结束后关闭该实例，并删除 `edge-profile` 目录。
-   - Firefox：须先诊断普通框对照为何未生效，再重跑。全新的隔离 profile 会停在使用条款同意页，需所有者本人决定是否接受；
-     上次运行经所有者同意，在 Firefox 完全退出后使用了默认 profile：
+   - Firefox：全新的隔离 profile 会停在使用条款同意页，需所有者本人决定是否接受。已验证的方式是经所有者同意，
+     在 Firefox 完全退出、且 Host 已启动之后，使用默认 profile 启动：
      `& 'C:\Program Files\Mozilla Firefox\firefox.exe' "$C\..\..\password-test.html"`
+     若 Host 在该 Firefox 进程运行期间重启过，`559d9ce` 构建的 TIP 会一直停在未就绪状态（R24），此时须重启 Firefox；
+     含 R24 修复的构建（`main` `0cd0374` 及之后）不受此影响。
    - 每个浏览器依次执行：
-     1. 先点「普通文本框」输入 `nihao`（必要时先按 Ctrl+Space 打开输入法）。[可见] 应出现候选，按空格提交后框内为中文。
+     1. 先点「普通文本框」输入 `nihao`（必要时先按 Ctrl+Space 打开输入法），再按空格提交。
+        [可见] 框内出现中文提交结果；[日志/源码] 出现 `KEY_ARRIVAL` 和 `EFFECT_APPLIED`。实际的中文组字与提交即构成对照成立。
+        候选 popup 是否显示另按 R25 单独记录，**不是**对照条件，也不影响最低保护结果的判定。
         这是前提对照：对照不成立时，该浏览器的密码框结果只能记为**不确定**，不能记 PASS 或 FAIL。
      2. 再点「密码框」输入 `nihao123`，[可见] 只出现 8 个掩码字符，无候选 popup、无下划线 preedit。
      3. 记录浏览器中加载 TIP 的进程与模块哈希：
