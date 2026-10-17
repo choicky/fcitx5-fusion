@@ -768,13 +768,14 @@ gate 记录的范围内；fusion-windows PR #11 与 PR #12 均已合并）。** 
     smoke。`670dfc0` 另把四个 `stage5_candidates` 模式（utf16/preedit/panel/comment）注册进 CTest。
 - **pinned-runtime 兼容性发现（Stage 6 WP1 已核验，2026-10-17）：** 历史：PR #12 实现工作曾报告 pinyin 笔画筛选模式下
   输入笔画键会在固定的 MSVC Debug runtime 中触发 string_view 迭代器断言，并声称 base 可复现；当时未经独立核验。
-  WP1 结论：(1) 两项基线中止（`stage3c_faithful_frontend`、`fcitx_msvc_empty_range_guards`）的原因已确认——旧
-  pinned runtime 由 `fcitx5-msvc.patch` 的早期修订 `d476f29` 构建，缺少两处空区间 guard（`lengthValidated` 与
-  `UTF8StringViewIter::update`）；旧二进制的构建来源仅在头文件/安装层面确立，二进制层面仍 UNKNOWN。(2) 产品路径上
+  WP1 观察：(1) 旧源码检出与已安装头文件均对应 `fcitx5-msvc.patch` 的早期状态 `d476f29`，缺少两处空区间 guard
+  （`lengthValidated` 与 `UTF8StringViewIter::update`）；两项基线中止（`stage3c_faithful_frontend`、
+  `fcitx_msvc_empty_range_guards`）在旧 runtime 上出现、在重建 runtime 上消失，归因于缺失的 guard；旧二进制的完整
+  构建来源仍为 UNKNOWN，不视为已证明。(2) 产品路径上
   旧 Debug runtime 对 `,`、`nihao,` 与 QuickPhrase 触发 `www.` 会使 Host 停在 Debug CRT 断言对话框（应用不崩溃，
-  TIP 按 post-write failure 作 Reject）。(3) 笔画键断言经独立探针在旧 Debug runtime 上复现，属已确认的既有 runtime
-  兼容性债。以上三项在以当前补丁、自固定版本全新检出重建的 Debug / Release runtime（`runtime-wp1-20261017`）上均
-  不再出现；笔画断言位置与 guard B 一致（归因可能，未单独隔离）。未修改 `cmake/patches` 或固定版本；fusion-windows
+  TIP 按 post-write failure 作 Reject）。(3) 笔画键断言经独立探针在旧 Debug runtime 上复现。以上三项在以当前补丁、自固定版本全新检出重建的 Debug / Release runtime（`runtime-wp1-20261017`）上均
+  不再出现；笔画断言与 guard B 位置一致，guard B 是合理归因，但未独立隔离。WP1 的 Notepad A–E 使用既有 Stage 5 已注册的
+  `FusionTsf.dll` 加重建的 Host/runtime，是该组合的兼容性证据，不是整套新构建二进制的 smoke。未修改 `cmake/patches` 或固定版本；fusion-windows
   PR #13 仅修正一个早于 Stage 5 的测试判定。证据与处置见 `docs/windows-stage6-plan.md` R1–R3。
 
 **下一阶段：Stage 6 — Packaging / release / soak（PLAN PROPOSED，未接受；WP1 已按单独授权执行，结果待评审；其余工作包未授权）。** 唯一的 Stage 6
