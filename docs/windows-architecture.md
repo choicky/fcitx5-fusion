@@ -546,7 +546,8 @@ Stage 4    Production Host / TSF lifecycle integration      COMPLETE / VERIFIED�
 Stage 5    Composition / candidate UI                         VERIFIED / COMPLETE（在 §25 记录的范围内；
            PR #11 与 PR #12 均已合并，canonical `main` `0f724af` 的 tree = 经评审与 exact-HEAD
            Notepad A–E smoke 的 `670dfc0`；controller PR #29 已合并；未主张项与 DEFER 项见 §25）
-Stage 6    Packaging / release / soak                       NEXT — 尚未启动（无已定义的实现包）
+Stage 6    Packaging / release / soak                       PLAN PROPOSED — 规划中，未接受；实现未启动
+           （`docs/windows-stage6-plan.md`）
 P0-A / P0-B / P0-D 仍 OPEN（§24）
 ```
 
@@ -774,10 +775,13 @@ gate 记录的范围内；fusion-windows PR #11 与 PR #12 均已合并）。** 
   核验后：若独立复现，记为已确认的既有 runtime 兼容性债并决定最小兼容性修复；若未复现，保留失败/无效的证据结论，
   不静默删除。
 
-**下一阶段：Stage 6 — Packaging / release / soak（NEXT，尚未启动）。** 本文不定义 Stage 6 实现包；其已记录的
-输入只有既有指针：多应用 out-of-process 兼容性验证债（§25 Stage 4 收口、§18）、上表以 Stage 6 为 trigger 的 DEFER
-项（如精确 caret 锚定）、上面的 pinned-runtime 发现核验，以及安装/注册/签名/soak/阈值测量（§21、§25 Stage 4
-"不属于"条款）。Stage 6 的范围与门须由其自身的任务/契约确定后再开始。
+**下一阶段：Stage 6 — Packaging / release / soak（PLAN PROPOSED，规划中、未接受；实现未启动）。** 唯一的 Stage 6
+规划位置是 `docs/windows-stage6-plan.md`：提议的目标场景（Pinyin 与 Shuangpin、Fcitx 学习的持久化为目标要求）、过渡期
+测试产物的限制与排除项、发现登记表、P0 子问题与故障恢复取证、待所有者决定的事项、有序工作包与门；每个工作包须
+另有明确的执行指令才可开始。该计划不是 Accepted Decision，不改变本文的 OPEN/UNFROZEN 项，也不复制上表；其输入包括
+多应用 out-of-process 兼容性验证债（§25 Stage 4 收口、§18）、上表以 Stage 6 为 trigger 的 DEFER 项（如精确 caret
+锚定）、上面的 pinned-runtime 发现核验，以及安装/注册/签名/soak/阈值测量（§21、§25 Stage 4"不属于"条款）。
+计划被所有者接受之前不得开始 Stage 6 实现。
 
 **暂不应做：** freeze final wire protocol；freeze permanent identifiers；freeze recovery/timing thresholds；freeze
 未决 Host topology；无证据即冻结 §16 candidate renderer 的进程/位置；借其他阶段的工作偷跑 P0-A / P0-B 的最终
