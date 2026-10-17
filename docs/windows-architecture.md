@@ -691,13 +691,20 @@ preedit 残留或崩溃；代表性真实 Forward 恰好送达应用一次）。
 **PR #11 — 首个 Stage 5 candidate projection/action 接缝（评审中，未合并；2026-10-17 记录）。**
 
 - **PR #11 是 Stage 5 的第一个接缝，不是 Stage 5 closure。** 其已实现、因此不得再被描述为未解决的能力：
-  有界的 candidate page 投影（STATE，index 与 `CandidateList::candidate(i)` 对齐，含 pager 真值与
-  `truncated` 边界旗标，以及截断后 cursor 永不指向保留前缀之外的规范化）；显式**非键**候选选择
+  有界的 candidate page 投影（STATE，index 与 `CandidateList::candidate(i)` 对齐，含 `layoutHint()` 的
+  `CandidateLayout` 投影并被 renderer 消费、pager 真值与 `truncated` 边界旗标，以及截断后 cursor 永不指向
+  保留前缀之外的规范化；label/text/comment 显示字段在投影处经引擎自身 `Instance::outputFilter` 过滤，
+  与成熟 classic-ui 显示路径同一调用形状，Windows 不建立第二过滤权威）；显式**非键**候选选择
   （`SelectCandidate`，复用真实按键 dispatch 的准入、有序 Core 记录与结算）；显式翻页
   （`PageNext` / `PagePrev`）；针对 context / Host incarnation / connection generation 的 stale-action fencing
   （`PageFence` 失配即 fail-open 拒绝，不发 dispatch）；首个最小 candidate presentation 接缝
   （non-activating owned popup，经 `ITfContext::GetActiveView` 锚定 active view，焦点丢失仅隐藏
   presentation，不触碰语义 incarnation）。
+- **snapshot 排序/围栏的实现处置（研究契约建议的对账）：** 候选快照与候选动作的因果/状态身份由
+  **复用既有单调 stimulus identity**（`PageFence` 记录产生该 page 的 dispatch 的 `stimulus_id`，连同
+  binding / backend session / Host incarnation / connection generation）满足，而非新增独立的 candidate
+  revision/generation 计数器；接缝未引入第二 candidate 账本。这是对既有建议的收口记账，不构成新的
+  Accepted Decision。
 - **研究识别出的剩余能力缺口（单一持久指针，不是十五个独立任务，也不主张"全部必须实现"）：**
   segmented `FormattedPreedit`/`Text` format flags；preedit 字节光标 → UTF-16 投影；`auxUp`/`auxDown`；
   `overlayMessage`；更丰富的候选字段（labels/comments/placeholder/spacing）；bulk candidate access /
@@ -707,8 +714,10 @@ preedit 残留或崩溃；代表性真实 Forward 恰好送达应用一次）。
   UNFROZEN 与 P0-A / P0-B / P0-D OPEN。
 - **Stage 5 closure gate（唯一一条）：** 在 Stage 5 被宣告 COMPLETE 之前，上一项中的每个剩余能力须逐项
   分类为 **IMPLEMENT / DEFER WITH REASON / NOT APPLICABLE ON WINDOWS / NEEDS SEPARATE EVIDENCE/DECISION**
-  并记录于 §22/§25；且 PR #11 所在接缝的独立评审结论落地（评审通过并合并，或其 blocker 修复被同分支
-  吸收）。在该 gate 满足前，Stage 5 保持 CURRENT。
+  并记录于 §22/§25；且 PR #11 所在接缝须满足：**blocker 修复 → 独立 blocker-only 复审 PASS → 合并进
+  canonical fusion-windows `main`**。仅把 blocker 修复推送到同一 PR 分支不构成满足；未合并或评审仍为
+  REJECTED 的接缝不能关闭本 gate。blocker 修复后不需要重跑完整全量评审——项目工作流即 blocker-only
+  复审。在该 gate 满足前，Stage 5 保持 CURRENT。
 
 **暂不应做：** freeze final wire protocol；freeze permanent identifiers；freeze recovery/timing thresholds；freeze
 未决 Host topology；无证据即冻结 §16 candidate renderer 的进程/位置；借 Stage 5 偷跑 P0-A / P0-B 的最终 recovery
