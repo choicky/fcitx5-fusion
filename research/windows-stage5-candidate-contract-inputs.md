@@ -5,6 +5,11 @@
 > UNFROZEN、§25「不属于 Stage 4」）提供一手 Fcitx5 frontend 契约事实与字段/生命周期 mapping，使 Stage 5
 > 实现契约从既有 Fcitx 契约出发，而不是在 Windows 侧另建第二语义权威（D082）。
 > 规范性权威仍为 D072 + D082；P0-A / P0-B / P0-D 与 §9 / §16 的 OPEN/UNFROZEN 项不因本文改变。
+> **对账注记（2026-10-17）：** 本文各表的「fusion-windows 现状」列描述的是 **PR #11 之前的 `main`**。首个
+> Stage 5 candidate projection/action 接缝（有界 page 投影、非键 select/page、stale-action fencing、最小
+> popup）已由 fusion-windows PR #11 实现（评审中，未合并）；接缝现状的权威是
+> `docs/windows-architecture.md` §22/§25，本文保持 research evidence 地位，不因其现状列过时而获得或
+> 转让规范性。
 
 ## 0. 证据来源（一手，本文事实边界）
 
