@@ -451,6 +451,11 @@ Stage 5 契约输入（research 级，非 Accepted Decision）：`research/windo
 mapping；D082 下 Windows 只运输/投影 Fcitx 已定义语义，候选 select/page 等动作须经非键 semantic stimulus 回送
 引擎，不得以合成键 replay 模拟。
 
+fusion-windows PR #11（评审中，未合并）实现了首个最小 in-process presentation 接缝（candidate popup 经
+`ITfContext::GetActiveView` 取权威 active view 锚定；焦点丢失仅隐藏 presentation）。该接缝是本节允许的
+"minimal specialized in-process presentation surface" 的一个候选实现，**不决定也不冻结** renderer 的最终
+进程/位置；§16 仍为 UNFROZEN。
+
 ## 17. State representation — UNFROZEN
 
 旧 flat FSM（DISABLED / PASS_THROUGH / READY / COMPOSING / RECOVERING / DEGRADED_PASS）不永久冻结；应与
@@ -540,6 +545,8 @@ Stage 4    Production Host / TSF lifecycle integration      COMPLETE / VERIFIED�
            4C PR #10 均已合并；exit gate 的实际证据范围与明确未主张项见 §25）
 Stage 5    Composition / candidate UI                         CURRENT — 实现主线，进行中（含首个 candidate
            renderer，§16；契约输入为 research evidence，不是 Accepted Decision）
+           首个 candidate projection/action 接缝 = fusion-windows PR #11（评审中，未合并）；PR #11 ≠
+           Stage 5 closure，收口门见 §25
 Stage 6    Packaging / release / soak
 P0-A / P0-B / P0-D 仍 OPEN（§24）
 ```
@@ -680,6 +687,28 @@ preedit 残留或崩溃；代表性真实 Forward 恰好送达应用一次）。
   watermark；§16 renderer 的进程/位置仍 UNFROZEN，首个变更只选取所需的最小实现接缝。
 - **契约输入：** `research/windows-stage5-candidate-contract-inputs.md` 为 research / evidence，**不是** Accepted
   Decision，不冻结 wire schema，本身不构成实现授权；其中的 Fcitx 契约事实须经一手源码核对后方可依赖。
+
+**PR #11 — 首个 Stage 5 candidate projection/action 接缝（评审中，未合并；2026-10-17 记录）。**
+
+- **PR #11 是 Stage 5 的第一个接缝，不是 Stage 5 closure。** 其已实现、因此不得再被描述为未解决的能力：
+  有界的 candidate page 投影（STATE，index 与 `CandidateList::candidate(i)` 对齐，含 pager 真值与
+  `truncated` 边界旗标，以及截断后 cursor 永不指向保留前缀之外的规范化）；显式**非键**候选选择
+  （`SelectCandidate`，复用真实按键 dispatch 的准入、有序 Core 记录与结算）；显式翻页
+  （`PageNext` / `PagePrev`）；针对 context / Host incarnation / connection generation 的 stale-action fencing
+  （`PageFence` 失配即 fail-open 拒绝，不发 dispatch）；首个最小 candidate presentation 接缝
+  （non-activating owned popup，经 `ITfContext::GetActiveView` 锚定 active view，焦点丢失仅隐藏
+  presentation，不触碰语义 incarnation）。
+- **研究识别出的剩余能力缺口（单一持久指针，不是十五个独立任务，也不主张"全部必须实现"）：**
+  segmented `FormattedPreedit`/`Text` format flags；preedit 字节光标 → UTF-16 投影；`auxUp`/`auxDown`；
+  `overlayMessage`；更丰富的候选字段（labels/comments/placeholder/spacing）；bulk candidate access /
+  windowing；`ActionableCandidateList`；`TabbedCandidateList`；preedit 点击 / `InvokeActionEvent` 重定位；
+  `commitStringWithCursor` / InputContextV2 边界；surrounding-text 的合法 TSF 边界；`cursorRect` /
+  scale-factor；`StatusArea`；更广的键盘-候选 UX。以上各项的处置仍服从 §16 UNFROZEN、wire/数值边界
+  UNFROZEN 与 P0-A / P0-B / P0-D OPEN。
+- **Stage 5 closure gate（唯一一条）：** 在 Stage 5 被宣告 COMPLETE 之前，上一项中的每个剩余能力须逐项
+  分类为 **IMPLEMENT / DEFER WITH REASON / NOT APPLICABLE ON WINDOWS / NEEDS SEPARATE EVIDENCE/DECISION**
+  并记录于 §22/§25；且 PR #11 所在接缝的独立评审结论落地（评审通过并合并，或其 blocker 修复被同分支
+  吸收）。在该 gate 满足前，Stage 5 保持 CURRENT。
 
 **暂不应做：** freeze final wire protocol；freeze permanent identifiers；freeze recovery/timing thresholds；freeze
 未决 Host topology；无证据即冻结 §16 candidate renderer 的进程/位置；借 Stage 5 偷跑 P0-A / P0-B 的最终 recovery
