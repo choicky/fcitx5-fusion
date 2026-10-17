@@ -546,8 +546,8 @@ Stage 4    Production Host / TSF lifecycle integration      COMPLETE / VERIFIED�
 Stage 5    Composition / candidate UI                         VERIFIED / COMPLETE（在 §25 记录的范围内；
            PR #11 与 PR #12 均已合并，canonical `main` `0f724af` 的 tree = 经评审与 exact-HEAD
            Notepad A–E smoke 的 `670dfc0`；controller PR #29 已合并；未主张项与 DEFER 项见 §25）
-Stage 6    Packaging / release / soak                       PLAN PROPOSED — 规划中，未接受；实现未启动
-           （`docs/windows-stage6-plan.md`）
+Stage 6    Packaging / release / soak                       PLAN PROPOSED — 未接受；WP1 已按单独授权执行
+           （结果待评审），其余工作包未授权（`docs/windows-stage6-plan.md`）
 P0-A / P0-B / P0-D 仍 OPEN（§24）
 ```
 
@@ -766,22 +766,24 @@ gate 记录的范围内；fusion-windows PR #11 与 PR #12 均已合并）。** 
     的 button-up 未到达。修复 `6d54592`：popup 以 `MA_NOACTIVATE` / `PA_NOACTIVATE` 拒绝激活（Win32 实现细节，不是
     Accepted Decision）；修复后的诊断运行基于 dirty 诊断构建，仅为诊断证据，收口证据为上面的 `670dfc0` exact-HEAD
     smoke。`670dfc0` 另把四个 `stage5_candidates` 模式（utf16/preedit/panel/comment）注册进 CTest。
-- **已报告的运行时发现（非 Stage 5 指针 blocker；证据待独立核验）：** PR #12 实现工作报告：pinyin 笔画筛选模式下
-  输入笔画键会在固定的 MSVC Debug runtime 中触发 string/string_view 迭代器断言，并声称仅用 base API 的探针在
-  fusion-windows base `3e7fc35` 上同样复现。独立评审尚未读取原始 base 复现日志，因此这是有证据依据的**已报告
-  发现 / 假设**，不是 CONFIRMED EVIDENCE。owner：Windows pinned-runtime 兼容性跟进；trigger：Stage 5 已收口，
-  须不晚于相关 Stage 6 / release 兼容性门核验原始与 base 复现，若其成为当前产品路径 blocker 则提前（Stage 5 收口
-  未核验也未确认该发现）；
-  核验后：若独立复现，记为已确认的既有 runtime 兼容性债并决定最小兼容性修复；若未复现，保留失败/无效的证据结论，
-  不静默删除。
+- **pinned-runtime 兼容性发现（Stage 6 WP1 已核验，2026-10-17）：** 历史：PR #12 实现工作曾报告 pinyin 笔画筛选模式下
+  输入笔画键会在固定的 MSVC Debug runtime 中触发 string_view 迭代器断言，并声称 base 可复现；当时未经独立核验。
+  WP1 结论：(1) 两项基线中止（`stage3c_faithful_frontend`、`fcitx_msvc_empty_range_guards`）的原因已确认——旧
+  pinned runtime 由 `fcitx5-msvc.patch` 的早期修订 `d476f29` 构建，缺少两处空区间 guard（`lengthValidated` 与
+  `UTF8StringViewIter::update`）；旧二进制的构建来源仅在头文件/安装层面确立，二进制层面仍 UNKNOWN。(2) 产品路径上
+  旧 Debug runtime 对 `,`、`nihao,` 与 QuickPhrase 触发 `www.` 会使 Host 停在 Debug CRT 断言对话框（应用不崩溃，
+  TIP 按 post-write failure 作 Reject）。(3) 笔画键断言经独立探针在旧 Debug runtime 上复现，属已确认的既有 runtime
+  兼容性债。以上三项在以当前补丁、自固定版本全新检出重建的 Debug / Release runtime（`runtime-wp1-20261017`）上均
+  不再出现；笔画断言位置与 guard B 一致（归因可能，未单独隔离）。未修改 `cmake/patches` 或固定版本；fusion-windows
+  PR #13 仅修正一个早于 Stage 5 的测试判定。证据与处置见 `docs/windows-stage6-plan.md` R1–R3。
 
-**下一阶段：Stage 6 — Packaging / release / soak（PLAN PROPOSED，规划中、未接受；实现未启动）。** 唯一的 Stage 6
+**下一阶段：Stage 6 — Packaging / release / soak（PLAN PROPOSED，未接受；WP1 已按单独授权执行，结果待评审；其余工作包未授权）。** 唯一的 Stage 6
 规划位置是 `docs/windows-stage6-plan.md`：提议的目标场景（Pinyin 与 Shuangpin、Fcitx 学习的持久化为目标要求）、过渡期
 测试产物的限制与排除项、发现登记表、P0 子问题与故障恢复取证、待所有者决定的事项、有序工作包与门；每个工作包须
 另有明确的执行指令才可开始。该计划不是 Accepted Decision，不改变本文的 OPEN/UNFROZEN 项，也不复制上表；其输入包括
 多应用 out-of-process 兼容性验证债（§25 Stage 4 收口、§18）、上表以 Stage 6 为 trigger 的 DEFER 项（如精确 caret
-锚定）、上面的 pinned-runtime 发现核验，以及安装/注册/签名/soak/阈值测量（§21、§25 Stage 4"不属于"条款）。
-计划被所有者接受之前不得开始 Stage 6 实现。
+锚定）、上面的 pinned-runtime 发现核验（已由 WP1 完成），以及安装/注册/签名/soak/阈值测量（§21、§25 Stage 4"不属于"条款）。
+WP1 已于 2026-10-17 按所有者的单独授权执行（结果待评审）；其余工作包仍须各自的明确授权，U1–U7 仍待决定。
 
 **暂不应做：** freeze final wire protocol；freeze permanent identifiers；freeze recovery/timing thresholds；freeze
 未决 Host topology；无证据即冻结 §16 candidate renderer 的进程/位置；借其他阶段的工作偷跑 P0-A / P0-B 的最终
