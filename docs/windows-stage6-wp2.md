@@ -14,15 +14,17 @@ Date: 2026-10-18
 **Technical acceptance** of the WP2 final-candidate checks is complete on `559d9ce`. These are the Release suites,
 Notepad A–E and the U5 minimum outcome in Firefox and Edge.
 
-**The overall WP2 exit is not complete.** U3 and U5 remain owner decisions, and no acceptance is inferred from the
-implementation or from these results.
+**WP2 is closed within its scope** after the owner's U3 (a) and U5 (a) decisions of 2026-10-18. The U5
+minimum outcome stands with the limitation recorded in the plan §7.1 U5 row: the protected-field result
+came from the existing keyboard-disabled/empty-context hard-policy gate, the InputScope probe read
+Unknown, so Sensitive classification is not demonstrated.
 
 New findings from the Firefox diagnosis, kept in the plan register:
 - **R24:** the TSF test-key eligibility readiness deadlock, confirmed and fixed by fusion-windows PR #15 (merged as `main`
   `0cd0374`). The checks above ran on `559d9ce`, before the fix. PR #15 changed only `SemanticController::routes_key`: it removed the semantic-readiness and backend-health (`healthy()`) terms and left key-class eligibility unchanged. The T-path decision that produced the Firefox password-field result (`mapped && hard_policy_allows(...)` in `OnTestKeyDown`) and the K path are unchanged, and Notepad and Edge did not deliver T in the recorded runs. The U5 minimum-outcome and Notepad A–E conclusions therefore apply to `0cd0374` by source analysis; they were not re-run on `0cd0374`.
 - **R25:** the Firefox candidate popup is not shown.
 
-Next action: the owner's U3/U5 decisions, which are the remaining WP2 exit dependency. No later work package, distribution or CI dispatch is authorized.
+Next action: no later work package, distribution or CI dispatch is authorized; WP3 additionally needs U1.
 
 ### Repair accounting as recorded by controller PR #33 (before final-candidate acceptance)
 
@@ -31,7 +33,7 @@ columns.
 
 | Finding | Evidence/status | Final disposition | Authority/dependency |
 |---|---|---|---|
-| Historical diagnostics emitted key-adjacent data | Source history; repaired implementation; Release policy tests pass | Repaired: default off, opt-in technical diagnostics with redaction | U3 remains an owner decision |
+| Historical diagnostics emitted key-adjacent data | Source history; repaired implementation; Release policy tests pass | Repaired: default off, opt-in technical diagnostics with redaction | U3 (a) accepted 2026-10-18 |
 | InputScope admission used a queued read, document start, and bare entry pointer | Source review of the cumulative PR diff | Repaired with synchronous TF_ES_SYNC|TF_ES_READ, current selection range, shared entry hold/generation check, and explicit Unknown/Ordinary/Sensitive classification | Bounded U5 policy; faithful Password/Sensitive path remains deferred |
 | Sensitive scope | Actual admission path blocks before backend routing | Repaired for the bounded policy | Browser proof was required. Final candidate: Sensitive classification NOT DEMONSTRATED in a browser (both read Unknown) |
 | Unknown/refused metadata | Unknown is preserved and logged; stale classification is not reused | Explicit limitation, ordinary-field behavior retained | Final candidate: Unknown observed in Notepad, Edge and Firefox (confirmed observation; cause undiagnosed — app metadata absence and probe/read failure are hypotheses) |
