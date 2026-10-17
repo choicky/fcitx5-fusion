@@ -546,8 +546,8 @@ Stage 4    Production Host / TSF lifecycle integration      COMPLETE / VERIFIED�
 Stage 5    Composition / candidate UI                         CURRENT — NOT COMPLETE（含首个 candidate
            renderer，§16；契约输入为 research evidence，不是 Accepted Decision）
            首个 candidate projection/action 接缝 = fusion-windows PR #11（已合并，`main` `3e7fc35`）；
-           剩余能力已逐项分类（2026-10-17），收口仍差 3 项 IMPLEMENT blocker 与 Notepad 产品路径
-           smoke，见 §25
+           剩余能力已逐项分类（2026-10-17），收口仍差 3 项 IMPLEMENT blocker：集成候选 → Notepad
+           产品路径 smoke（PENDING）→ 独立评审 → 合并已验证 delta，见 §25
 Stage 6    Packaging / release / soak
 P0-A / P0-B / P0-D 仍 OPEN（§24）
 ```
@@ -716,10 +716,10 @@ preedit 残留或崩溃；代表性真实 Forward 恰好送达应用一次）。
 
   | 能力 | 处置 | 阻塞收口 | 理由 / owner · trigger · 依赖 |
   |---|---|---|---|
-  | segmented `FormattedPreedit` / format flags + preedit 字节光标 → UTF-16 | **IMPLEMENT** | **是** | 现状把 client preedit 扁平为字符串、caret 恒置 composition 末尾、未过 `outputFilter`；pinyin 在默认键（Left/Right/Home/End）上移动/编辑引擎光标、Left 在已选边界撤销部分选择，Windows 无从显示——偏离 D082 composition 语义，TSF 无限制（composition 内可置 selection，样式经 display attribute）。实现：投影分段+flags+byte cursor，TSF 侧换算 UTF-16 caret 与逐段 display attribute |
-  | `auxUp` / `auxDown`（含 server-side `preedit()` 行；隐藏条件 = 整个 `InputPanel::empty()`） | **IMPLEMENT** | **是** | pinyin 笔画筛选（默认键 `` ` ``）所输入的笔画**只**显示在 auxUp，QuickPhrase 模式提示亦在 auxUp；现状不投影 aux，且候选页为空即隐藏——引擎吞键而用户无可见输入，隐藏条件窄于 Fcitx 契约。classic-ui 与 dbusfrontend 均承载 |
-  | 候选 comment 呈现 | **IMPLEMENT** | **是** | comment 已投影（过 `outputFilter`）但 renderer 只画 label+text；pinyin 用 comment 区分同字异读候选（`(full pinyin)`；同字候选可对应不同读音与选择长度）、`(Half)` 标点与笔画候选读音 |
-  | label / placeholder | 已解决（PR #11） | 否 | — |
+  | 1. faithful preedit projection = 显示的 preedit 文本在正确的 Fcitx frontend 边界经 `Instance::outputFilter` + 保留/投影所需 `ui::Text` 分段与 format flags + 引擎 byte cursor + 合法换算到 TSF UTF-16 caret 与相应 display attribute | **IMPLEMENT** | **是** | 现状把 client preedit 扁平为 `clientPreedit().toString()`：未过 `outputFilter`（dbusfrontend 对 client preedit 调用之）、分段/flags 丢失、caret 恒置 composition 末尾；pinyin 在默认键（Left/Right/Home/End）上移动/编辑引擎光标、Left 在已选边界撤销部分选择，Windows 无从显示——偏离 D082 composition 语义，TSF 无限制（composition 内可置 selection，样式经 display attribute）。四个组成部分缺一即不满足本项；仅完成 cursor/format 而缺 `outputFilter` 不构成关闭 |
+  | 2. aux/panel projection = `auxUp`/`auxDown` 及本项实际投影的其他 panel 文本（server-side `preedit()` 行）经相应 `Instance::outputFilter` + `auxUp`/`auxDown` 投影 + 隐藏条件 = 整个 `InputPanel::empty()` | **IMPLEMENT** | **是** | pinyin 笔画筛选（默认键 `` ` ``）所输入的笔画**只**显示在 auxUp，QuickPhrase 模式提示亦在 auxUp；现状不投影 aux，且候选页为空即隐藏——引擎吞键而用户无可见输入，隐藏条件窄于 Fcitx 契约。classic-ui 与 dbusfrontend 均承载，且两者都先经 `outputFilter` 再显示 aux。三个组成部分缺一即不满足本项 |
+  | 3. 候选 comment 呈现 | **IMPLEMENT** | **是** | comment 已投影（过 `outputFilter`）但 renderer 只画 label+text；pinyin 用 comment 区分同字异读候选（`(full pinyin)`；同字候选可对应不同读音与选择长度）、`(Half)` 标点与笔画候选读音 |
+  | label / placeholder；候选 label/text/comment 经 `outputFilter` 的传输 | 已解决（PR #11） | 否 | — |
   | `customLabel` | DEFER WITH REASON | 否 | 固定源码中无 producer。trigger：Host 加载的引擎调用 `setCustomLabel`；做法：非空时优先（同 classic/dbus） |
   | `spaceBetweenComment` | DEFER WITH REASON | 否 | 默认 `true`，唯一 producer 为 table IM（未加载）。trigger：Host 加载 table IM 或其他置 `false` 的引擎；依赖 comment 呈现 |
   | `overlayMessage` | DEFER WITH REASON | 否 | 唯一 producer 为切换输入法时的 IM 信息；Host 仅一个 IM，修饰键切换不到达。trigger：Host 注册第二个 IM / IM 切换可达；依赖 aux 行 |
@@ -741,13 +741,20 @@ preedit 残留或崩溃；代表性真实 Forward 恰好送达应用一次）。
   NEEDS SEPARATE EVIDENCE/DECISION 项各归其所列权威（§9 / §10 / D082 key admission / §16），不在 Stage 5 内
   隐式决定。逐项一手源码依据见 fusion-controller PR（本次 closure accounting）描述。
 - **Stage 5 closure gate（唯一一条，当前状态）：** (1) 剩余能力逐项分类——**已满足**（上表）；(2) PR #11 接缝
-  合并进 canonical fusion-windows `main`——**已满足**（`3e7fc35`）；(3) 上表三项 **IMPLEMENT** blocker 合并进
-  canonical `main`——**未满足**；(4) 在含 (3) 的 canonical `main` 上，Notepad（既定最小 owner-visible 应用）
-  产品路径 smoke 取得原始证据并 PASS：输入 `nihao` 出现候选 popup、popup 锚定到 composition/caret、点击某个
-  显示位解析到正确的显示 index、点击经显式非键候选动作到达引擎、选择/提交在应用中正确结算——**未满足**
-  （canonical `main` 上尚无该证据，2026-10-17 的 smoke 未执行；已有证据仅为 Host/IPC 层的
-  `stage4a_ipc_integration`）。四项全部满足前 Stage 5 保持 CURRENT、NOT COMPLETE；收口不要求多应用验证
-  （仍归 Stage 6 应用广度门）。
+  合并进 canonical fusion-windows `main`——**已满足**（`3e7fc35`）；(3) 上表恰好三项 **IMPLEMENT** blocker 按
+  项目常规流程收口——**未满足**。(3) 的顺序：实现三项 → 形成最终集成、可评审的候选 revision / 候选 HEAD →
+  本地 build/tests 与适用验证 PASS → 在**该确切集成候选**上执行 Notepad（既定最小 owner-visible 应用）产品
+  路径 smoke 并 PASS → 独立评审 PASS → 把已验证的实现 delta 合并进 canonical fusion-windows `main` → 若其余
+  已记录条件仍成立，Stage 5 可宣告 COMPLETE。smoke 的 A–E：A 输入 `nihao` 出现可见候选 popup；B popup 锚定到
+  active TSF text context / caret；C 点击某个显示位解析到正确的显示 index；D 点击经显式非键候选动作到达
+  Fcitx；E 选择/提交在应用中正确结算。
+  - **Notepad A–E smoke 状态：PENDING——trigger：包含全部三项 IMPLEMENT 修复的最终集成、可评审 Stage 5 候选
+    已存在。** 在此之前对现有 canonical `main` 重跑 smoke 不是收口要求：即便 PASS 也只证明已合并的 PR #11
+    popup/select 接缝（该接缝现有证据为 Host/IPC 层的 `stage4a_ipc_integration`）。
+  - 三项可经一个或多个 commit/PR 开发；不要求各组成部分先单独合并进 canonical `main` 再做集成 smoke。须保持
+    的不变量：接受产品路径 smoke 与独立评审的最终集成实现，必须与随后合并进 canonical `main` 的实现
+    delta/tree 一致；合并本身不触发冗余的合并后 smoke。
+  - 收口不要求多应用验证（仍归 Stage 6 应用广度门）。(3) 满足前 Stage 5 保持 CURRENT、NOT COMPLETE。
 
 **暂不应做：** freeze final wire protocol；freeze permanent identifiers；freeze recovery/timing thresholds；freeze
 未决 Host topology；无证据即冻结 §16 candidate renderer 的进程/位置；借 Stage 5 偷跑 P0-A / P0-B 的最终 recovery
