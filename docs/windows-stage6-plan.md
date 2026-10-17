@@ -35,7 +35,7 @@ scenario — without promising universal Windows compatibility and without silen
 | Pipe identity | `FusionHost-v1-<user SID>-<session id>`; DACL grants only the current user SID; client checks server session | `src/ipc/pipe_security.cpp` (CONFIRMED) |
 | Runtime layout | Host needs Fcitx/LibIME DLLs, addon libs, `data/`, `lib/libime` beside its output (CMake post-build copy) | `cmake/FcitxBackend.cmake` (CONFIRMED) |
 | Request bound | One backend request waiting > 2 s marks the backend session permanently unhealthy until the Host process restarts | `src/fcitx/backend.cpp` (CONFIRMED) |
-| Diagnostics | TSF diagnostic log is **always on**: `%LOCALAPPDATA%\fusion-tsf\fusion-tsf-<pid>.log` (2 MiB cap per process), recording every key's virtual-key code (`KEY_ARRIVAL`) and engine keysym (`BACKEND symbolic=fcitx:<keysym>`) in every process that loads the TIP; preedit/commit text only with `FUSION_TSF_FRONTEND_TRACE` | `src/tsf/diag.cpp`, `service.cpp` (CONFIRMED) |
+| Diagnostics | TSF diagnostic logging is **off by default** (opt-in through `FUSION_TSF_DIAGNOSTICS`): `%LOCALAPPDATA%\fusion-tsf\fusion-tsf-<pid>.log` (2 MiB cap per process), recording every key's virtual-key code (`KEY_ARRIVAL`) and engine keysym (`BACKEND symbolic=fcitx:<keysym>`) in every process that loads the TIP; preedit/commit text only with `FUSION_TSF_FRONTEND_TRACE` | `src/tsf/diag.cpp`, `service.cpp` (CONFIRMED) |
 | Native runtime build | `tools/fcitx/build-native.ps1` (Debug/Release) applies `cmake/patches/fcitx5-msvc.patch` and `chinese-addons-msvc.patch` to pinned sources | source (CONFIRMED) |
 | Local tests | Mock-only 64/64; real-Fcitx 70/72 with `stage3c_faithful_frontend`, `fcitx_msvc_empty_range_guards` aborting (`xstring(54)`) | Stage 5 closure (CONFIRMED) |
 
