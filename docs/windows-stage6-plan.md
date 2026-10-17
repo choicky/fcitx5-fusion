@@ -1,6 +1,6 @@
 # Windows Stage 6 — Plan and Acceptance Gates (PROPOSED)
 
-> **Status: PLAN PROPOSED — NOT accepted.** WP1 was executed on 2026-10-17 under its own owner authorization (results: R1–R3 in §4, WP1 row in §6, §9; pending review of fusion-windows PR #13 and this controller update). No other work package is authorized; U1–U7 remain open.
+> **Status: PLAN PROPOSED — NOT accepted.** Current state (2026-10-18): WP1 is merged and closed within its accepted scope (fusion-windows PR #13, controller PR #32; R1–R3 in §4, §9). WP2 implementation is merged (fusion-windows PR #14 → `main` `559d9ce`, controller PR #33), but its final-candidate acceptance is incomplete: Notepad A–E and the Firefox/Edge password checks are NOT RUN (`docs/windows-stage6-wp2.md`). Next step: run those checks on the freshly built final candidate. No later work package is authorized; U1–U7 remain open, and U3/U5 are not owner-accepted.
 > This is the single canonical Stage 6 planning location. It proposes a target scope, work order and gates; it is
 > not an Accepted Decision, does not change `docs/REQUIREMENTS.md`, and does not supersede D072 / D082 / D083 or
 > `docs/windows-architecture.md`. Merging this plan authorizes no implementation: every work package, including the
@@ -119,7 +119,7 @@ execution instruction after the plan review (WP0).
 | WP | Content | Depends on | Entry gate | Exit gate |
 |---|---|---|---|---|
 | WP0 | Owner review of this plan; decisions U2, U3, U5 (others may follow) | — | this PR | Plan accepted or amended |
-| WP1 | **Pinned-runtime compatibility (R1–R3).** Record raw identity first (pinned source SHAs, patch-applied state, installed headers, build logs, binary hashes of the current runtime); rebuild Debug and Release runtimes with the current patches via `build-native.ps1` into a new versioned directory; rerun the existing suites and Notepad A–E; punctuation and `;` QuickPhrase on the product path (old vs new); independently verify R3 | WP0 + explicit WP1 instruction | Clean fusion-windows `main`; pinned revisions unchanged | R1 closed or re-classified with a root cause; R2 resolved; R3 dispositioned with evidence kept. **Executed 2026-10-17:** R1/R2/R3 RESOLVED (§4); new runtime `runtime-wp1-20261017` (Debug + Release); fusion-windows PR #13 (test oracle) open for review |
+| WP1 | **Pinned-runtime compatibility (R1–R3).** Record raw identity first (pinned source SHAs, patch-applied state, installed headers, build logs, binary hashes of the current runtime); rebuild Debug and Release runtimes with the current patches via `build-native.ps1` into a new versioned directory; rerun the existing suites and Notepad A–E; punctuation and `;` QuickPhrase on the product path (old vs new); independently verify R3 | WP0 + explicit WP1 instruction | Clean fusion-windows `main`; pinned revisions unchanged | R1 closed or re-classified with a root cause; R2 resolved; R3 dispositioned with evidence kept. **Executed 2026-10-17:** R1/R2/R3 RESOLVED (§4); new runtime `runtime-wp1-20261017` (Debug + Release); fusion-windows PR #13 (test oracle) merged; WP1 closed within its scope |
 | WP2 | **Release configuration and distribution prerequisites.** Release build of DLL + Host on the rebuilt runtime; diagnostics per U3; sensitive/password-field policy per U5 with its minimum validation (R11); artifact identity manifest | WP1, U3, U5 | WP1 exit; builds use the rebuilt runtime (identity recorded) | Release suites and diagnostics pass; InputScope repair is implemented; final-candidate Notepad A–E and Firefox/Edge password checks remain NOT RUN dependencies. WP2 exit is incomplete; no package leaves the local developer machine. |
 | WP3 | **Input methods and user data (R5a–R5c).** Pinyin/Shuangpin selection (replacing the hard-coded `pinyin`), per-user configuration persistence, learning/user dictionary persistence through Fcitx's existing mechanisms, upgrade/uninstall data policy (U1). Registering Shuangpin as a second input method fires the trigger of the unchanged arch §25 `overlayMessage` DEFER row ("Host registers a second IM / IM switching reachable"); WP3 records whether IM switching is reachable on the product path and, if so, dispositions that row per its own terms (it depends on the already implemented aux row). Other §25 rows are not pulled in | WP2, U1 | WP2 exit | Pinyin and Shuangpin each selectable with representative input committing correctly; selected options survive Host restart; learning/user dictionary persist across Host restart; U1 data policy documented and applied; no learning in U5-sensitive fields; the §25 `overlayMessage` trigger check recorded |
 | WP4 | **Packaging and lifecycle.** Package layout (TIP DLL; Host + runtime + `data/` + `lib/libime` + user-data location from WP3); elevated install/uninstall on the existing `register.ps1`/`unregister.ps1`/`check-state.ps1`; Host start per U2; upgrade while the DLL is loaded in running apps (stage, re-register, require app restart/sign-out); test-package delivery | WP3, U2 | WP3 exit | §7.3 startup / singleton / session-identity evidence; install → uninstall leaves no TIP/COM/start entry/files except per U1 user data; upgrade evidence |
@@ -268,7 +268,7 @@ Release-vs-Debug difference is investigated before it is classified.
   tests; registration conventions; R3's history (no silent deletion).
 - **Expected behavioural delta:** none in product semantics; expected effect is that the two baseline aborts
   disappear and punctuation/QuickPhrase cannot abort a Debug Host. Any other semantic change is a stop condition.
-- **Result (pending review):** expected delta met with no semantic difference. Old source checkout and installed
+- **Result (merged; WP1 closed within its scope):** expected delta met with no semantic difference. Old source checkout and installed
   headers match the older patch state `d476f29` and lack both guards (complete old-binary provenance UNKNOWN); rebuilt Debug/Release runtimes from fresh pinned clones + current patches (`runtime-wp1-20261017`,
   old runtime preserved). Mock-only 64/64; real-Fcitx Debug 72/72, Release 72/72 (new and old Release runtime),
   given the stale test-oracle fix in fusion-windows PR #13 (https://github.com/choicky/fusion-windows/pull/13); Notepad A–E PASS with the
@@ -278,7 +278,7 @@ Release-vs-Debug difference is investigated before it is classified.
   QuickPhrase correct on the rebuilt runtimes; the stroke assertion reproduces on the old Debug runtime only. No
   `cmake/patches` change was needed. PR #13 later tightened its oracle to exactly one empty-panel snapshot and reran
   only that test (Debug and Release, rebuilt runtime: pass); the full suites and Notepad A–E were not rerun after
-  that test-only change. Next boundary: WP2 needs its own authorization.
+  that test-only change. Next boundary at the time: WP2 needed its own authorization (since given; see the WP2 row).
 
 ## 10. Accounting and reverse-omission
 
@@ -298,7 +298,7 @@ new WP5 (failure/recovery); old WP4 → WP6; old WP5 → WP7; old WP6 → WP8.
   verification (R3); Stage 4 multi-app debt (R12); Chromium census (R13); WP1 raw identity evidence.
 - Resolved matters still labelled unresolved: none; Stage 5 remains CLOSED / VERIFIED; R1–R3 recorded RESOLVED on
   the rebuilt runtime with history kept; R23 (build-script tooling) added and scheduled.
-- ROADMAP: Phase 8 points here as "Stage 6 plan proposed (not accepted); WP1 executed, pending review".
+- ROADMAP: Phase 8 points here as "Stage 6 plan proposed (not accepted); WP1 closed; WP2 implementation merged, final-candidate acceptance incomplete".
 
 **WP1 delivery accounting (2026-10-17):** changed register entries — R1, R2, R3 RESOLVED on the rebuilt runtime
 (observed; R1 old-binary provenance UNKNOWN; R3 guard-B attribution plausible, not isolated); R16 partially informed
