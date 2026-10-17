@@ -776,8 +776,9 @@ gate 记录的范围内；fusion-windows PR #11 与 PR #12 均已合并）。** 
   不静默删除。
 
 **下一阶段：Stage 6 — Packaging / release / soak（PLAN PROPOSED，规划中、未接受；实现未启动）。** 唯一的 Stage 6
-规划位置是 `docs/windows-stage6-plan.md`：提议的初始支持场景与排除项、发现登记表、P0 子问题分析、待所有者决定的
-事项、有序工作包与门。该计划不是 Accepted Decision，不改变本文的 OPEN/UNFROZEN 项，也不复制上表；其输入包括
+规划位置是 `docs/windows-stage6-plan.md`：提议的目标场景（Pinyin 与 Shuangpin、Fcitx 学习的持久化为目标要求）、过渡期
+测试产物的限制与排除项、发现登记表、P0 子问题与故障恢复取证、待所有者决定的事项、有序工作包与门；每个工作包须
+另有明确的执行指令才可开始。该计划不是 Accepted Decision，不改变本文的 OPEN/UNFROZEN 项，也不复制上表；其输入包括
 多应用 out-of-process 兼容性验证债（§25 Stage 4 收口、§18）、上表以 Stage 6 为 trigger 的 DEFER 项（如精确 caret
 锚定）、上面的 pinned-runtime 发现核验，以及安装/注册/签名/soak/阈值测量（§21、§25 Stage 4"不属于"条款）。
 计划被所有者接受之前不得开始 Stage 6 实现。
