@@ -17,7 +17,8 @@ WP2 remains incomplete until the final-candidate Notepad A–E and Firefox/Edge 
 ## Final-candidate acceptance handoff (2026-10-18)
 
 **Status:** WP2 implementation is merged (fusion-windows PR #14 → `main` `559d9ce`, tree `53b392b`; controller PR #33).
-Final-candidate acceptance is **incomplete**: Notepad A–E and the Firefox/Edge password checks are **NOT RUN**.
+Final-candidate acceptance is **incomplete**: Notepad A–E **PASS**; Edge password **PASS** for the U5 minimum outcome;
+Firefox password **INCONCLUSIVE** (see results below).
 U3 and U5 are **not** owner-accepted. Nothing in this record grants that acceptance.
 
 **Candidate identity.** The DLL registered during the WP2 execution was `stage6-wp2-real-release\bin\FusionTsf.dll`
@@ -35,10 +36,25 @@ A fresh local Release candidate was built from clean `559d9ce` against the rebui
 | CTest (with the candidate Host running) | 74/74 |
 | Fcitx runtime DLLs | identical to the rebuilt WP1 runtime |
 
-Full hashes are in the local evidence `candidate-identity.txt`. This candidate is not yet registered; registration
-needs elevation.
+Full hashes are in the local evidence `candidate-identity.txt`. The candidate was registered through
+`tools\tsf\register.ps1`, with the UAC prompt approved by the owner. HKLM InprocServer32 now points to the candidate
+DLL above.
 
-**Manual checklist (Chinese).** This is the existing Notepad A–E definition (arch §25 Stage 5) plus the plan §8.3/R11
+**Results (2026-10-18).** All runs used the registered candidate, the candidate Host and synthetic input. Diagnostics
+were on only through the technical opt-in. The DLL loaded by each target process was verified by path and hash
+`E58DB2C5…`. Evidence: `acceptance-results.md` plus the run folders.
+
+| Check | Result | Evidence |
+|---|---|---|
+| Notepad A–E | **PASS** | A: popup visible. B: popup over the composition. C: `CANDIDATE_HIT 2`. D: `CANDIDATE_ACTION index=2 route=Effect`, with no synthetic key. E: `EFFECT_APPLIED`; readback `拟好` |
+| Edge password field (guest mode) | **PASS** for the U5 minimum outcome | Ordinary-field control composed and committed `你好`. The password field showed 8 masked characters and no popup. Every key went `FailOpen`/`PASS` with 0 `FCITX_BATCH`, `COMPOSITION_START` and `EFFECT_APPLIED`, so no key reached Fcitx and none could be learned. No key content in the log. The block came from the existing `guid-blocked` (keyboard-disabled/empty-context) gate; InputScope read Unknown |
+| Firefox password field (owner's default profile, with approval) | **INCONCLUSIVE** | The password field showed 8 masked characters and no popup, but the ordinary-field control failed: the TIP took no key anywhere in Firefox (0 `KEY_ARRIVAL`). The cause is undiagnosed; this is a new Firefox product-path finding for the WP6 matrix |
+| InputScope `Sensitive` classification in a browser | **NOT DEMONSTRATED** | Both browsers reported `INPUT_SCOPE class=unknown` for the password field |
+
+The Host has no per-key log, so non-admission is established from the TIP-side log only. The Chinese checklist below
+remains the procedure for a manual Firefox rerun after the control failure is understood.
+
+**Manual checklist (Chinese).** It is kept for a manual rerun. This is the existing Notepad A–E definition (arch §25 Stage 5) plus the plan §8.3/R11
 browser password requirement. The evidence directory is `C:\Users\choicky\worktmp\fusion-windows\stage6-wp2-acceptance\`.
 In the steps below, **[可见]** marks what a person can observe directly. **[日志]** marks what must be established by
 the TSF diagnostic log or by loaded-module identity.
